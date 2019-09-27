@@ -1,0 +1,36 @@
+{
+  "name": "oi4-service",
+  "version": "1.0.0",
+  "description": "Acts as the application in a running OI4 container",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc"
+  },
+  "keywords": [
+    "oi4",
+    "open",
+    "industry",
+    "industry4.0"
+  ],
+  "author": "BM",
+  "license": "SEE LICENSE IN hilscherlicense.lic",
+  "dependencies": {
+    "@types/uuid": "^3.4.5",
+    "async-mqtt": "^2.4.2",
+    "chalk": "^2.4.2",
+    "dotenv": "^8.1.0",
+    "express": "^4.17.1",
+    "mqtt": "^3.0.0",
+    "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.1",
+    "@types/node": "^12.7.4",
+    "tslint": "^5.19.0",
+    "tslint-config-airbnb": "^5.11.1",
+    "typescript": "^3.6.2",
+    "typescript-tslint-plugin": "^0.5.4"
+  }
+}

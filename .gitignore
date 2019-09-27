@@ -1,0 +1,19 @@
+# Root folder
+node_modules
+.vscode
+out/**/*
+
+# OI4-Service folder
+OI4-Service/node_modules/**/*
+OI4-Service/.vscode
+OI4-Service/out/**/*
+
+# OI4-Local-UI folder
+OI4-Local-UI/node_modules/**/*
+OI4-Local-UI/.vscode
+OI4-Local-UI/build/**/*
+
+# OI4-Cockpit-UI folder
+OI4-Cockpit-UI/node_modules/**/*
+OI4-Cockpit-UI/.vscode
+OI4-Cockpit-UI/dist/**/*

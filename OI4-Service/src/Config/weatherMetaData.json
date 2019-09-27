@@ -1,0 +1,106 @@
+{
+  "MessageId": "42aaff52-0b89-4b6a-a2f7-27eb17624e2a",
+  "MessageType": "ua-metadata",
+  "PublisherId": "Hilscher",
+  "DataSetWriterId": 0,
+  "MetaData": [
+    {
+      "name": "SampleTempSensor",
+      "description": {
+        "Locale": "en-US",
+        "Text": "TemperatureSensor"
+      },
+      "fields": [
+        {
+          "name": "Temperature",
+          "description": {
+            "Locale": "en-US",
+            "Text": "The temperature of the Sensor"
+          },
+          "fieldFlags": 0,
+          "builtInType": 4,
+          "dataType": {
+            "IdType": 0,
+            "Id": 1
+          },
+          "valueRank": -1,
+          "arrayDimension": [
+            null
+          ],
+          "maxStringLength": 0,
+          "dataSetFieldId": "27eb17624e2a-1234-0123-27eb17624e2a",
+          "properties": [
+            {
+              "key": {
+                "Name": "Unit",
+                "Uri": 0
+              },
+              "value": "°C"
+            },
+            {
+              "key": {
+                "Name": "Min",
+                "Uri": 0
+              },
+              "value": -50
+            },
+            {
+              "key": {
+                "Name": "Max",
+                "Uri": 0
+              },
+              "value": 250
+            }
+          ]
+        },
+        {
+          "name": "Humidity",
+          "description": {
+            "Locale": "en-US",
+            "Text": "The humidity of the Sensor"
+          },
+          "fieldFlags": 0,
+          "builtInType": 3,
+          "dataType": {
+            "IdType": 0,
+            "Id": 1
+          },
+          "valueRank": -1,
+          "arrayDimension": [
+            null
+          ],
+          "maxStringLength": 0,
+          "dataSetFieldId": "27eb17624e2a-1234-0123-27eb17624e2b",
+          "properties": [
+            {
+              "key": {
+                "Name": "Unit",
+                "Uri": 0
+              },
+              "value": "%"
+            },
+            {
+              "key": {
+                "Name": "Min",
+                "Uri": 0
+              },
+              "value": 0
+            },
+            {
+              "key": {
+                "Name": "Max",
+                "Uri": 0
+              },
+              "value": 100
+            }
+          ]
+        }
+      ],
+      "dataSetClassId": "da508b5b-5ebc-439a-818f-d723a79afafc",
+      "configurationVersion": {
+        "majorVersion": 8,
+        "minorVersion": 15
+      }
+    }
+  ]
+}

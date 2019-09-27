@@ -1,0 +1,22 @@
+{
+        "MessageId": "not yet defined",
+        "MessageType": "ua-data",
+        "PublisherId": "Registry/hilscher.com/container/99/FFEF3342",
+        "DataSetClassId": "cd8d179a-fd2d-4ad4-ac6b-b0801722a4b6",
+        "Messages": [
+            {
+                "DataSetWriterId": "BaseOI4Container",
+                "SequenceNumber": 2,
+                "MetaDataVersion": {
+                    "majorVersion": 601689600,
+                    "minorVersion": 614822400
+                },
+                "Timestamp": "2019-06-26T13:16:00+01:00",
+                "Status": 2147942400,
+                "Payload": {
+                    "CPULoad": 37,
+                    "FreeMemory": 400 
+                }
+            }
+        ]
+}
