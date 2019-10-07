@@ -1,8 +1,12 @@
 # Quick Start!
+## Prerequisite
+Windows: Make sure that mingw32-make.exe is installed and in your PATH.\
+Linux: Make sure that make is installed and in your PATH.
+## Let's go!
 Checkout the project root (you should see 3 Folders with an OI4-Prefix and this README).\
 In your commandline, switch to this folder and run
 * ```npm run installAll```
-* ```npm run buildAll```
+* ```npm run buildAll<OS>``` (either ```npm run buildAllWindows``` or ```npm run buildAllLinux```)
 * ```docker build -t <yourTagName> -f <architecture>.Dockerfile .```
 
 Proceed to the Docker-section of the README in order to learn how to start the resulting container image.
