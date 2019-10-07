@@ -75,7 +75,7 @@ webClient.get('/registry/device', (deviceReq, deviceResp) => {
   deviceResp.send(JSON.stringify(registry.devices));
 });
 
-const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'auditList'];
+const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList'];
 
 for (const resources of resourceList) {
   webClient.get(`/registry/${resources}/:oi4Id`, async (resourceReq, resourceResp) => {
@@ -92,8 +92,8 @@ for (const resources of resourceList) {
   });
 }
 
-webClient.get('/registry/audit', (deviceHealthReq, deviceHealthResp) => {
-  deviceHealthResp.send(JSON.stringify(registry.auditTrail));
+webClient.get('/registry/event', (deviceHealthReq, deviceHealthResp) => {
+  deviceHealthResp.send(JSON.stringify(registry.eventTrail));
 });
 
 // -------- Conformity Checker Application

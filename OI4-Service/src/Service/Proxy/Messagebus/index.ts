@@ -384,7 +384,7 @@ class OI4MessageBusProxy extends OI4Proxy {
   }
 
   /**
-   * Sends an audit/event with a specified level to the message bus
+   * Sends an event/event with a specified level to the message bus
    * @param eventStr - The string that is to be sent as the 'event'
    * @param level - the level that is used as a <subresource> element in the event topic
    */

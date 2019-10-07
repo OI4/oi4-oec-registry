@@ -89,7 +89,7 @@ class OI4Base extends React.Component {
     // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
     // the local UI and the cockpit frontend.
     // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
-    this.fetch = new CommonFetch('cockpit', this.address, this.port);
+    this.fetch = new CommonFetch('fetch', this.address, this.port);
     /* eslint-enable */
 
     this.state = {
@@ -123,7 +123,7 @@ class OI4Base extends React.Component {
         'https://i.imgur.com/kUQ0wLJ.png',
         'https://i.imgur.com/8FXxfIq.png',
       ],
-      globalAuditTrail: [],
+      globalEventTrail: [],
     };
 
     this.mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
@@ -143,9 +143,9 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('config') }, 8200));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('rtLicense') }, 8300));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('license') }, 8400));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('auditList') }, 8500));
+    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 8500));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('profile') }, 8600));
-    this.activeIntervals.push(setInterval(() => { this.updateGlobalAuditTrail() }, 10000));
+    this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
     // If we start out with a couple of applications, we should update their conformity right away
     setTimeout(() => {
@@ -197,89 +197,82 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Application Registry: </ExpansionPanelSummary>
                 <ExpansionPanelDetails>
-                  <Paper className={classes.paper}>
-                    <Table className={classes.table}>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Manufacturer</TableCell>
-                          <TableCell>Model</TableCell>
-                          <TableCell>DeviceClass</TableCell>
-                          <TableCell align="right">Health</TableCell>
-                          <TableCell align="right">Last Message</TableCell>
-                          <TableCell align="right">Conformity</TableCell>
-                          <TableCell align="right">Updated</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {Object.keys(this.state.applicationLookup).map((oi4Id) => (
-                          <React.Fragment>
-                            <TableRow
-                              key={this.state.applicationLookup[oi4Id].name}
-                              hoverstyle={{ cursor: "pointer" }}
-                              onClick={() => {
-                                // A bit of a hack in order to not mutate the state...
-                                const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
-                                if (oi4Id in expandedLookupCopy) {
-                                  expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
-                                } else {
-                                  expandedLookupCopy[oi4Id] = true;
-                                }
-                                const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
-                                updateLookupLoc[oi4Id] = false;
-                                this.setState({ expandedLookup: expandedLookupCopy, updateLookup: updateLookupLoc });
-                              }}
-                            >
-                              <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].DeviceClass}</TableCell>
-                              <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
-                              <TableCell align="right">{this.state.applicationLookup[oi4Id].health.lastMessage}</TableCell>
-                              <TableCell align="right">
-                                <Button variant="contained" size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
-                                  Refresh
+                  <Table stickyHeader className={classes.table}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Manufacturer</TableCell>
+                        <TableCell>Model</TableCell>
+                        <TableCell>DeviceClass</TableCell>
+                        <TableCell align="right">Health</TableCell>
+                        <TableCell align="right">Last Message</TableCell>
+                        <TableCell align="right">Conformity</TableCell>
+                        <TableCell align="right">Updated</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {Object.keys(this.state.applicationLookup).map((oi4Id) => (
+                        <React.Fragment>
+                          <TableRow
+                            key={this.state.applicationLookup[oi4Id].name}
+                            hoverstyle={{ cursor: "pointer" }}
+                            onClick={() => {
+                              // A bit of a hack in order to not mutate the state...
+                              const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
+                              if (oi4Id in expandedLookupCopy) {
+                                expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
+                              } else {
+                                expandedLookupCopy[oi4Id] = true;
+                              }
+                              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
+                              updateLookupLoc[oi4Id] = false;
+                              this.setState({ expandedLookup: expandedLookupCopy, updateLookup: updateLookupLoc });
+                            }}
+                          >
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].DeviceClass}</TableCell>
+                            <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
+                            <TableCell align="right">{this.state.applicationLookup[oi4Id].health.lastMessage}</TableCell>
+                            <TableCell align="right">
+                              <Button variant="contained" size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
+                                Refresh
                                   <span role="img" aria-label="check">{this.parseConformityData(this.state.conformityLookup, oi4Id)}</span>
-                                </Button>
-                              </TableCell>
-                              <TableCell align="right">{this.displayUpdate(oi4Id)}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
-                                <Collapse
-                                  className={classes.tableInside}
-                                  in={this.state.expandedLookup[oi4Id]}
-                                  timeout="auto"
-                                  unmountOnExit
-                                >
-                                  <h3>Detailed Health:</h3>
+                              </Button>
+                            </TableCell>
+                            <TableCell align="right">{this.displayUpdate(oi4Id)}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                              <Collapse
+                                className={classes.tableInside}
+                                in={this.state.expandedLookup[oi4Id]}
+                                timeout="auto"
+                                unmountOnExit
+                              >
+                                <h3>Detailed Health:</h3>
+                                  {this.ownJsonViewer(this.state.applicationLookup[oi4Id].health)}
+                                <div>
+                                  <h3>Basic Conformance Validation:</h3>
                                   <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                    {this.ownJsonViewer(this.state.applicationLookup[oi4Id].health)}
+                                    {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
                                   </Paper>
-                                  <div>
-                                    <h3>Basic Conformance Validation:</h3>
-                                    <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                      {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
-                                    </Paper>
-                                  </div>
-                                  <div>
-                                    <h3>Last 3 Audits:</h3>
-                                    <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                      {this.displayAudits(this.state.applicationLookup[oi4Id].auditList)}
-                                    </Paper>
-                                  </div>
-                                </Collapse>
-                              </TableCell>
-                            </TableRow>
-                          </React.Fragment>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </Paper>
+                                </div>
+                                <div>
+                                  <h3>Last 3 Events:</h3>
+                                    {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
+                                </div>
+                              </Collapse>
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Device Registry: </ExpansionPanelSummary>
                 <ExpansionPanelDetails>
-                  <Paper className={classes.paper}>
                     <Table className={classes.table}>
                       <TableHead>
                         <TableRow>
@@ -307,13 +300,12 @@ class OI4Base extends React.Component {
                         ))}
                       </TableBody>
                     </Table>
-                  </Paper>
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               <ExpansionPanel>
-                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Global Audit Trail: </ExpansionPanelSummary>
+                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Global Event Trail: </ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
-                  {this.displayAudits(this.state.globalAuditTrail)}
+                  {this.displayEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               {/* <div>
@@ -378,6 +370,9 @@ class OI4Base extends React.Component {
   }
 
   displayNamurHealth(status) {
+    if (status < 0 || status > 5) {
+      return "Undefined NamurHealth";
+    }
     return <img src={this.state.namurLookup[status]} alt="Namur" height="25" width="30" />;
   }
 
@@ -425,33 +420,57 @@ class OI4Base extends React.Component {
   }
 
   /**
-   * Displays the Audits / Events coming from either global or local data sources
-   * @param {array} auditArray - an array of the last few audits
+   * Displays the Events / Events coming from either global or local data sources
+   * @param {array} eventArray - an array of the last few events
+   * @param {string} mode - the mode with which the events will be displayed (local: without originId, global: with originId)
    */
-  displayAudits(auditArray) {
-    if (Array.isArray(auditArray)) {
-      return <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>OriginID</TableCell>
-            <TableCell>Number</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Payload</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {
-            auditArray.map((audits) => {
-              return <TableRow>
-                <TableCell component="th" scope="row">{audits.originId}</TableCell>
-                <TableCell component="th" scope="row">{audits.number}</TableCell>
-                <TableCell component="th" scope="row">{audits.description}</TableCell>
-                <TableCell component="th" scope="row">{JSON.stringify(audits.payload)}</TableCell>
-              </TableRow>;
-            })
-          }
-        </TableBody>
-      </Table>;
+  displayEvents(eventArray, mode = 'global') {
+    if (Array.isArray(eventArray)) {
+      if (mode === 'global') {
+        return <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>OriginID</TableCell>
+              <TableCell>Number</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Payload</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {
+              eventArray.map((events) => {
+                return <TableRow>
+                  <TableCell component="th" scope="row">{events.originId}</TableCell>
+                  <TableCell component="th" scope="row">{events.number}</TableCell>
+                  <TableCell component="th" scope="row">{events.description}</TableCell>
+                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                </TableRow>;
+              })
+            }
+          </TableBody>
+        </Table>;
+      } else if (mode === 'local') {
+        return <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Number</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Payload</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {
+              eventArray.map((events) => {
+                return <TableRow>
+                  <TableCell component="th" scope="row">{events.number}</TableCell>
+                  <TableCell component="th" scope="row">{events.description}</TableCell>
+                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                </TableRow>;
+              })
+            }
+          </TableBody>
+        </Table>;
+      }
     }
   }
 
@@ -595,7 +614,7 @@ class OI4Base extends React.Component {
     for (const oi4Id of Object.keys(this.state.applicationLookup)) {
       // Check, if we can even get the resource (through conformity lookup)
       if (typeof this.state.conformityLookup[oi4Id] === 'object' && this.state.conformityLookup[oi4Id] !== null) {
-        if (resource === 'auditList') {
+        if (resource === 'eventList') {
           this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
             .then(data => {
               const resourceObject = JSON.parse(data);
@@ -664,10 +683,10 @@ class OI4Base extends React.Component {
       });
   }
 
-  updateGlobalAuditTrail() {
-    this.fetch.get(`/registry/audit`)
+  updateGlobalEventTrail() {
+    this.fetch.get(`/registry/event`)
       .then(data => {
-        this.setState({ globalAuditTrail: JSON.parse(data) });
+        this.setState({ globalEventTrail: JSON.parse(data) });
       });
   }
 

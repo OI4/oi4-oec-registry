@@ -1,4 +1,4 @@
-import { IAuditObject, EDeviceHealth } from '../../Service/Models/IContainer';
+import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
 import { IDeviceLookup } from '../Models/IRegistry';
 import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
@@ -18,7 +18,7 @@ export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;
   private deviceLookup: IDeviceLookup;
   private registryClient: mqtt.AsyncClient;
-  private globalAuditList: IAuditObject[];
+  private globalEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
 
@@ -40,7 +40,7 @@ export class Registry extends EventEmitter {
     this.configTimeout = 0;
     this.profileTimeout = 0;
 
-    this.globalAuditList = [];
+    this.globalEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
 
@@ -73,18 +73,19 @@ export class Registry extends EventEmitter {
       // const logLevel = topicArr[8]; // If we don't save the logLevel in the payload, we can discard it
       const oi4Id = `${topicArr[9]}/${topicArr[10]}/${topicArr[11]}/${topicArr[12]}`;
       if (oi4Id in this.applicationLookup) {
-        const auditList: any = this.applicationLookup[oi4Id].auditList;
-        if (auditList.length >= 3) {
-          this.applicationLookup[oi4Id].auditList.shift();
+        const eventList: any = this.applicationLookup[oi4Id].eventList;
+        if (eventList.length >= 3) {
+          this.applicationLookup[oi4Id].eventList.shift();
         }
-        this.applicationLookup[oi4Id].auditList.push({
+        console.log('GOT EVENT FROM DEVICE!');
+        this.applicationLookup[oi4Id].eventList.push({
           ...parsedPayload,
         });
       }
-      if (this.globalAuditList.length >= 30) {
-        this.globalAuditList.shift();
+      if (this.globalEventList.length >= 20) {
+        this.globalEventList.shift();
       }
-      this.globalAuditList.push({
+      this.globalEventList.push({
         ...parsedPayload,
         originId: oi4Id,
       });
@@ -184,7 +185,7 @@ export class Registry extends EventEmitter {
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
     const fullDevice = {
       ...device,
-      auditList: [],
+      eventList: [],
     };
     this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`);
     const topicArr = fullTopic.split('/');
@@ -332,9 +333,9 @@ export class Registry extends EventEmitter {
     };
   }
 
-  getAuditTrailFromDevice(oi4Id: string) {
+  getEventTrailFromDevice(oi4Id: string) {
     if (oi4Id in this.applicationLookup) {
-      return this.applicationLookup[oi4Id].auditList;
+      return this.applicationLookup[oi4Id].eventList;
     }
   }
 
@@ -352,7 +353,7 @@ export class Registry extends EventEmitter {
     }
   }
 
-  get auditTrail() {
-    return this.globalAuditList;
+  get eventTrail() {
+    return this.globalEventList;
   }
 }

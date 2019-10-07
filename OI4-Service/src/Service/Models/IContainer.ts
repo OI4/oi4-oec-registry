@@ -14,11 +14,11 @@ export interface IDeviceMessage extends IMasterAssetModel {
   licenseText?: IContainerLicenseText;
   config?: IContainerConfig;
   fullDevicePath?: string;
-  auditList: IAuditObject[];
+  eventList: IEventObject[];
   originator?: string;
 }
 
-export interface IAuditObject {
+export interface IEventObject {
   originId?: string;
   logLevel: string;
   logText: string;
@@ -45,7 +45,9 @@ export interface IContainerHealth {
 }
 
 export interface IContainerEvent {
-
+  number: number;
+  description: string;
+  payload: object;
 }
 
 export interface IContainerRTLicense {
