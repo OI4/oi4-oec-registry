@@ -127,7 +127,13 @@ class OI4Base extends React.Component {
     };
 
     this.mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
-
+    this.namurEnum = {
+      0: 'NORMAL_0',
+      1: 'FAILURE_1',
+      2: 'CHECK_FUNCTION_2',
+      3: 'OFF_SPEC_3',
+      4: 'MAINTENANCE_REQUIRED_4',
+    };
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
@@ -250,7 +256,7 @@ class OI4Base extends React.Component {
                                 unmountOnExit
                               >
                                 <h3>Detailed Health:</h3>
-                                  {this.ownJsonViewer(this.state.applicationLookup[oi4Id].health)}
+                                  {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
                                 <div>
                                   <h3>Basic Conformance Validation:</h3>
                                   <Paper className={classes.paper} style={{ maxWidth: 700 }}>
@@ -369,11 +375,18 @@ class OI4Base extends React.Component {
     }
   }
 
-  displayNamurHealth(status) {
+  displayNamurHealth(status, height = '25', width = '30') {
     if (status < 0 || status > 5) {
       return "Undefined NamurHealth";
     }
-    return <img src={this.state.namurLookup[status]} alt="Namur" height="25" width="30" />;
+    return <img src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
+  }
+
+  detailedHealthViewer(healthObject) {
+    return <div>
+      <div style={{ marginLeft: 25 }}>NE107 Status: {this.namurEnum[healthObject.health]}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
+      <div style={{ marginLeft: 25 }}>Health state[%]: {healthObject.healthState}</div>
+    </div>;
   }
 
   /**
