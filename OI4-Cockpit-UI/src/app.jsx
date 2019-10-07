@@ -67,14 +67,6 @@ const styles = theme => ({
   },
 });
 
-const EDeviceHealth = {
-  NORMAL_0: 0,
-  FAILURE_1: 1,
-  CHECK_FUNCTION_2: 2,
-  OFF_SPEC_3: 3,
-  MAINTENANCE_REQUIRED_4: 4,
-};
-
 class OI4Base extends React.Component {
   constructor(props) {
     super(props);
@@ -146,11 +138,12 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 7000));
     this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 7000));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 8100));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('config') }, 8200));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('rtLicense') }, 8300));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('license') }, 8400));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('config') }, 8200));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('rtLicense') }, 8300));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('license') }, 8400));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 8500));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('profile') }, 8600));
+    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('profile') }, 8600));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
     // If we start out with a couple of applications, we should update their conformity right away
@@ -161,6 +154,10 @@ class OI4Base extends React.Component {
     },
       3000);
     this.updateAppID(); // This will retrieve the AppID of the registry itself.
+    setTimeout(() => {
+      this.toggleTheme();
+    },
+      100);
   }
 
   // On close, clear all cyclic intervals
@@ -238,7 +235,7 @@ class OI4Base extends React.Component {
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model}</TableCell>
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].DeviceClass}</TableCell>
                             <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
-                            <TableCell align="right">{this.state.applicationLookup[oi4Id].health.lastMessage}</TableCell>
+                            <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
                               <Button variant="contained" size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
                                 Refresh
@@ -255,8 +252,14 @@ class OI4Base extends React.Component {
                                 timeout="auto"
                                 unmountOnExit
                               >
+                                <h3>Detailed MasterAssetModel:</h3>
+                                <Paper className={classes.paper} style={{ maxWidth: 700 }}>
+                                  {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
+                                </Paper>
                                 <h3>Detailed Health:</h3>
+                                <Paper className={classes.paper} style={{ maxWidth: 700 }}>
                                   {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
+                                </Paper>
                                 <div>
                                   <h3>Basic Conformance Validation:</h3>
                                   <Paper className={classes.paper} style={{ maxWidth: 700 }}>
@@ -265,7 +268,7 @@ class OI4Base extends React.Component {
                                 </div>
                                 <div>
                                   <h3>Last 3 Events:</h3>
-                                    {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
+                                  {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
                                 </div>
                               </Collapse>
                             </TableCell>
@@ -279,33 +282,33 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Device Registry: </ExpansionPanelSummary>
                 <ExpansionPanelDetails>
-                    <Table className={classes.table}>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Manufacturer</TableCell>
-                          <TableCell>Model</TableCell>
-                          <TableCell>DeviceClass</TableCell>
-                          <TableCell>SerialNumber</TableCell>
-                          <TableCell>Origin</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {Object.keys(this.state.deviceLookup).map((oi4Id) => (
-                          <React.Fragment>
-                            <TableRow key={this.state.deviceLookup[oi4Id].name}>
-                              <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Manufacturer}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Model}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].DeviceClass}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].SerialNumber}</TableCell>
-                              <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].originator}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5} />
-                            </TableRow>
-                          </React.Fragment>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <Table className={classes.table}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Manufacturer</TableCell>
+                        <TableCell>Model</TableCell>
+                        <TableCell>DeviceClass</TableCell>
+                        <TableCell>SerialNumber</TableCell>
+                        <TableCell>Origin</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {Object.keys(this.state.deviceLookup).map((oi4Id) => (
+                        <React.Fragment>
+                          <TableRow key={this.state.deviceLookup[oi4Id].name}>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Manufacturer}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Model}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].DeviceClass}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].SerialNumber}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].originator}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5} />
+                          </TableRow>
+                        </React.Fragment>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               <ExpansionPanel>
@@ -384,8 +387,8 @@ class OI4Base extends React.Component {
 
   detailedHealthViewer(healthObject) {
     return <div>
-      <div style={{ marginLeft: 25 }}>NE107 Status: {this.namurEnum[healthObject.health]}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
-      <div style={{ marginLeft: 25 }}>Health state[%]: {healthObject.healthState}</div>
+      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{this.namurEnum[healthObject.health]}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
+      <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthState}</div>
     </div>;
   }
 
@@ -398,37 +401,21 @@ class OI4Base extends React.Component {
     if (typeof jsonObject === 'object' && jsonObject !== null) {
       return Object.keys(jsonObject).map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div style={{ marginLeft: idx * 25 }}><b>{keys}</b>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div style={{ marginLeft: idx * 25 }}><b>{keys}</b>: {jsonObject[keys].toString()}</div>;
+          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {jsonObject[keys].toString()}</div>;
         }
       });
     } else if (Array.isArray(jsonObject)) {
       return jsonObject.map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div style={{ marginLeft: idx * 25 }}><b>{keys}</b>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div style={{ marginLeft: idx * 25 }}><b>{keys}</b>: {'Test'}</div>;
+          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
         }
       });
     } else {
       return <CircularProgress />;
-    }
-  }
-
-  /**
-   * Displays the time of the health object.
-   * If the health is good, displays registeredAt
-   * If it is bad, displays lastMessage
-   * @param {object} healthObject - the health that is to be parsed for the timeData
-   */
-  displayTime(healthObject) {
-    if (typeof healthObject === 'object' && healthObject !== null) {
-      if (healthObject.health === EDeviceHealth.NORMAL_0) {
-        return <b>Registered at:{healthObject.registeredAt}</b>;
-      } else if (healthObject.health === EDeviceHealth.FAILURE_1) {
-        return <b>Last Message:{healthObject.lastMessage}</b>;
-      }
     }
   }
 
@@ -627,7 +614,7 @@ class OI4Base extends React.Component {
     for (const oi4Id of Object.keys(this.state.applicationLookup)) {
       // Check, if we can even get the resource (through conformity lookup)
       if (typeof this.state.conformityLookup[oi4Id] === 'object' && this.state.conformityLookup[oi4Id] !== null) {
-        if (resource === 'eventList') {
+        if (resource === 'eventList' || resource === 'lastMessage') {
           this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
             .then(data => {
               const resourceObject = JSON.parse(data);

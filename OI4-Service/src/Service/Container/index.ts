@@ -40,8 +40,6 @@ class ContainerState extends ConfigParser implements IContainerState {
     this.health = {
       health: EDeviceHealth.NORMAL_0,
       healthState: 100,
-      registeredAt: '',
-      lastMessage: '',
     };
 
     this.license = {

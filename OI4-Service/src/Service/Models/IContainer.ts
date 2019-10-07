@@ -40,8 +40,6 @@ export interface IContainerConfig {
 export interface IContainerHealth {
   health: EDeviceHealth;
   healthState: number; // UInt16 (from 0 to 100%)
-  registeredAt: string;
-  lastMessage: string;
 }
 
 export interface IContainerEvent {

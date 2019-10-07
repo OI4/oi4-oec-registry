@@ -69,9 +69,13 @@ export class Registry extends EventEmitter {
   private processMqttMessage = (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
     const parsedPayload = JSON.parse(message.toString()).Messages[0].Payload;
+    const baseIdOffset = topicArr.length - 4;
+    const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
+    if (oi4Id in this.applicationLookup) {
+      this.applicationLookup[oi4Id]['lastMessage'] = new Date().toISOString();
+    }
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
       // const logLevel = topicArr[8]; // If we don't save the logLevel in the payload, we can discard it
-      const oi4Id = `${topicArr[9]}/${topicArr[10]}/${topicArr[11]}/${topicArr[12]}`;
       if (oi4Id in this.applicationLookup) {
         const eventList: any = this.applicationLookup[oi4Id].eventList;
         if (eventList.length >= 3) {
@@ -90,7 +94,6 @@ export class Registry extends EventEmitter {
         originId: oi4Id,
       });
     } else if (topic.includes('/pub/health')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       this.logger.log(`Registry: Got Health from ${oi4Id}`);
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
@@ -120,7 +123,6 @@ export class Registry extends EventEmitter {
         this.applicationLookup[oi4Id].health = parsedPayload;
       }
     } else if (topic.includes('/pub/license')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -132,7 +134,6 @@ export class Registry extends EventEmitter {
         this.applicationLookup[oi4Id].license = parsedPayload;
       }
     } else if (topic.includes('/pub/rtLicense')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -144,7 +145,6 @@ export class Registry extends EventEmitter {
         this.applicationLookup[oi4Id].rtLicense = parsedPayload;
       }
     } else if (topic.includes('/pub/licenseText')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -156,7 +156,6 @@ export class Registry extends EventEmitter {
         this.applicationLookup[oi4Id].licenseText = parsedPayload;
       }
     } else if (topic.includes('/pub/config')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -168,7 +167,6 @@ export class Registry extends EventEmitter {
         this.applicationLookup[oi4Id].config = parsedPayload;
       }
     } else if (topic.includes('/pub/profile')) {
-      const oi4Id = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`;
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -186,6 +184,8 @@ export class Registry extends EventEmitter {
     const fullDevice = {
       ...device,
       eventList: [],
+      lastMessage: '',
+      mam: device,
     };
     this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`);
     const topicArr = fullTopic.split('/');
@@ -206,6 +206,7 @@ export class Registry extends EventEmitter {
       try {
         await this.getResourceFromDevice(assetId, 'health');
         this.applicationLookup[assetId]['registeredAt'] = new Date().toISOString();
+        this.applicationLookup[assetId]['lastMessage'] = new Date().toISOString();
         <any>setTimeout(() => this.getResourceFromDevice(assetId, 'health'), 10000); // Trigger cyclic retrieval
         await this.getResourceFromDevice(assetId, 'license');
         <any>setTimeout(() => this.getResourceFromDevice(assetId, 'license'), 10000);
@@ -272,7 +273,6 @@ export class Registry extends EventEmitter {
             if (resource === 'health') {
               resPayload = {
                 ...resourcePayload,
-                lastMessage: new Date().toISOString(),
               };
             } else {
               resPayload = resourcePayload;

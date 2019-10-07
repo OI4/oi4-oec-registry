@@ -75,7 +75,8 @@ webClient.get('/registry/device', (deviceReq, deviceResp) => {
   deviceResp.send(JSON.stringify(registry.devices));
 });
 
-const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList'];
+// In this resourceList, eventList, lastMessage and mam are custom resources only used by the registry
+const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList', 'lastMessage', 'mam'];
 
 for (const resources of resourceList) {
   webClient.get(`/registry/${resources}/:oi4Id`, async (resourceReq, resourceResp) => {
