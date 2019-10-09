@@ -81,7 +81,7 @@ class OI4Base extends React.Component {
     // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
     // the local UI and the cockpit frontend.
     // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
-    this.fetch = new CommonFetch('fetch', this.address, this.port);
+    this.fetch = new CommonFetch('cockpit', this.address, this.port);
     /* eslint-enable */
 
     this.state = {
