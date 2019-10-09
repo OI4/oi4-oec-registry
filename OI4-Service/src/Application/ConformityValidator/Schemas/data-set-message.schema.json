@@ -1,0 +1,56 @@
+{
+  "$id": "data-set-message.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A representation of a Message",
+  "type": "object",
+  "required": [
+    "DataSetWriterId",
+    "Payload",
+    "Timestamp"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "DataSetWriterId": {
+      "$ref": "oi4-identifier.schema.json"
+    },
+    "SequenceNumber": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "A strictly monotonically increasing sequence number assigned to the DataSetMessage by the DataSetWriter"
+    },
+    "Status": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional and may not be shown, when Status = “Good”",
+      "optional": true
+    },
+    "MetaDataVersion": {
+      "$ref": "metadata-version.schema.json",
+      "optional": true
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp in format xy"
+    },
+    "Payload": {
+      "oneOf": [
+        {
+          "$ref": "master-asset-model-payload.schema.json"
+        },
+        {
+          "$ref": "health-payload.schema.json"
+        },
+        {
+          "$ref": "license-payload.schema.json"
+        },
+        {
+          "$ref": "license-text-payload.schema.json"
+        },
+        {
+          "$ref": "profile-payload.schema.json"
+        }
+      ]
+    }
+  }
+}

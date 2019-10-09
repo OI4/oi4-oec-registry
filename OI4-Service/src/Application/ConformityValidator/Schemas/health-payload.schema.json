@@ -1,0 +1,19 @@
+{
+  "$id": "health-payload.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A representation of a Message",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "health",
+    "healthState"
+  ],
+  "properties": {
+    "health": {
+      "type": "number"
+    },
+    "healthState": {
+      "type": "number"
+    }
+  }
+}

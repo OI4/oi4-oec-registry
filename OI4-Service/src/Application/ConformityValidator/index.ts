@@ -6,6 +6,19 @@ const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 import os from 'os';
 
+import networkMessageSchemaJson = require('./Schemas/network-message.schema.json');
+import metadataVersionSchemaJson = require('./Schemas/metadata-version.schema.json');
+import oi4IdentifierSchemaJson = require('./Schemas/oi4-identifier.schema.json');
+import healthPayloadSchemaJson = require('./Schemas/health-payload.schema.json');
+import masterAssetModelPayloadSchemaJson = require('./Schemas/master-asset-model-payload.schema.json');
+import dataSetMessageSchemaJson = require('./Schemas/data-set-message.schema.json');
+import descriptionSchemaJson = require('./Schemas/description.schema.json');
+import licensePayloadSchemaJson = require('./Schemas/license-payload.schema.json');
+import licenseTextPayloadSchemaJson = require('./Schemas/license-text-payload.schema.json');
+import profilePayloadSchemaJson = require('./Schemas/profile-payload.schema.json');
+
+import Ajv from 'ajv'; /*tslint:disable-line*/
+
 interface TMqttOpts {
   clientId: string;
   servers: object[];
@@ -22,6 +35,7 @@ export class ConformityValidator extends EventEmitter {
   private readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
   private readonly mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
   private builder: OPCUABuilder;
+  private readonly jsonValidator: Ajv.Ajv;
   constructor() {
     super();
     this.builder = new OPCUABuilder('appId'); // TODO: Set appId to something useful
@@ -35,6 +49,19 @@ export class ConformityValidator extends EventEmitter {
       servers: [serverObj],
     };
     this.conformityClient = mqtt.connect(mqttOpts);
+
+    this.jsonValidator = new Ajv();
+    // Add Validation Schemas
+    this.jsonValidator.addSchema(networkMessageSchemaJson, 'network-message.schema.json');
+    this.jsonValidator.addSchema(metadataVersionSchemaJson, 'metadata-version.schema.json');
+    this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4-identifier.schema.json');
+    this.jsonValidator.addSchema(healthPayloadSchemaJson, 'health-payload.schema.json');
+    this.jsonValidator.addSchema(masterAssetModelPayloadSchemaJson, 'master-asset-model-payload.schema.json');
+    this.jsonValidator.addSchema(dataSetMessageSchemaJson, 'data-set-message.schema.json');
+    this.jsonValidator.addSchema(descriptionSchemaJson, 'description.schema.json');
+    this.jsonValidator.addSchema(licensePayloadSchemaJson, 'license-payload.schema.json');
+    this.jsonValidator.addSchema(licenseTextPayloadSchemaJson, 'license-text-payload.schema.json');
+    this.jsonValidator.addSchema(profilePayloadSchemaJson, 'profile-payload.schema.json');
   }
 
   /**
@@ -190,7 +217,14 @@ export class ConformityValidator extends EventEmitter {
       if (topic === `${fullTopic}/pub/${resource}/${oi4Id}`) {
         const parsedMessage = JSON.parse(rawMsg.toString());
         let eRes = 0;
-        if (ConformityValidator.isOPCUAData(parsedMessage)) {
+        let altValidationResult;
+        try {
+          altValidationResult = await this.jsonValidator.validate('network-message.schema.json', parsedMessage);
+        } catch (validateErr) {
+          console.log(validateErr);
+          altValidationResult = false;
+        }
+        if (altValidationResult) {
           eRes = EValidity.ok;
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) {
             eRes = EValidity.ok;
@@ -199,9 +233,8 @@ export class ConformityValidator extends EventEmitter {
             console.log(`CorrelationID not passed for ${oi4Id} with resource ${resource}`);
           }
         } else {
-          if (ConformityValidator.isOPCUAData(parsedMessage)) {
-            eRes = EValidity.partial;
-          }
+          console.log(this.jsonValidator.errorsText());
+          eRes = EValidity.partial;
         }
         if (resource === 'license') { // FIXME: Fix this hardcoded stuff...
           const licRes = {
@@ -259,21 +292,6 @@ export class ConformityValidator extends EventEmitter {
     const oi4Array = oi4Id.split('/');
     if (oi4Array.length !== 4) return false; // throw new Error('Wrong number of subTopics');
     // further checks will follow!
-    return true;
-  }
-
-  /**
-   * Superficial OPCUa NetworkMessage validator. Checks if the keys are present, otherwise returns false
-   * @param checkedObject - the OPCUA Message that is to be checked
-   */
-  static isOPCUAData(checkedObject: IOPCUAData): boolean {
-    const myInterface = checkedObject as IOPCUAData;
-    if (myInterface.MessageId === undefined) return false;
-    if (myInterface.MessageType === undefined) return false;
-    if (myInterface.DataSetClassId === undefined) return false;
-    if (myInterface.PublisherId === undefined) return false;
-    if (myInterface.Messages === undefined) return false;
-    // if (myInterface.CorrelationId === undefined) return false; // Currently not mandatory!
     return true;
   }
 }

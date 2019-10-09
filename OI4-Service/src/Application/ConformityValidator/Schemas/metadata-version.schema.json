@@ -1,0 +1,23 @@
+{
+    "$id": "metadata-version-payload.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Metadata Version Schema",
+    "type": "object",
+    "required": [
+        "majorVersion",
+        "minorVersion"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "majorVersion": {
+            "type": "integer",
+            "description": "",
+            "minimum": 0
+        },
+        "minorVersion": {
+            "type": "integer",
+            "description": "",
+            "minimum": 0
+        }
+    }
+}

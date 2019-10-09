@@ -1,0 +1,64 @@
+{
+  "$id": "license-payload.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "License Schema",
+  "type": "object",
+  "required": ["licenses"],
+  "additionalProperties": false,
+  "properties": {
+    "licenses": {
+      "type": "array",
+      "description": "License Object",
+      "items": {
+        "$ref": "#/definitions/license"
+      }
+    }
+  },
+  "definitions": {
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "licAuthor"
+      ],
+      "properties": {
+        "component": {
+          "description": "Library using this license",
+          "type": "string"
+        },
+        "licAuthor": {
+          "description": "License Authors",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "licAddText": {
+          "description": "Additional license text",
+          "type": "string"
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "components",
+        "licenseId"
+      ],
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        },
+        "licenseId": {
+          "description": "License Name",
+          "type": "string"
+        }
+      }
+    }
+  }
+}
