@@ -282,7 +282,7 @@ export class Registry extends EventEmitter {
           });
         }),
           1000, /*tslint:disable-line*/
-          `${resource}Error`, /*tslint:disable-line*/
+          `${resource}Timeout`, /*tslint:disable-line*/
         );
       } catch (promErr) {
         this.logger.log(`Registry: Error: ${promErr} in GetResource with Resource ${resource}`);
@@ -315,7 +315,7 @@ export class Registry extends EventEmitter {
           });
         }),
           1100, /*tslint:disable-line*/
-          `${resource}Error`, /*tslint:disable-line*/
+          `${resource}Timeout`, /*tslint:disable-line*/
         );
       } catch (promErr) {
         this.logger.log(`Registry: Error: ${promErr} in GetResource with Resource ${resource}`);

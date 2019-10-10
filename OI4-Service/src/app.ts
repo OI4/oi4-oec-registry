@@ -57,9 +57,8 @@ busProxy.on('getMam', async (tag) => {
   if (tag === '') {
     const devices = registry.applications as IDeviceLookup;
     for (const device of Object.keys(devices)) {
-      busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device], new Date(), 'registryClassID')), () => {
-        logger.log(`Sent device with OI4-ID ${devices[device].ProductInstanceUri}`);
-      });
+      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device], new Date(), 'registryClassID')));
+      logger.log(`Sent device with OI4-ID ${devices[device].ProductInstanceUri}`);
     }
   }
 });

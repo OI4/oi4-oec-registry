@@ -1,4 +1,4 @@
-import mqtt = require('mqtt');
+import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { OPCUABuilder } from '../OPCUABuilder/index';
 
 const chalk = require('chalk');
@@ -17,12 +17,12 @@ class Logger {
   private colorLookUp: any;
   private _enabled: boolean; /*tslint:disable-line*/
   private _level: number; /*tslint:disable-line*/
-  private _mqttClient?: mqtt.Client;
+  private _mqttClient?: mqtt.AsyncClient;
   private _appId?: string;
   private _serviceType?: string;
   private _builder?: OPCUABuilder;
 
-  constructor(enabled: boolean = true, level: number = 1, mqttClient?: mqtt.Client, appId?: string, serviceType?: string) {
+  constructor(enabled: boolean = true, level: number = 1, mqttClient?: mqtt.AsyncClient, appId?: string, serviceType?: string) {
     /**
      * Enables or disables the logging. Default: `true`
      * @type {boolean}
@@ -114,6 +114,7 @@ class Logger {
               },
             }, new Date(), 'eventID'); /*tslint:disable-line*/
           }
+          /* Optimistic log...if we want to be certain, we have to convert this to async */
           this._mqttClient.publish(`oi4/${this._serviceType}/${this._appId}/pub/event/debug/${this._appId}`, JSON.stringify(logPayload));
         }
       }
