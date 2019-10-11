@@ -13,7 +13,7 @@ if (!(process.env.OI4_ADDR) || !(process.env.OI4_PORT) || !(process.env.CONTAINE
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
+const logger = new Logger(true, 2, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
@@ -100,7 +100,7 @@ webClient.get('/registry/event', (deviceHealthReq, deviceHealthResp) => {
 import { ConformityValidator } from './Application/ConformityValidator';
 import { IDeviceLookup } from './Application/Models/IRegistry';
 
-const confChecker = new ConformityValidator();
+const confChecker = new ConformityValidator(logger);
 webClient.get('/conformity/:oi4Id', async (conformityReq, conformityResp) => {
   let conformityObject = confChecker.initializeValidityObject();
   try {

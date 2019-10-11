@@ -54,16 +54,16 @@ class OI4MessageBusProxy extends OI4Proxy {
     };
 
     this.client = mqtt.connect(mqttOpts);
-    this.logger = new Logger(false, 1, this.client, this.appId, this.serviceType);
-    this.logger.log(`This is the standardroute until method element: ${this.standardRoute}`);
+    this.logger = new Logger(true, 2, this.client, this.appId, this.serviceType);
+    this.logger.log(`BusProxy: Standardroute: ${this.standardRoute}`, 'y', 2);
     // Publish Birth Message and start listening to topics
     this.client.on('connect', async (connack: mqtt.IConnackPacket) => {
-      console.log('Connected successfully');
+      this.logger.log('BusProxy: Connected successfully', 'w' , 2);
       await this.client.publish(
         `${this.standardRoute}/pub/mam/${this.appId}`,
         JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID')),
       );
-      this.logger.log(`Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`);
+      this.logger.log(`BusProxy: Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, 'w', 2);
 
       // Listen to own routes
       this.client.subscribe(`${this.standardRoute}/get/#`);
@@ -302,14 +302,14 @@ class OI4MessageBusProxy extends OI4Proxy {
     const tagName = cutTopic; // Remove the leading /
     if (tagName === '') { // If there is no tag specified, we should send all available metadata
       await this.client.publish(`${this.standardRoute}/pub/metadata`, JSON.stringify(this.containerState.metaDataLookup));
-      this.logger.log(`Published ALL available MetaData on ${this.standardRoute}/pub/metadata`);
+      this.logger.log(`BusProxy: Published ALL available MetaData on ${this.standardRoute}/pub/metadata`);
       return;
     }
     // This topicObject is also specific to the resource. The data resource will include the TagName!
     const dataLookup = this.containerState.dataLookup;
     if (tagName in dataLookup) {
       await this.client.publish(`${this.standardRoute}/pub/metadata/${tagName}`, JSON.stringify(this.containerState.metaDataLookup[tagName]));
-      this.logger.log(`Published available MetaData on ${this.standardRoute}/pub/metadata/${tagName}`);
+      this.logger.log(`BusProxy: Published available MetaData on ${this.standardRoute}/pub/metadata/${tagName}`);
     }
   }
 
@@ -321,14 +321,14 @@ class OI4MessageBusProxy extends OI4Proxy {
     const tagName = cutTopic;
     if (tagName === '') { // If there is no tag specified, we shuld send all available data
       await this.client.publish(`${this.standardRoute}/pub/data`, JSON.stringify(this.containerState.dataLookup));
-      this.logger.log(`Published ALL available Data on ${this.standardRoute}/pub/data`);
+      this.logger.log(`BusProxy: Published ALL available Data on ${this.standardRoute}/pub/data`);
       return;
     }
     // This topicObject is also specific to the resource. The data resource will include the TagName!
     const dataLookup = this.containerState.dataLookup;
     if (tagName in dataLookup) {
       await this.client.publish(`${this.standardRoute}/pub/data/${tagName}`, JSON.stringify(this.containerState.dataLookup[tagName]));
-      this.logger.log(`Published available Data on ${this.standardRoute}/pub/data/${tagName}`);
+      this.logger.log(`BusProxy: Published available Data on ${this.standardRoute}/pub/data/${tagName}`);
     }
   }
 
@@ -341,7 +341,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     await this.client.publish(
       `${this.standardRoute}/pub/mam/${this.appId}`,
       JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID')));
-    this.logger.log(`Published MasterAssetData on ${this.standardRoute}/pub/mam/${this.appId}`);
+    this.logger.log(`BusProxy: Published MasterAssetData on ${this.standardRoute}/pub/mam/${this.appId}`);
   }
 
   /**
@@ -354,7 +354,7 @@ class OI4MessageBusProxy extends OI4Proxy {
       await this.client.publish(
         `${this.standardRoute}/pub/${resource}/${this.appId}`,
         JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState[resource], new Date(), `${resource}-${this.serviceType}-ClassId`, messageId)));
-      this.logger.log(`Published ${resource} on ${this.standardRoute}/pub/${resource}`);
+      this.logger.log(`BusProxy: Published ${resource} on ${this.standardRoute}/pub/${resource}`);
     }
   }
 
@@ -369,7 +369,7 @@ class OI4MessageBusProxy extends OI4Proxy {
       return;
     }
     await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.licenseText[license], new Date(), 'licenseTextClass', messageId)));
-    this.logger.log(`Published LicenseText on ${this.standardRoute}/pub/licenseText/${this.appId}`);
+    this.logger.log(`BusProxy: Published LicenseText on ${this.standardRoute}/pub/licenseText/${this.appId}`);
   }
 
   /**
@@ -387,12 +387,12 @@ class OI4MessageBusProxy extends OI4Proxy {
       },
     }, new Date(), 'eventID'); /*tslint:disable-line*/
     await this.client.publish(`${this.standardRoute}/pub/event/${level}/${this.appId}`, JSON.stringify(opcUAEvent));
-    this.logger.log(`Published event on ${this.standardRoute}/event/${level}/${this.appId}`);
+    this.logger.log(`BusProxy: Published event on ${this.standardRoute}/event/${level}/${this.appId}`);
   }
 
   // Basic Error Functions
   async sendError(error: string) {
-    this.logger.log(`MQTTProxy: Error: ${error}`);
+    this.logger.log(`BusProxy: Error: ${error}`);
   }
 
   // SET Function section ------//
@@ -405,10 +405,10 @@ class OI4MessageBusProxy extends OI4Proxy {
     }
     if (!(tagName in dataLookup)) {
       this.containerState.dataLookup[tagName] = data;
-      this.logger.log(`Added ${tagName} to dataLookup`);
+      this.logger.log(`BusProxy: Added ${tagName} to dataLookup`);
     } else {
       this.containerState.dataLookup[tagName] = data; // No difference if we create the data or just update it with an object
-      this.logger.log(`${tagName} already exists in dataLookup`);
+      this.logger.log(`BusProxy: ${tagName} already exists in dataLookup`);
     }
   }
 
@@ -418,7 +418,7 @@ class OI4MessageBusProxy extends OI4Proxy {
    */
   setConfig(configObject: IContainerConfig) {
     this.containerState.config = configObject;
-    this.logger.log('Updated config(no CREATE possible)');
+    this.logger.log('BusProxy: Updated config(no CREATE possible)');
   }
 
   // DELETE Function section
@@ -436,9 +436,9 @@ class OI4MessageBusProxy extends OI4Proxy {
     }
     if ((tagName in dataLookup)) {
       delete this.containerState.dataLookup[tagName];
-      this.logger.log(`Deleted ${tagName} from dataLookup`);
+      this.logger.log(`BusProxy: Deleted ${tagName} from dataLookup`);
     } else {
-      this.logger.log(`Cannot find ${tagName} in lookup`);
+      this.logger.log(`BusProxy: Cannot find ${tagName} in lookup`);
     }
   }
 

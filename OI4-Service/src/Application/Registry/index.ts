@@ -85,12 +85,12 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            this.logger.log('Resetting timeout from health');
+            this.logger.log('Registry: Resetting timeout from health');
             clearTimeout(this.healthTimeout);
             this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
           } else if (health.health === EDeviceHealth.FAILURE_1) {
             if (parsedPayload.health === EDeviceHealth.NORMAL_0) {
-              this.logger.log('Resetting timeout from ALL');
+              this.logger.log('Registry: Resetting timeout from ALL');
               clearTimeout(this.healthTimeout);
               this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
               clearTimeout(this.licenseTimeout);
@@ -173,7 +173,7 @@ export class Registry extends EventEmitter {
       lastMessage: '',
       mam: device,
     };
-    this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`);
+    this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`, 'w', 2);
     const topicArr = fullTopic.split('/');
     const originator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
@@ -229,11 +229,11 @@ export class Registry extends EventEmitter {
     if (device in this.applicationLookup) {
       this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/event/+/${device}`);
       delete this.applicationLookup[device];
-      this.logger.log(`Registry: Deleted App: ${device}`);
+      this.logger.log(`Registry: Deleted App: ${device}`, 'w', 2);
     } else if (device in this.deviceLookup) {
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
       delete this.deviceLookup[device];
-      this.logger.log(`Registry: Deleted Device: ${device}`);
+      this.logger.log(`Registry: Deleted Device: ${device}`, 'r', 2);
     }
   }
 

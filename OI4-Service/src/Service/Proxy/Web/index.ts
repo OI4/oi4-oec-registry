@@ -13,8 +13,8 @@ class OI4WebProxy extends OI4Proxy {
   private logger: Logger;
   constructor(container: IContainerState) {
     super(container);
-    this.logger = new Logger(true, 1);
-    console.log(this.standardRoute);
+    this.logger = new Logger(true, 2);
+    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, 'y', 2);
 
     this.client = express();
     this.client.use((initReq, initRes, initNext) => {

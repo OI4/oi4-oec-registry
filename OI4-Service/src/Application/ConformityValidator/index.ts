@@ -18,6 +18,7 @@ import licenseTextPayloadSchemaJson = require('./Schemas/license-text-payload.sc
 import profilePayloadSchemaJson = require('./Schemas/profile-payload.schema.json');
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
+import { Logger } from '../../Service/Utilities/Logger';
 
 interface TMqttOpts {
   clientId: string;
@@ -36,8 +37,10 @@ export class ConformityValidator extends EventEmitter {
   private readonly mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
-  constructor() {
+  private readonly logger: Logger;
+  constructor(logger: Logger) {
     super();
+    this.logger = logger;
     this.builder = new OPCUABuilder('appId'); // TODO: Set appId to something useful
     const serverObj = {
       host: process.env.OI4_ADDR as string,
@@ -150,7 +153,7 @@ export class ConformityValidator extends EventEmitter {
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
-      console.log(`ConfValid: Error in checkOI4IDConformity: ${err}`);
+      this.logger.log(`ConformityValidator: Error in checkOI4IDConformity: ${err}`, 'w', 2);
       return conformityObject;
     }
     if (oi4Result) {
@@ -184,7 +187,7 @@ export class ConformityValidator extends EventEmitter {
           }
 
         } catch (err) {
-          console.log(`ConfValid: ${resource} did not pass with ${err}`);
+          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w' , 2);
           if (this.mandatoryResource.includes(resource)) { // If it's not mandatory, we do not count the error!
             errorSoFar = true;
           }
@@ -221,7 +224,7 @@ export class ConformityValidator extends EventEmitter {
         try {
           altValidationResult = await this.jsonValidator.validate('network-message.schema.json', parsedMessage);
         } catch (validateErr) {
-          console.log(validateErr);
+          this.logger.log(validateErr);
           altValidationResult = false;
         }
         if (altValidationResult) {
@@ -230,10 +233,10 @@ export class ConformityValidator extends EventEmitter {
             eRes = EValidity.ok;
           } else {
             eRes = EValidity.nok;
-            console.log(`CorrelationID not passed for ${oi4Id} with resource ${resource}`);
+            this.logger.log(`ConformityValidator: CorrelationID not passed for ${oi4Id} with resource ${resource}`);
           }
         } else {
-          console.log(this.jsonValidator.errorsText());
+          this.logger.log(this.jsonValidator.errorsText());
           eRes = EValidity.partial;
         }
         if (resource === 'license') { // FIXME: Fix this hardcoded stuff...
