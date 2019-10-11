@@ -7,6 +7,7 @@ out/**/*
 OI4-Service/node_modules/**/*
 OI4-Service/.vscode
 OI4-Service/out/**/*
+OI4-Service/.env
 
 # OI4-Local-UI folder
 OI4-Local-UI/node_modules/**/*
