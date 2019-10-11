@@ -35,7 +35,7 @@ class ContainerState extends ConfigParser implements IContainerState {
     this.masterAssetModel.SerialNumber = process.env.CONTAINERNAME as string;
 
     this.appId = `${encodeURIComponent(this.masterAssetModel.ManufacturerUri)}/${encodeURIComponent(this.masterAssetModel.Model)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
-    this.masterAssetModel.ProductInstanceUri = `${this.masterAssetModel.ManufacturerUri}/${this.masterAssetModel.Model}/${this.masterAssetModel.ProductCode}/${this.masterAssetModel.SerialNumber}`;
+    this.masterAssetModel.ProductInstanceUri = `${this.masterAssetModel.ManufacturerUri}/${encodeURIComponent(this.masterAssetModel.Model)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
 
     this.health = {
       health: EDeviceHealth.NORMAL_0,
