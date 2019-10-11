@@ -18,7 +18,7 @@ const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy
 // -------- Registry Application
 import { Registry } from './Application/Registry';
 
-const registry = new Registry(logger);
+const registry = new Registry(logger, busProxy.mqttClient);
 /**
  * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
  * If not, we add it to the registry, if yes, we don't.

@@ -29,7 +29,7 @@ export class Registry extends EventEmitter {
   private licenseTextTimeout: number;
   private configTimeout: number;
   private profileTimeout: number;
-  constructor(logger: Logger) {
+  constructor(logger: Logger, registryClient: mqtt.AsyncClient) {
     super();
     this.logger = logger;
 
@@ -46,23 +46,9 @@ export class Registry extends EventEmitter {
 
     this.builder = new OPCUABuilder('appIdRegistry'); // TODO: Better system for appId!
 
-    // Instantiate Registry-MQTT-Client
-    const serverObj = {
-      host: process.env.OI4_ADDR as string,
-      port: parseInt(process.env.OI4_PORT as string, 10),
-    };
-
-    const mqttOpts: TMqttOpts = {
-      clientId: `Registry${os.hostname()}`,
-      servers: [serverObj],
-    };
-    this.registryClient = mqtt.connect(mqttOpts);
-
-    this.registryClient.on('connect', (connack: mqtt.IConnackPacket) => {
-      console.log('Registry: Connected to broker!');
-      this.registryClient.on('message', this.processMqttMessage);
-    });
-
+    // Take registryClient from parameter Registry-MQTT-Client
+    this.registryClient = registryClient;
+    this.registryClient.on('message', this.processMqttMessage);
     this.registryClient.subscribe('oi4/+/+/+/+/+/pub/event/+/#');
   }
 
@@ -94,7 +80,7 @@ export class Registry extends EventEmitter {
         originId: oi4Id,
       });
     } else if (topic.includes('/pub/health')) {
-      this.logger.log(`Registry: Got Health from ${oi4Id}`);
+      this.logger.log(`Registry: Got Health from ${oi4Id} in processMqttMessage`);
       if (oi4Id in this.applicationLookup) {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
@@ -253,74 +239,15 @@ export class Registry extends EventEmitter {
 
   async getResourceFromDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
-      // if (resource in this.applicationLookup[oi4Id]) {
-      //   return this.applicationLookup[oi4Id][resource];
-      // }
-      this.registryClient.once('message', async (topic, rawMsg) => {
-        if (topic === `${this.applicationLookup[oi4Id].fullDevicePath}/pub/${resource}/${oi4Id}`) {
-          const parsedMessage: IOPCUAData = JSON.parse(rawMsg.toString());
-          const parsedPayload = parsedMessage.Messages[0].Payload;
-          this.emit(`Registry${resource}${oi4Id}Success`, parsedPayload); // God knows how many hours I wasted here! We send the OI4ID with the success emit
-          // This way, ONLY the corresponding Conformity gets updated!
-        }
-      });
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
-      this.logger.log(`Registry: Getting ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
-      try {
-        return await promiseTimeout(new Promise((resolve, reject) => {
-          this.once(`Registry${resource}${oi4Id}Success`, (resourcePayload) => {
-            let resPayload;
-            if (resource === 'health') {
-              resPayload = {
-                ...resourcePayload,
-              };
-            } else {
-              resPayload = resourcePayload;
-            }
-            this.applicationLookup[oi4Id][resource] = resPayload;
-            resolve(this.applicationLookup[oi4Id][resource]);
-          });
-        }),
-          1000, /*tslint:disable-line*/
-          `${resource}Timeout`, /*tslint:disable-line*/
-        );
-      } catch (promErr) {
-        this.logger.log(`Registry: Error: ${promErr} in GetResource with Resource ${resource}`);
-        return { err: 'ERROR, Timeout error' };
-      }
+      this.logger.log(`Registry: Sent Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
   }
 
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.applicationLookup) {
-      // if (resource in this.applicationLookup[oi4Id]) {
-      //   return this.applicationLookup[oi4Id][resource];
-      // }
-      this.registryClient.once('message', async (topic, rawMsg) => {
-        if (topic === `${this.applicationLookup[oi4Id].fullDevicePath}/pub/${resource}/${license}`) {
-          const parsedMessage: IOPCUAData = JSON.parse(rawMsg.toString());
-          const parsedPayload = parsedMessage.Messages[0].Payload;
-          this.emit(`Registry${resource}${oi4Id}Success`, parsedPayload); // God knows how many hours I wasted here! We send the OI4ID with the success emit
-          // This way, ONLY the corresponding Conformity gets updated!
-        }
-      });
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
-      this.logger.log(`Registry: Getting ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
-      try {
-        return await promiseTimeout(new Promise((resolve, reject) => {
-          this.once(`Registry${resource}${oi4Id}Success`, (resourcePayload) => {
-            this.applicationLookup[oi4Id][resource] = resourcePayload;
-            this.logger.log(`Registry: Success in GetResource with Resource ${resource}`);
-            resolve(this.applicationLookup[oi4Id][resource]);
-          });
-        }),
-          1100, /*tslint:disable-line*/
-          `${resource}Timeout`, /*tslint:disable-line*/
-        );
-      } catch (promErr) {
-        this.logger.log(`Registry: Error: ${promErr} in GetResource with Resource ${resource}`);
-        return { err: 'ERROR, Timeout error' };
-      }
+      this.logger.log(`Registry: Sent Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
   }
 
