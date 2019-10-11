@@ -1,5 +1,4 @@
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
-import { IOPCUAData, IOPCUAMetaData } from '../../Service/Models/IOPCUAPayload';
 import { EventEmitter } from 'events';
 import { IConformity, EValidity } from '../Models/IConformityValidator';
 const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');

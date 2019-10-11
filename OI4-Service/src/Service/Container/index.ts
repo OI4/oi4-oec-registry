@@ -12,7 +12,6 @@ import {
 } from '../Models/IContainer';
 
 import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel, EOPCUALocale } from '../Models/IOPCUAPayload';
-import os from 'os';
 
 import masterAssetModel from '../../Config/masterAssetModel.json'; /*tslint:disable-line*/
 

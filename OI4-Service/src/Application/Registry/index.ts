@@ -1,18 +1,10 @@
 import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
 import { IDeviceLookup } from '../Models/IRegistry';
-import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayload';
+import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
-import os from 'os';
-const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 import { Logger } from '../../Service/Utilities/Logger';
-
-interface TMqttOpts {
-  clientId: string;
-  servers: object[];
-  will?: object;
-}
 
 export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;

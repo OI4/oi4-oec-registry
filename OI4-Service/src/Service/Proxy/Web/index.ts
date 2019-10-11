@@ -1,9 +1,6 @@
 import express = require('express');
 import bodyParser = require('body-parser');
 import { IContainerState, IContainerConfig } from '../../Container/index';
-import https = require('https');
-import fs = require('fs');
-import path = require('path');
 import { OI4Proxy } from '../index.js';
 import { IOPCUAData, IOPCUAMetaData } from '../../Models/IOPCUAPayload';
 import { Logger } from '../../Utilities/Logger';
