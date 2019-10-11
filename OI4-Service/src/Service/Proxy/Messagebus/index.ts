@@ -3,7 +3,6 @@ import { IContainerState, IContainerConfig } from '../../Container/index';
 import { IOPCUAData, IMasterAssetModel } from '../../Models/IOPCUAPayload.js';
 import { OI4Proxy } from '../index';
 import { hasKey } from '../../Utilities/index';
-import os from 'os';
 import { Logger } from '../../Utilities/Logger/index';
 import { EDeviceHealth } from '../../Models/IContainer';
 
@@ -41,7 +40,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     // Initialize MQTT Options
 
     const mqttOpts: TMqttOpts = {
-      clientId: `MessageBus${os.hostname()}`,
+      clientId: `MessageBus${process.env.CONTAINERNAME as string}`,
       servers: [serverObj],
       will: {
         topic: `oi4/${this.serviceType}/${this.appId}/pub/health/${this.appId}`,

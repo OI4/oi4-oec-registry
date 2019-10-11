@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 import { IConformity, EValidity } from '../Models/IConformityValidator';
 const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
-import os from 'os';
 
 import networkMessageSchemaJson = require('./Schemas/network-message.schema.json');
 import metadataVersionSchemaJson = require('./Schemas/metadata-version.schema.json');
@@ -47,7 +46,7 @@ export class ConformityValidator extends EventEmitter {
     };
 
     const mqttOpts: TMqttOpts = {
-      clientId: `ConformityCheck${os.hostname()}`,
+      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}`,
       servers: [serverObj],
     };
     this.conformityClient = mqtt.connect(mqttOpts);
