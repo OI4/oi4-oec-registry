@@ -18,7 +18,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { BrightnessHigh, BrightnessLow, AddCircle } from '@material-ui/icons';
+import { BrightnessHigh, BrightnessLow } from '@material-ui/icons';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import _ from 'lodash';
 import { reject } from 'q';
@@ -94,15 +94,13 @@ class OI4Base extends React.Component {
       loadValue: 0,
       conformityLookup: {},
       validityLookup: {
-        ok: 0,
-        partial: 1,
-        nok: 2,
-      },
-      updateLookup: {
-
+        0: '❔',
+        1: '✅',
+        2: '⚠️',
+        3: '❌',
       },
       config: {
-        textColor: 'white',
+        developmentMode: true,
       },
       theme: lightTheme,
       darkActivated: false,
@@ -193,8 +191,9 @@ class OI4Base extends React.Component {
                 When onboarding, each container is tested for a base-set of compatible APIs. The results are displayed in following form:<br />
                 <p>
                   Fully passed base-set of OI4-Functions: <span role="img" aria-label="check">✅</span><br />
-                  Partially passed base-set of OI4-Functions: <span role="img" aria-label="semicheck">⚠️</span><br />
-                  Failed base-set of OI4-Functions: <span role="img" aria-label="failcheck">❌</span>
+                  Partially passed base-set of OI4-Functions: (Does answer, but payload or correlationID are incorrect)<span role="img" aria-label="semicheck">⚠️</span><br />
+                  Failed base-set of OI4-Functions: (No answer at all on this topic)<span role="img" aria-label="failcheck">❌</span><br />
+                  Not yet tested: <span role="img" aria-label="failcheck">❔</span>
                 </p>
               </Paper>
               <ExpansionPanel>
@@ -226,9 +225,7 @@ class OI4Base extends React.Component {
                               } else {
                                 expandedLookupCopy[oi4Id] = true;
                               }
-                              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
-                              updateLookupLoc[oi4Id] = false;
-                              this.setState({ expandedLookup: expandedLookupCopy, updateLookup: updateLookupLoc });
+                              this.setState({ expandedLookup: expandedLookupCopy });
                             }}
                           >
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer}</TableCell>
@@ -239,10 +236,10 @@ class OI4Base extends React.Component {
                             <TableCell align="right">
                               <Button variant="contained" size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
                                 Refresh
-                                  <span role="img" aria-label="check">{this.parseConformityData(this.state.conformityLookup, oi4Id)}</span>
+                                  <span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span>
                               </Button>
                             </TableCell>
-                            <TableCell align="right">{this.displayUpdate(oi4Id)}</TableCell>
+                            <TableCell align="right">Removed</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
@@ -365,16 +362,11 @@ class OI4Base extends React.Component {
     }
   }
 
-  /**
-   * Returns a "plus" sign whenever an update was triggered to indicate
-   * that there might be new data in the expanded panel
-   * @param {string} oi4Id - oi4Id of the application that is looked up in the updateList
-   */
-  displayUpdate(oi4Id) {
-    if (this.state.updateLookup[oi4Id]) {
-      return <AddCircle style={{ color: this.state.theme.palette.secondary.dark }} />;
+  displayConformityHeader(oi4Id) {
+    if (this.state.conformityLookup[oi4Id]) {
+        return this.state.validityLookup[this.state.conformityLookup[oi4Id].validity];
     } else {
-      return <AddCircle style={{ color: 'grey' }} />;
+      return 'Wait...';
     }
   }
 
@@ -482,25 +474,21 @@ class OI4Base extends React.Component {
   displayConformity(conformityObject) {
     if (typeof conformityObject === 'object' && conformityObject !== null) {
       return <div>
-        <b>OI4-Id Conformity: </b>: {conformityObject.oi4Id}
+        <b>OI4-Id Conformity: </b>{conformityObject.oi4Id}
         {
           Object.keys(conformityObject.resource).map((resources) => {
+            let resourceColor = this.state.theme.palette.text.default;
+            let resourceWeight = 400;
+            if (conformityObject.nonProfileResourceList.includes(resources)) {
+              resourceColor = this.state.theme.palette.secondary.light;
+            }
             if (this.mandatoryResource.includes(resources)) {
-              return <div>{resources}:(
-                {
-                  Object.keys(conformityObject.resource[resources].method).map((methods) => {
-                    return <b>{methods}: {conformityObject.resource[resources].method[methods]}</b>;
-                  })
-                })
-                </div>;
+              resourceWeight = 600;
+            }
+            if (conformityObject.resource[resources].validityError) {
+              return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
             } else {
-              return <div style={{ color: 'lightgrey' }}>{resources}:(
-                {
-                  Object.keys(conformityObject.resource[resources].method).map((methods) => {
-                    return <b>{methods}: {conformityObject.resource[resources].method[methods]}</b>;
-                  })
-                })
-                </div>;
+              return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
             }
           })
         }
@@ -511,63 +499,41 @@ class OI4Base extends React.Component {
   // -- CONFORMITY HELPERS
   updateConformity(fullTopic) {
     console.log(`Updating Conformity for ${fullTopic}`);
-    this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}`)
-      .then(data => {
-        const jsonData = JSON.parse(data);
-        const topicArray = fullTopic.split('/');
-        const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
-        const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
-        delete confLookup[oi4Id];
-        confLookup[oi4Id] = jsonData;
-        // console.log(`Fetched conformity for ${oi4Id}: ${JSON.stringify(data)} and updated in ${JSON.stringify(confLookup)}`)
-        this.setState({ conformityLookup: confLookup });
-      });
-  }
-
-  /**
-   * Converts the conformity test results (ok, partial, nok) to emojis in order to display them
-   * in the front-end
-   * @param {object} conformityObject - the object that is to be converted
-   * @param {string} oi4Id - the oi4id where there results are saved at
-   */
-  parseConformityData(conformityObject, oi4Id) {
-    if (oi4Id in conformityObject) {
-      switch (conformityObject[oi4Id].validity) {
-        case this.state.validityLookup.ok: {
-          return '✅';
-        }
-        case this.state.validityLookup.partial: {
-          return '⚠️';
-        }
-        case this.state.validityLookup.nok: {
-          return '❌';
-        }
-        default: {
-          return 'ERROR';
-        }
-      }
+    if (this.state.config.developmentMode === true) {
+      this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}`)
+        .then(data => {
+          const jsonData = JSON.parse(data);
+          const topicArray = fullTopic.split('/');
+          const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
+          const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
+          delete confLookup[oi4Id];
+          confLookup[oi4Id] = jsonData;
+          // console.log(`Fetched conformity for ${oi4Id}: ${JSON.stringify(data)} and updated in ${JSON.stringify(confLookup)}`)
+          this.setState({ conformityLookup: confLookup });
+        });
     } else {
-      return 'ing...';
+      this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}`)
+        .then(data => {
+          const jsonData = JSON.parse(data);
+          const topicArray = fullTopic.split('/');
+          const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
+          const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
+          delete confLookup[oi4Id];
+          confLookup[oi4Id] = jsonData;
+          // console.log(`Fetched conformity for ${oi4Id}: ${JSON.stringify(data)} and updated in ${JSON.stringify(confLookup)}`)
+          this.setState({ conformityLookup: confLookup });
+        });
     }
-  }
-
-  convertNumToEmoji(num) {
-    if (num === 0) return '✅';
-    if (num === 1) return '⚠️';
-    if (num === 2) return '❌';
-    return 'ERROR';
   }
 
   convertConformityToEmoji(conformityObject, oi4Id) {
     const conformityObj = JSON.parse(JSON.stringify(conformityObject));
+    const validityLookup = this.state.validityLookup;
     if (oi4Id in conformityObject) {
-      conformityObj[oi4Id].oi4Id = this.convertNumToEmoji(conformityObject[oi4Id].oi4Id);
-      conformityObj[oi4Id].validity = this.convertNumToEmoji(conformityObject[oi4Id].validity);
+      conformityObj[oi4Id].oi4Id = validityLookup[conformityObject[oi4Id].oi4Id];
+      conformityObj[oi4Id].validity = validityLookup[conformityObject[oi4Id].validity];
       Object.keys(conformityObject[oi4Id].resource).forEach((resource) => {
-        conformityObj[oi4Id].resource[resource].validity = this.convertNumToEmoji(conformityObject[oi4Id].resource[resource].validity);
-        Object.keys(conformityObject[oi4Id].resource[resource].method).forEach((method) => {
-          conformityObj[oi4Id].resource[resource].method[method] = this.convertNumToEmoji(conformityObject[oi4Id].resource[resource].method[method]);
-        });
+        conformityObj[oi4Id].resource[resource].validity = validityLookup[conformityObject[oi4Id].resource[resource].validity];
       });
       return conformityObj[oi4Id];
     } else {
@@ -590,11 +556,9 @@ class OI4Base extends React.Component {
     this.fetch.get(`/registry/application`)
       .then(data => {
         const jsonData = JSON.parse(data);
-        const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.applicationLookup[oi4Id] === undefined || this.state.applicationLookup[oi4Id] === null) {
-            updateLookupLoc[oi4Id] = true;
             const fullTopic = jsonData[oi4Id].fullDevicePath;
             this.updateConformity(fullTopic);
           }
@@ -602,7 +566,7 @@ class OI4Base extends React.Component {
             delete confLookupLoc[oi4Id];
           }
         }
-        this.setState({ applicationLookup: jsonData, updateLookup: updateLookupLoc, confLookup: confLookupLoc });
+        this.setState({ applicationLookup: jsonData, confLookup: confLookupLoc });
       });
   }
 
@@ -620,14 +584,10 @@ class OI4Base extends React.Component {
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
-              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
               if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
-                if (!this.state.expandedLookup[oi4Id]) {
-                  updateLookupLoc[oi4Id] = true;
-                }
                 applicationLookupLoc[oi4Id][resource] = resourceObject;
               }
-              this.setState({ applicationLookup: applicationLookupLoc, updateLookup: updateLookupLoc });
+              this.setState({ applicationLookup: applicationLookupLoc });
             })
             .catch(err => {
               // console.log(`Error ${err} with Resource ${resource}`);
@@ -643,14 +603,10 @@ class OI4Base extends React.Component {
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
-              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
               if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
-                if (!this.state.expandedLookup[oi4Id]) {
-                  updateLookupLoc[oi4Id] = true;
-                }
                 applicationLookupLoc[oi4Id][resource] = resourceObject;
               }
-              this.setState({ applicationLookup: applicationLookupLoc, updateLookup: updateLookupLoc });
+              this.setState({ applicationLookup: applicationLookupLoc });
             })
             .catch(err => {
               console.log(`Error ${err} with Resource ${resource}`);

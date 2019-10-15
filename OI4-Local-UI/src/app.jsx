@@ -18,7 +18,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { BrightnessHigh, BrightnessLow, AddCircle } from '@material-ui/icons';
+import { BrightnessHigh, BrightnessLow } from '@material-ui/icons';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import _ from 'lodash';
 import { reject } from 'q';
@@ -98,9 +98,6 @@ class OI4Base extends React.Component {
         1: '✅',
         2: '⚠️',
         3: '❌',
-      },
-      updateLookup: {
-
       },
       config: {
         developmentMode: true,
@@ -228,9 +225,7 @@ class OI4Base extends React.Component {
                               } else {
                                 expandedLookupCopy[oi4Id] = true;
                               }
-                              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
-                              updateLookupLoc[oi4Id] = false;
-                              this.setState({ expandedLookup: expandedLookupCopy, updateLookup: updateLookupLoc });
+                              this.setState({ expandedLookup: expandedLookupCopy });
                             }}
                           >
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer}</TableCell>
@@ -244,7 +239,7 @@ class OI4Base extends React.Component {
                                   <span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span>
                               </Button>
                             </TableCell>
-                            <TableCell align="right">{this.displayUpdate(oi4Id)}</TableCell>
+                            <TableCell align="right">Removed</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
@@ -364,19 +359,6 @@ class OI4Base extends React.Component {
       } else {
         return `Fetching ${prop}`;
       }
-    }
-  }
-
-  /**
-   * Returns a "plus" sign whenever an update was triggered to indicate
-   * that there might be new data in the expanded panel
-   * @param {string} oi4Id - oi4Id of the application that is looked up in the updateList
-   */
-  displayUpdate(oi4Id) {
-    if (this.state.updateLookup[oi4Id]) {
-      return <AddCircle style={{ color: this.state.theme.palette.secondary.dark }} />;
-    } else {
-      return <AddCircle style={{ color: 'grey' }} />;
     }
   }
 
@@ -574,11 +556,9 @@ class OI4Base extends React.Component {
     this.fetch.get(`/registry/application`)
       .then(data => {
         const jsonData = JSON.parse(data);
-        const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.applicationLookup[oi4Id] === undefined || this.state.applicationLookup[oi4Id] === null) {
-            updateLookupLoc[oi4Id] = true;
             const fullTopic = jsonData[oi4Id].fullDevicePath;
             this.updateConformity(fullTopic);
           }
@@ -586,7 +566,7 @@ class OI4Base extends React.Component {
             delete confLookupLoc[oi4Id];
           }
         }
-        this.setState({ applicationLookup: jsonData, updateLookup: updateLookupLoc, confLookup: confLookupLoc });
+        this.setState({ applicationLookup: jsonData, confLookup: confLookupLoc });
       });
   }
 
@@ -604,14 +584,10 @@ class OI4Base extends React.Component {
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
-              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
               if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
-                if (!this.state.expandedLookup[oi4Id]) {
-                  updateLookupLoc[oi4Id] = true;
-                }
                 applicationLookupLoc[oi4Id][resource] = resourceObject;
               }
-              this.setState({ applicationLookup: applicationLookupLoc, updateLookup: updateLookupLoc });
+              this.setState({ applicationLookup: applicationLookupLoc });
             })
             .catch(err => {
               // console.log(`Error ${err} with Resource ${resource}`);
@@ -627,14 +603,10 @@ class OI4Base extends React.Component {
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
-              const updateLookupLoc = JSON.parse(JSON.stringify(this.state.updateLookup));
               if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
-                if (!this.state.expandedLookup[oi4Id]) {
-                  updateLookupLoc[oi4Id] = true;
-                }
                 applicationLookupLoc[oi4Id][resource] = resourceObject;
               }
-              this.setState({ applicationLookup: applicationLookupLoc, updateLookup: updateLookupLoc });
+              this.setState({ applicationLookup: applicationLookupLoc });
             })
             .catch(err => {
               console.log(`Error ${err} with Resource ${resource}`);
