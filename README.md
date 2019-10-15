@@ -2,6 +2,7 @@
 ## Prerequisite
 Windows: Make sure that mingw32-make.exe is installed and in your PATH.\
 Linux: Make sure that make is installed and in your PATH.
+
 ## Let's go!
 Checkout the project root (you should see 3 Folders with an OI4-Prefix and this README).\
 In your commandline, switch to this folder and run
@@ -88,9 +89,11 @@ Environment variables:
 
 Next, the ports for ```4567:4567``` and ```5000:5000``` need to be forwarded in order to work. (TCP)
 
-As a last step, if you are using the Cockpit-Plugin, the following path needs to be bound (writable): ```usr/local/share/cockpit```
+As a last step, if you are using the Cockpit-Plugin, the following path needs to be bound and existing (writable): ```usr/local/share/cockpit```.
+If you don't want to use the Cockpit-Plugin, just remove the mount path in your docker run command, the registry will then only be accessible at your specified port.
 
-A run command can be found here: ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest```
+A run command can be found here(without cockpit mount): ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest```\
+(with cockpit mount) ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer registrycheckout:latest```
 
 ## Dockerfiles:
 some people might remove the Cockpit-UI as they don't support cockpit on their device.\
