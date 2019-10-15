@@ -79,7 +79,9 @@ export class ConformityValidator extends EventEmitter {
       oi4Id: EValidity.default,
       validity: EValidity.default,
       resource: {},
+      checkedResourceList: [],
       profileResourceList: [],
+      nonProfileResourceList: [],
     };
     return validityObject;
   }
@@ -90,6 +92,7 @@ export class ConformityValidator extends EventEmitter {
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
   async checkConformity(fullTopic: string, resourceList?: string[]) {
+    const mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile'];
     const topicArray = fullTopic.split('/');
     const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
     const conformityObject = this.initializeValidityObject();
@@ -108,25 +111,45 @@ export class ConformityValidator extends EventEmitter {
       const profileRes = await this.checkResourceConformity(fullTopic, oi4Id, 'profile') as IResultObject;
       if (profileRes.eRes === EValidity.ok) {
         conformityObject.profileResourceList = profileRes.payload.resource;
-        conformityObject.resource['profile'] = {
-          method: {
-            get: EValidity.ok,
-            pub: EValidity.ok,
-          },
-          validity: EValidity.ok,
-        };
+        console.log(mandatoryResourceList);
+        console.log(conformityObject.profileResourceList);
+        if (mandatoryResourceList.every(i => conformityObject.profileResourceList.includes(i))) {
+          console.log('Hello');
+          conformityObject.resource['profile'] = {
+            validity: EValidity.ok,
+          };
+        } else {
+          conformityObject.resource['profile'] = {
+            validity: EValidity.partial,
+            validityError: 'Profile does not contain Mandatory Resoruces',
+          };
+        }
       }
-      let checkedList: string[] = [];
+      // First, all mandatories
+      const checkedList: string[] = mandatoryResourceList;
+      // Second, all profile-Resources
+      for (const resources of conformityObject.profileResourceList) {
+        if (!(checkedList.includes(resources))) {
+          checkedList.push(resources);
+        }
+      }
+      // This, all non-profile-non-mandatory resources
       if (resourceList) {
         console.log(`Got ResourceList from Param: ${resourceList}`);
-        checkedList = resourceList;
-      } else {
-        console.log(`Got ResourceList from confObject OR profile: ${conformityObject.profileResourceList}`);
-        checkedList = conformityObject.profileResourceList;
+        for (const resources of resourceList) {
+          if (!(checkedList.includes(resources))) {
+            checkedList.push(resources);
+            conformityObject.nonProfileResourceList.push(resources);
+          }
+        }
       }
+
+      conformityObject.checkedResourceList = checkedList;
+
       for (const resource of checkedList) {
         let validity: EValidity = EValidity.nok;
         try {
+          if (resource === 'profile') continue;
           if (resource === 'license') { // License is a different case. We actually need to parse the return value here
             resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
             validity = resObj.eRes;
@@ -143,37 +166,28 @@ export class ConformityValidator extends EventEmitter {
             resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
             validity = resObj.eRes;
           }
-
           if (validity === EValidity.ok) { // Set the validity according to the results
             conformityObject.resource[resource] = {
-              method: {
-                get: EValidity.ok,
-                pub: EValidity.ok,
-              },
               validity: EValidity.ok,
             };
           } else if (validity === EValidity.partial) {
             conformityObject.resource[resource] = {
-              method: {
-                get: EValidity.partial,
-                pub: EValidity.partial,
-              },
               validity: EValidity.partial,
             };
           }
-
         } catch (err) {
-          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w' , 2);
+          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w', 2);
+          conformityObject.resource[resource] = {
+            validity: EValidity.nok,
+          };
+          if (resource === 'data' || resource === 'metadata' || resource === 'event') {
+            conformityObject.resource[resource] = {
+              validity: EValidity.default,
+            };
+          }
           if (this.mandatoryResource.includes(resource)) { // If it's not mandatory, we do not count the error!
             errorSoFar = true;
             // No response means NOK
-            conformityObject.resource[resource] = {
-              method: {
-                get: EValidity.nok,
-                pub: EValidity.nok,
-              },
-              validity: EValidity.nok,
-            };
           }
         }
       }

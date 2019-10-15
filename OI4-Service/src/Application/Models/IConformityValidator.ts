@@ -1,7 +1,9 @@
 export interface IConformity {
   oi4Id: EValidity;
   resource: IOI4TopicResource;
+  checkedResourceList: string[];
   profileResourceList: string[];
+  nonProfileResourceList: string[];
   validity: EValidity;
 }
 
@@ -11,14 +13,7 @@ interface IOI4TopicResource {
 
 interface IOI4TopicValidity {
   validity: EValidity;
-  method: IOI4TopicMethod;
-}
-
-interface IOI4TopicMethod {
-  [key: string]: EValidity;
-  pub: EValidity;
-  get: EValidity;
-  // TODO: Add Set, Event etc. support
+  validityError?: string;
 }
 
 export enum EValidity {
