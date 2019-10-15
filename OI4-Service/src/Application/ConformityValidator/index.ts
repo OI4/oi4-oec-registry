@@ -24,6 +24,11 @@ interface TMqttOpts {
   will?: object;
 }
 
+interface IResultObject {
+  eRes: EValidity;
+  payload: any;
+}
+
 /**
  * Responsible for checking mandatory OI4-conformance.
  * Only checks for response within a certain amount of time, not for 100% payload conformity.
@@ -71,66 +76,10 @@ export class ConformityValidator extends EventEmitter {
    */
   initializeValidityObject(): IConformity {
     const validityObject: IConformity = {
-      oi4Id: EValidity.nok,
-      validity: EValidity.nok,
-      resource: {
-        license: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        licenseText: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        rtLicense: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        data: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        mam: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        config: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        health: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-        profile: {
-          validity: EValidity.nok,
-          method: {
-            pub: EValidity.nok,
-            get: EValidity.nok,
-          },
-        },
-      },
+      oi4Id: EValidity.default,
+      validity: EValidity.default,
+      resource: {},
+      profileResourceList: [],
     };
     return validityObject;
   }
@@ -140,14 +89,14 @@ export class ConformityValidator extends EventEmitter {
    * If a resource passes, its entry in the conformity Object is set to 'OK', otherwise, the initialized 'NOK' values persist.
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
-  async checkConformity(fullTopic: string) {
+  async checkConformity(fullTopic: string, resourceList?: string[]) {
     const topicArray = fullTopic.split('/');
     const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
     const conformityObject = this.initializeValidityObject();
     let errorSoFar = false;
-    const resourceList = ['health', 'license', 'licenseText', 'rtLicense', 'config', 'mam', 'data', 'profile'];
     const licenseList: string[] = [];
     let oi4Result;
+    let resObj;
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
@@ -156,11 +105,30 @@ export class ConformityValidator extends EventEmitter {
     }
     if (oi4Result) {
       conformityObject.oi4Id = EValidity.ok;
-      for (const resource of resourceList) {
+      const profileRes = await this.checkResourceConformity(fullTopic, oi4Id, 'profile') as IResultObject;
+      if (profileRes.eRes === EValidity.ok) {
+        conformityObject.profileResourceList = profileRes.payload.resource;
+        conformityObject.resource['profile'] = {
+          method: {
+            get: EValidity.ok,
+            pub: EValidity.ok,
+          },
+          validity: EValidity.ok,
+        };
+      }
+      let checkedList: string[] = [];
+      if (resourceList) {
+        console.log(`Got ResourceList from Param: ${resourceList}`);
+        checkedList = resourceList;
+      } else {
+        console.log(`Got ResourceList from confObject OR profile: ${conformityObject.profileResourceList}`);
+        checkedList = conformityObject.profileResourceList;
+      }
+      for (const resource of checkedList) {
         let validity: EValidity = EValidity.nok;
         try {
           if (resource === 'license') { // License is a different case. We actually need to parse the return value here
-            const resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource);
+            resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
             validity = resObj.eRes;
             const licPayload = resObj.payload;
             for (const licenses of licPayload.licenses) { // With the obtained licenses, we can check the licenseText resource per TC-T6
@@ -168,26 +136,44 @@ export class ConformityValidator extends EventEmitter {
             }
           } else if (resource === 'licenseText') {
             for (const licenses of licenseList) {
-              validity = await this.checkResourceConformity(fullTopic, licenses, resource); // here, the oi4ID is the license
+              resObj = await this.checkResourceConformity(fullTopic, licenses, resource) as IResultObject; // here, the oi4ID is the license
+              validity = resObj.eRes;
             }
           } else {
-            validity = await this.checkResourceConformity(fullTopic, oi4Id, resource);
+            resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
+            validity = resObj.eRes;
           }
 
           if (validity === EValidity.ok) { // Set the validity according to the results
-            conformityObject.resource[resource].method.get = EValidity.ok;
-            conformityObject.resource[resource].method.pub = EValidity.ok;
-            conformityObject.resource[resource].validity = EValidity.ok;
+            conformityObject.resource[resource] = {
+              method: {
+                get: EValidity.ok,
+                pub: EValidity.ok,
+              },
+              validity: EValidity.ok,
+            };
           } else if (validity === EValidity.partial) {
-            conformityObject.resource[resource].method.get = EValidity.partial;
-            conformityObject.resource[resource].method.pub = EValidity.partial;
-            conformityObject.resource[resource].validity = EValidity.partial;
+            conformityObject.resource[resource] = {
+              method: {
+                get: EValidity.partial,
+                pub: EValidity.partial,
+              },
+              validity: EValidity.partial,
+            };
           }
 
         } catch (err) {
           this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w' , 2);
           if (this.mandatoryResource.includes(resource)) { // If it's not mandatory, we do not count the error!
             errorSoFar = true;
+            // No response means NOK
+            conformityObject.resource[resource] = {
+              method: {
+                get: EValidity.nok,
+                pub: EValidity.nok,
+              },
+              validity: EValidity.nok,
+            };
           }
         }
       }
@@ -197,6 +183,7 @@ export class ConformityValidator extends EventEmitter {
         conformityObject.validity = EValidity.ok;
       }
     }
+    console.log(`Final conformity object: ${JSON.stringify(conformityObject)}`);
     return conformityObject;
   }
 
@@ -211,46 +198,41 @@ export class ConformityValidator extends EventEmitter {
    * @param oi4Id - the oi4Id of the requestor
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
-  private async checkResourceConformity(fullTopic: string, oi4Id: string, resource: string) {
+  async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
     const conformityPayload = this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`);
     this.conformityClient.once('message', async (topic, rawMsg) => {
-      await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${oi4Id}`);
-      if (topic === `${fullTopic}/pub/${resource}/${oi4Id}`) {
+      await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
+      if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString());
         let eRes = 0;
-        let altValidationResult;
+        let jsonValidationResult;
         try {
-          altValidationResult = await this.jsonValidator.validate('network-message.schema.json', parsedMessage);
+          jsonValidationResult = await this.jsonValidator.validate('network-message.schema.json', parsedMessage);
         } catch (validateErr) {
           this.logger.log(validateErr);
-          altValidationResult = false;
+          jsonValidationResult = false;
         }
-        if (altValidationResult) {
-          eRes = EValidity.ok;
+        if (jsonValidationResult) {
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) {
             eRes = EValidity.ok;
           } else {
-            eRes = EValidity.nok;
-            this.logger.log(`ConformityValidator: CorrelationID not passed for ${oi4Id} with resource ${resource}`);
+            eRes = EValidity.partial;
+            this.logger.log(`ConformityValidator: CorrelationID did not pass for ${tag} with resource ${resource}`);
           }
         } else {
           this.logger.log(this.jsonValidator.errorsText());
           eRes = EValidity.partial;
         }
-        if (resource === 'license') { // FIXME: Fix this hardcoded stuff...
-          const licRes = {
-            eRes,
-            payload: parsedMessage.Messages[0].Payload,
-          };
-          this.emit(`${resource}${fullTopic}Success`, licRes);
-        } else {
-          this.emit(`${resource}${fullTopic}Success`, eRes); // God knows how many hours I wasted here! We send the OI4ID with the success emit
-        }
+        const resObj: IResultObject = {
+          eRes,
+          payload: parsedMessage.Messages[0].Payload,
+        };
+        this.emit(`${resource}${fullTopic}Success`, resObj); // God knows how many hours I wasted here! We send the OI4ID with the success emit
         // This way, ONLY the corresponding Conformity gets updated!
       }
     });
-    await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${oi4Id}`);
-    await this.conformityClient.publish(`${fullTopic}/get/${resource}/${oi4Id}`, JSON.stringify(conformityPayload));
+    await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${tag}`);
+    await this.conformityClient.publish(`${fullTopic}/get/${resource}/${tag}`, JSON.stringify(conformityPayload));
     return await promiseTimeout(new Promise((resolve, reject) => {
       this.once(`${resource}${fullTopic}Success`, (res) => {
         resolve(res);
@@ -273,17 +255,10 @@ export class ConformityValidator extends EventEmitter {
       for (let i = 0; i < 6; i = i + 1) {
         oi4String = `${oi4String}/${topicArray[i]}`;
       }
-      const checkedString = oi4String.slice(1);
       const serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
       if (!(serviceTypes.includes(topicArray[1]))) return false; // throw new Error('Unknown ServiceType');
       const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
-      if (await ConformityValidator.checkOI4IDConformity(oi4Id)) { // TODO: change from static to class method
-        // if (oi4Array[0] !== 'OI4') return false; // throw new Error('Must lead with OI4');
-        // if (!(serviceTypes.includes(oi4Array[1]))) return false; // throw new Error('Unknown ServiceType');
-        return true; // TODO: Validate method and resource from lookup-list
-      } else { /*tslint:disable-line*/ // We need to explicitly return false here!
-        return false; // A bit verbose, but if the OI4 ID is not conform, the whole topic is not conform aswell
-      }
+      return await ConformityValidator.checkOI4IDConformity(oi4Id);
     } else { /*tslint:disable-line*/
       return false; // For minimum validity, we need oi4ID (length: 6) + method + method
     }

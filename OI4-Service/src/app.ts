@@ -111,3 +111,15 @@ webClient.get('/conformity/:oi4Id', async (conformityReq, conformityResp) => {
 
   conformityResp.send(JSON.stringify(conformityObject));
 });
+
+webClient.get('/fullConformity/:oi4Id', async (conformityReq, conformityResp) => {
+  let conformityObject = confChecker.initializeValidityObject();
+  const fullResourceList = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
+  try {
+    conformityObject = await confChecker.checkConformity(conformityReq.params.oi4Id, fullResourceList);
+  } catch (err) {
+    console.log(`Got hard error in conformity REST request: ${err}`);
+  }
+
+  conformityResp.send(JSON.stringify(conformityObject));
+});

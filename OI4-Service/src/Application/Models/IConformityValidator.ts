@@ -1,19 +1,12 @@
 export interface IConformity {
   oi4Id: EValidity;
   resource: IOI4TopicResource;
+  profileResourceList: string[];
   validity: EValidity;
 }
 
 interface IOI4TopicResource {
   [key: string]: IOI4TopicValidity;
-  license: IOI4TopicValidity;
-  licenseText: IOI4TopicValidity;
-  rtLicense: IOI4TopicValidity;
-  data: IOI4TopicValidity;
-  mam: IOI4TopicValidity;
-  health: IOI4TopicValidity;
-  config: IOI4TopicValidity;
-  profile: IOI4TopicValidity;
 }
 
 interface IOI4TopicValidity {
@@ -29,7 +22,8 @@ interface IOI4TopicMethod {
 }
 
 export enum EValidity {
-  ok = 0,
-  partial = 1,
-  nok = 2,
+  default = 0,
+  ok = 1,
+  partial = 2,
+  nok = 3,
 }
