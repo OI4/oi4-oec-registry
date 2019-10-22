@@ -54,7 +54,6 @@ const styles = theme => ({
     padding: theme.spacing(2),
     fontWeight: 100,
     minHeight: '100vh',
-    display: 'inline',
     fontSize: 'calc(5px + 1vmin)',
   },
   paper: {
@@ -240,34 +239,36 @@ class OI4Base extends React.Component {
                               <Collapse
                                 className={classes.tableInside}
                                 in={this.state.expandedLookup[oi4Id]}
-                                timeout="auto"
+                                timeout='auto'
                                 unmountOnExit
                               >
-                                <Grid item xs={12}>
-                                  <Grid container justify='space-evenly' spacing={this.state.theme.spacing(2)}>
-                                    <div>
-                                      <h3>Detailed MasterAssetModel:</h3>
-                                      <Paper className={classes.paper}>
-                                        {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
-                                      </Paper>
-                                    </div>
-                                    <div>
-                                      <h3>Conformity Validation:</h3>
-                                      <Paper className={classes.paper}>
-                                        {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
-                                      </Paper>
-                                    </div>
-                                    <div>
-                                      <h3>Detailed Health:</h3>
-                                      <Paper className={classes.paper}>
-                                        {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
-                                      </Paper>
-                                    </div>
-                                  </Grid>
-                                </Grid>
                                 <div>
-                                  <h3>Last 3 Events:</h3>
-                                  {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
+                                  <Grid item xs={12}>
+                                    <Grid container justify='space-evenly'>
+                                      <div>
+                                        <h3>Detailed MasterAssetModel:</h3>
+                                        <Paper className={classes.paper}>
+                                          {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
+                                        </Paper>
+                                      </div>
+                                      <div>
+                                        <h3>Conformity Validation:</h3>
+                                        <Paper className={classes.paper}>
+                                          {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
+                                        </Paper>
+                                      </div>
+                                      <div>
+                                        <h3>Detailed Health:</h3>
+                                        <Paper className={classes.paper}>
+                                          {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
+                                        </Paper>
+                                      </div>
+                                    </Grid>
+                                  </Grid>
+                                  <div>
+                                    <h3>Last 3 Events:</h3>
+                                    {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
+                                  </div>
                                 </div>
                               </Collapse>
                             </TableCell>
@@ -316,6 +317,7 @@ class OI4Base extends React.Component {
                   {this.displayEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
+              {/* TODO: Make this responsive and align with the rest of the page... */}
               <Collapse
                 style={{ backgroundColor: this.state.theme.palette.background.paper, position: 'fixed', width: '87.4%', bottom: '21px', border: '3px', borderColor: 'black' }}
                 className={classes.paper}
