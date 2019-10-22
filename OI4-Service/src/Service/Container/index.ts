@@ -47,7 +47,7 @@ class ContainerState extends ConfigParser implements IContainerState {
           licenseId: 'MIT',
           components: [
             {
-              component: 'Mqtt.js',
+              component: 'Async-Mqtt.js',
               licAuthor: [
                 'Adam Rudd',
                 'Octavian Ionescu',
@@ -56,8 +56,9 @@ class ContainerState extends ConfigParser implements IContainerState {
                 'Nicholas Dudfield',
                 'Wouter Klijn',
                 'Yohei Onishi',
+                'RangerMauve',
               ],
-              licAddText: 'https://www.npmjs.com/package/mqtt',
+              licAddText: 'https://www.npmjs.com/package/async-mqtt',
             },
             {
               component: 'Express.js',
@@ -76,16 +77,33 @@ class ContainerState extends ConfigParser implements IContainerState {
             {
               component: 'chalk',
               licAuthor: [
-                'TODO',
+                'sindresorhus',
+                'Qix-',
+                'et al',
               ],
               licAddText: 'https://www.npmjs.com/package/chalk',
             },
             {
               component: 'uuid',
               licAuthor: [
-                'TODO',
+                'ctavan',
+                'broofa',
+                'defunctzombie',
+                'solderjs',
+                'benjreinhart',
+                'et al',
               ],
               licAddText: 'https://www.npmjs.com/package/uuid',
+            },
+            {
+              component: 'ajv',
+              licAuthor: [
+                'epoberezkin',
+                'blakeembrey',
+                'gajus',
+                'et al',
+              ],
+              licAddText: 'https://www.npmjs.com/package/ajv',
             },
           ],
         },
@@ -95,7 +113,11 @@ class ContainerState extends ConfigParser implements IContainerState {
             {
               component: 'dotenv',
               licAuthor: [
-                'TODO',
+                'motdotla',
+                'maxbeatty',
+                'jcblw',
+                'jessefulton',
+                'et al',
               ],
               licAddText: 'https://www.npmjs.com/package/dotenv',
             },
