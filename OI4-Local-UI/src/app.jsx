@@ -15,6 +15,7 @@ import Paper from '@material-ui/core/Paper';
 import Checkbox from '@material-ui/core/Checkbox';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
+import Grid from '@material-ui/core/Grid';
 // import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -53,10 +54,7 @@ const styles = theme => ({
     padding: theme.spacing(2),
     fontWeight: 100,
     minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: 'inline',
     fontSize: 'calc(5px + 1vmin)',
   },
   paper: {
@@ -245,20 +243,28 @@ class OI4Base extends React.Component {
                                 timeout="auto"
                                 unmountOnExit
                               >
-                                <h3>Detailed MasterAssetModel:</h3>
-                                <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                  {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
-                                </Paper>
-                                <h3>Detailed Health:</h3>
-                                <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                  {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
-                                </Paper>
-                                <div>
-                                  <h3>Basic Conformance Validation:</h3>
-                                  <Paper className={classes.paper} style={{ maxWidth: 700 }}>
-                                    {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
-                                  </Paper>
-                                </div>
+                                <Grid item xs={12}>
+                                  <Grid container justify='space-evenly' spacing={this.state.theme.spacing(2)}>
+                                    <div>
+                                      <h3>Detailed MasterAssetModel:</h3>
+                                      <Paper className={classes.paper}>
+                                        {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
+                                      </Paper>
+                                    </div>
+                                    <div>
+                                      <h3>Conformity Validation:</h3>
+                                      <Paper className={classes.paper}>
+                                        {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
+                                      </Paper>
+                                    </div>
+                                    <div>
+                                      <h3>Detailed Health:</h3>
+                                      <Paper className={classes.paper}>
+                                        {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
+                                      </Paper>
+                                    </div>
+                                  </Grid>
+                                </Grid>
                                 <div>
                                   <h3>Last 3 Events:</h3>
                                   {this.displayEvents(this.state.applicationLookup[oi4Id].eventList, 'local')}
