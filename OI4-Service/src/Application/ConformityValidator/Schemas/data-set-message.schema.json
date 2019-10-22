@@ -34,9 +34,9 @@
       "description": "Timestamp in format xy"
     },
     "Payload": {
-      "oneOf": [
+      "anyOf": [
         {
-          "$ref": "master-asset-model-payload.schema.json"
+          "$ref": "mam-payload.schema.json"
         },
         {
           "$ref": "health-payload.schema.json"
@@ -45,7 +45,16 @@
           "$ref": "license-payload.schema.json"
         },
         {
-          "$ref": "license-text-payload.schema.json"
+          "$ref": "licenseText-payload.schema.json"
+        },
+        {
+          "$ref": "rtLicense-payload.schema.json"
+        },
+        {
+          "$ref": "config-payload.schema.json"
+        },
+        {
+          "$ref": "event-payload.schema.json"
         },
         {
           "$ref": "profile-payload.schema.json"
