@@ -1,6 +1,6 @@
 {
   "name": "oi4-service",
-  "version": "1.0.0",
+  "version": "0.8.1",
   "description": "Acts as the application in a running OI4 container",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,6 @@
   "author": "BM",
   "license": "SEE LICENSE IN hilscherlicense.lic",
   "dependencies": {
-    "@types/uuid": "^3.4.5",
     "ajv": "^6.10.2",
     "async-mqtt": "^2.4.2",
     "chalk": "^2.4.2",
@@ -25,6 +24,7 @@
     "uuid": "^3.3.3"
   },
   "devDependencies": {
+    "@types/uuid": "^3.4.5",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.1",
     "@types/node": "^12.7.4",
