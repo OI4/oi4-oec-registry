@@ -15,14 +15,19 @@ import Paper from '@material-ui/core/Paper';
 import Checkbox from '@material-ui/core/Checkbox';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
-import Button from '@material-ui/core/Button';
+// import Button from '@material-ui/core/Button';
+import Fab from '@material-ui/core/Fab';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { BrightnessHigh, BrightnessLow } from '@material-ui/icons';
+import { BrightnessHigh, Brightness3 } from '@material-ui/icons';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
+import RefreshIcon from '@material-ui/icons/Refresh';
+
 import _ from 'lodash';
 import { reject } from 'q';
 import { CommonFetch } from './Helper/CommonFetch/index';
+import { Typography } from '@material-ui/core';
 
 const darkTheme = createMuiTheme({
   palette: {
@@ -43,7 +48,6 @@ const styles = theme => ({
     paddingRight: '120px',
   },
   table: {
-    minWidth: 350,
   },
   tableInside: {
     padding: theme.spacing(2),
@@ -99,6 +103,7 @@ class OI4Base extends React.Component {
         2: '⚠️',
         3: '❌',
       },
+      footerExpanded: false,
       config: {
         developmentMode: true,
       },
@@ -172,32 +177,22 @@ class OI4Base extends React.Component {
         <MuiThemeProvider theme={this.state.theme}>
           <CssBaseline />
           <div className={classes.root}>
-            <AppBar position="static" color='inherit'><Toolbar><img src={this.state.iconSource} alt="OI4Logo" height="55" width="55" /><h3 style={{ marginLeft: this.state.theme.spacing(2) }}>OI4-Registry</h3></Toolbar></AppBar>
-            <div>
-              <span>
-                <h1>
-                  Hello! This is an OI4-compatible Registry:
-                  <Checkbox
-                    icon={<BrightnessHigh />}
-                    checkedIcon={<BrightnessLow />}
-                    checked={this.state.darkActivated}
-                    onChange={() => { this.toggleTheme() }}
-                  />
-                </h1>
-              </span>
-              <Paper className={classes.paper}>
-                If started as the first container, it will register and display all oncoming Applications and Devices that are OI4-conform.
-                Every container/device in the registry is polled in an interval about their Stats (Health, Resource, etc.)<br />
-                When onboarding, each container is tested for a base-set of compatible APIs. The results are displayed in following form:<br />
-                <p>
-                  Fully passed base-set of OI4-Functions: <span role="img" aria-label="check">✅</span><br />
-                  Partially passed base-set of OI4-Functions: (Does answer, but payload or correlationID are incorrect)<span role="img" aria-label="semicheck">⚠️</span><br />
-                  Failed base-set of OI4-Functions: (No answer at all on this topic)<span role="img" aria-label="failcheck">❌</span><br />
-                  Not yet tested: <span role="img" aria-label="failcheck">❔</span>
-                </p>
-              </Paper>
+            <AppBar position="static" color='inherit'>
+              <Toolbar>
+                <img src={this.state.iconSource} alt="OI4Logo" height="55" width="55" style={{ marginRight: '10px' }} />
+                <Typography variant='h6' style={{ flexGrow: 1 }}>OI4 Registry</Typography>
+                <Checkbox
+                  icon={<BrightnessHigh />}
+                  checkedIcon={<Brightness3 />}
+                  checked={this.state.darkActivated}
+                  style={{ right: '30px' }}
+                  onChange={() => { this.toggleTheme() }}
+                />
+              </Toolbar>
+            </AppBar>
+            <div style={{ marginTop: '30px' }}>
               <ExpansionPanel>
-                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Application Registry: </ExpansionPanelSummary>
+                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Application Registry: ({Object.keys(this.state.applicationLookup).length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails>
                   <Table stickyHeader className={classes.table}>
                     <TableHead>
@@ -208,7 +203,7 @@ class OI4Base extends React.Component {
                         <TableCell align="right">Health</TableCell>
                         <TableCell align="right">Last Message</TableCell>
                         <TableCell align="right">Conformity</TableCell>
-                        <TableCell align="right">Updated</TableCell>
+                        <TableCell align="right">Refresh</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -234,12 +229,13 @@ class OI4Base extends React.Component {
                             <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
                             <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
-                              <Button variant="contained" size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
-                                Refresh
-                                  <span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span>
-                              </Button>
+                              <span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span>
                             </TableCell>
-                            <TableCell align="right">Removed</TableCell>
+                            <TableCell align="right">
+                              <Fab size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
+                                <RefreshIcon />
+                              </Fab>
+                            </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
@@ -277,7 +273,7 @@ class OI4Base extends React.Component {
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               <ExpansionPanel>
-                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Device Registry: </ExpansionPanelSummary>
+                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Device Registry: ({Object.keys(this.state.deviceLookup).length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails>
                   <Table className={classes.table}>
                     <TableHead>
@@ -309,25 +305,39 @@ class OI4Base extends React.Component {
                 </ExpansionPanelDetails>
               </ExpansionPanel>
               <ExpansionPanel>
-                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Global Event Trail: </ExpansionPanelSummary>
+                <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
                   {this.displayEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
-              {/* <div>
-                <h2>
-                  DEBUG - Own health:
-                </h2>
-                <Paper className={classes.paper}>
-                  {this.ownJsonViewer(this.state.health)}
-                </Paper>
-              </div>
-              <div>
-                <Paper className={classes.paper}>
-                  <h2>DEBUG - Own Config (Try to edit this!):</h2><JsonTree data={this.state.config} onFullyUpdate={(data) => { this.setConfig(data); }} />
-                  <h1 style={{ color: this.state.config.textColor }}>This text is written in the color configured in the Container-Backend</h1>
-                </Paper>
-              </div> */}
+              <Collapse
+                style={{ backgroundColor: this.state.theme.palette.background.paper, position: 'fixed', width: '87.4%', bottom: '21px', border: '3px', borderColor: 'black' }}
+                className={classes.paper}
+                in={this.state.footerExpanded}
+                timeout="auto"
+                unmountOnExit
+              >
+                <p>If started as the first container, the registry will display all oncoming Applications and Devices, as long as they are OI4-Conform.</p>
+                <p>It will also display the global OI4-Event trail.</p>
+                <p>When onboarding, each asset is tested for a base-set of compatible APIs. The results are displayed in the following form:</p>
+                <p>Fully passed GET/PUB Method and Payload-format of Resource: <span role='img' aria-label='ok'>✅</span></p>
+                <p>Partially passed (GET/PUB Method was answered, but payload was not correct): <span role='img' aria-label='warn'>⚠️</span></p>
+                <p>Failed GET/PUB Method (no answer on Resource topic): <span role='img' aria-label='nok'>❌</span></p>
+                <p>Not yet tested (neither success nor fail): <span role='img' aria-label='default'>❔</span></p>
+                <p>The conformity icon in the header bar is an indication of overall conformity.</p>
+                <p>The refresh button will initiate a new conformity check.</p>
+                <p><b>License</b>: BSD, <b>Copyright (C)</b>: 2019 Hilscher Gesellschaft für Systemautomation mbH, <b>Version</b>: v0.8-1</p>
+              </Collapse>
+              <ExpansionPanel style={{ position: 'fixed', bottom: 1, width: '87.4%' }}>
+                <ExpansionPanelSummary
+                  onClick={() => {
+                    this.setState({ footerExpanded: !this.state.footerExpanded });
+                  }}
+                  expandIcon={<ExpandLessIcon />}
+                >
+                  Additional Information
+                </ExpansionPanelSummary>
+              </ExpansionPanel>
             </div>
           </div>
         </MuiThemeProvider>
@@ -364,7 +374,7 @@ class OI4Base extends React.Component {
 
   displayConformityHeader(oi4Id) {
     if (this.state.conformityLookup[oi4Id]) {
-        return this.state.validityLookup[this.state.conformityLookup[oi4Id].validity];
+      return this.state.validityLookup[this.state.conformityLookup[oi4Id].validity];
     } else {
       return 'Wait...';
     }
