@@ -108,24 +108,17 @@ class OI4Base extends React.Component {
       darkActivated: false,
       // TODO: Remove these hardcoded links and replace with relative images...
       iconSource: 'https://i.imgur.com/LBYpKg3.png',
-      namurLookup: [
-        'https://i.imgur.com/hHYbbn5.png',
-        'https://i.imgur.com/jLS12vP.png',
-        'https://i.imgur.com/saz6aWA.png',
-        'https://i.imgur.com/kUQ0wLJ.png',
-        'https://i.imgur.com/8FXxfIq.png',
-      ],
+      namurLookup: {
+        NORMAL_0: 'https://i.imgur.com/hHYbbn5.png',
+        FAILURE_1: 'https://i.imgur.com/jLS12vP.png',
+        CHECK_FUNCTION_2: 'https://i.imgur.com/saz6aWA.png',
+        OFF_SPEC_3: 'https://i.imgur.com/kUQ0wLJ.png',
+        MAINTENANCE_REQUIRED_4: 'https://i.imgur.com/8FXxfIq.png',
+      },
       globalEventTrail: [],
     };
 
     this.mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
-    this.namurEnum = {
-      0: 'NORMAL_0',
-      1: 'FAILURE_1',
-      2: 'CHECK_FUNCTION_2',
-      3: 'OFF_SPEC_3',
-      4: 'MAINTENANCE_REQUIRED_4',
-    };
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
@@ -389,15 +382,16 @@ class OI4Base extends React.Component {
   }
 
   displayNamurHealth(status, height = '25', width = '30') {
-    if (status < 0 || status > 5) {
+    if (!(status in this.state.namurLookup)) {
       return "Undefined NamurHealth";
+    } else {
+      return <img src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
     }
-    return <img src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
   }
 
   detailedHealthViewer(healthObject) {
     return <div>
-      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{this.namurEnum[healthObject.health]}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
+      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
       <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthState}</div>
     </div>;
   }
