@@ -1,5 +1,5 @@
 {
-  "$id": "data-set-message.schema.json",
+  "$id": "DataSetMessage.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "A representation of a Message",
   "type": "object",
@@ -11,7 +11,7 @@
   "additionalProperties": false,
   "properties": {
     "DataSetWriterId": {
-      "$ref": "oi4-identifier.schema.json"
+      "$ref": "oi4Identifier.schema.json"
     },
     "SequenceNumber": {
       "type": "integer",
@@ -25,7 +25,7 @@
       "optional": true
     },
     "MetaDataVersion": {
-      "$ref": "metadata-version.schema.json",
+      "$ref": "MetaDataVersion.schema.json",
       "optional": true
     },
     "Timestamp": {
@@ -36,28 +36,28 @@
     "Payload": {
       "anyOf": [
         {
-          "$ref": "mam-payload.schema.json"
+          "$ref": "mam.schema.json"
         },
         {
-          "$ref": "health-payload.schema.json"
+          "$ref": "health.schema.json"
         },
         {
-          "$ref": "license-payload.schema.json"
+          "$ref": "license.schema.json"
         },
         {
-          "$ref": "licenseText-payload.schema.json"
+          "$ref": "licenseText.schema.json"
         },
         {
-          "$ref": "rtLicense-payload.schema.json"
+          "$ref": "rtLicense.schema.json"
         },
         {
-          "$ref": "config-payload.schema.json"
+          "$ref": "config.schema.json"
         },
         {
-          "$ref": "event-payload.schema.json"
+          "$ref": "event.schema.json"
         },
         {
-          "$ref": "profile-payload.schema.json"
+          "$ref": "profile.schema.json"
         }
       ]
     }

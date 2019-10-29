@@ -1,5 +1,5 @@
 {
-    "$id": "oi4-identifier.schema.json",
+    "$id": "oi4Identifier.schema.json",
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "Open Industry 4.0 Device Identifier",
     "type": "string",

@@ -20,7 +20,7 @@
       "type": "array",
       "description": "Messages Array",
       "items": {
-        "$ref": "data-set-message.schema.json"
+        "$ref": "DataSetMessage.schema.json"
       }
     },
     "MessageType": {

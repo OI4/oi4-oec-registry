@@ -1,5 +1,5 @@
 {
-  "$id": "mam-payload.schema.json",
+  "$id": "mam.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
   "description": "A representation of an event",
@@ -41,7 +41,7 @@
       "description": ""
     },
     "ProductInstanceUri": {
-      "$ref": "oi4-identifier.schema.json"
+      "$ref": "oi4Identifier.schema.json"
     },
     "RevisionCounter": {
       "type": "integer",

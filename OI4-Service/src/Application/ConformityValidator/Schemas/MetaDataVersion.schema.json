@@ -1,5 +1,5 @@
 {
-    "$id": "metadata-version-payload.schema.json",
+    "$id": "MetaDataVersion.schema.json",
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "Metadata Version Schema",
     "type": "object",
