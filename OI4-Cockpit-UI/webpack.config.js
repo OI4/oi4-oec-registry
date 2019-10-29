@@ -55,13 +55,13 @@ function vpath(/* ... */) {
 }
 
 /* Qualify all the paths in entries */
-Object.keys(info.entries).forEach(function(key) {
+Object.keys(info.entries).forEach(function (key) {
     if (section && key.indexOf(section) !== 0) {
         delete info.entries[key];
         return;
     }
 
-    info.entries[key] = info.entries[key].map(function(value) {
+    info.entries[key] = info.entries[key].map(function (value) {
         if (value.indexOf("/") === -1)
             return value;
         else
@@ -71,7 +71,7 @@ Object.keys(info.entries).forEach(function(key) {
 
 /* Qualify all the paths in files listed */
 var files = [];
-info.files.forEach(function(value) {
+info.files.forEach(function (value) {
     if (!section || value.indexOf(section) === 0)
         files.push({ from: vpath("src", value), to: value });
 });
@@ -136,7 +136,13 @@ module.exports = {
                 exclude: /node_modules/,
                 loader: extract.extract('css-loader!sass-loader'),
                 test: /\.scss$/
-            }
+            },
+            {
+                test: /\.(png|svg|jpg|gif)$/,
+                use: [
+                    'file-loader',
+                ],
+            },
         ]
     },
     plugins: plugins
