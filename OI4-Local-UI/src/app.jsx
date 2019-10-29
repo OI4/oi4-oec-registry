@@ -1,5 +1,16 @@
 import React from 'react';
-// import logo from './logo.svg';
+
+import namur0 from './Images/namur_0.png';
+import namur1 from './Images/namur_1.png';
+import namur2 from './Images/namur_2.png';
+import namur3 from './Images/namur_3.png';
+import namur4 from './Images/namur_4.png';
+
+import oi4BigLogoLight from './Images/OI4_Logo_complete_color_RGB.png';
+import oi4BigLogoDark from './Images/OI4_Logo_complete_white_RGB.png';
+import oi4SmallLogoLight from './Images/OI4_Signet_color_RGB.png';
+import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
+
 import { MuiThemeProvider, createMuiTheme, withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -16,19 +27,18 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 import Grid from '@material-ui/core/Grid';
-// import Button from '@material-ui/core/Button';
+import Link from '@material-ui/core/Link';
 import Fab from '@material-ui/core/Fab';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { BrightnessHigh, Brightness3 } from '@material-ui/icons';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import RefreshIcon from '@material-ui/icons/Refresh';
 
 import _ from 'lodash';
 import { reject } from 'q';
 import { CommonFetch } from './Helper/CommonFetch/index';
-import { Typography } from '@material-ui/core';
+import { Typography, Dialog, DialogTitle, DialogContentText, DialogContent, IconButton } from '@material-ui/core';
 
 const darkTheme = createMuiTheme({
   palette: {
@@ -47,6 +57,9 @@ const styles = theme => ({
     // padding: theme.spacing(4),
     paddingLeft: '120px',
     paddingRight: '120px',
+    display: 'flex',
+    minHeight: '100vh',
+    flexDirection: 'column',
   },
   table: {
   },
@@ -87,6 +100,7 @@ class OI4Base extends React.Component {
 
     this.state = {
       appId: 'empty',
+      dialogOpen: false,
       applicationLookup: {},
       deviceLookup: {},
       expandBoxes: {},
@@ -107,13 +121,14 @@ class OI4Base extends React.Component {
       theme: lightTheme,
       darkActivated: false,
       // TODO: Remove these hardcoded links and replace with relative images...
-      iconSource: 'https://i.imgur.com/LBYpKg3.png',
+      smallLogo: oi4SmallLogoLight,
+      bigLogo: oi4BigLogoLight,
       namurLookup: {
-        NORMAL_0: 'https://i.imgur.com/hHYbbn5.png',
-        FAILURE_1: 'https://i.imgur.com/jLS12vP.png',
-        CHECK_FUNCTION_2: 'https://i.imgur.com/saz6aWA.png',
-        OFF_SPEC_3: 'https://i.imgur.com/kUQ0wLJ.png',
-        MAINTENANCE_REQUIRED_4: 'https://i.imgur.com/8FXxfIq.png',
+        NORMAL_0: namur0,
+        FAILURE_1: namur1,
+        CHECK_FUNCTION_2: namur2,
+        OFF_SPEC_3: namur3,
+        MAINTENANCE_REQUIRED_4: namur4,
       },
       globalEventTrail: [],
     };
@@ -167,10 +182,10 @@ class OI4Base extends React.Component {
         <MuiThemeProvider theme={this.state.theme}>
           <CssBaseline />
           <div className={classes.root}>
-            <AppBar position="static" color='inherit'>
+            <AppBar position='static' color='inherit'>
               <Toolbar>
-                <img src={this.state.iconSource} alt="OI4Logo" height="55" width="55" style={{ marginRight: '10px' }} />
-                <Typography variant='h6' style={{ flexGrow: 1 }}>OI4 Registry</Typography>
+                <img src={this.state.bigLogo} alt="OI4Logo" style={{ marginRight: '10px', maxWidth: '180px', height: 'auto' }} />
+                <Typography variant='h6' style={{ flexGrow: 1 }}>Registry</Typography>
                 <Checkbox
                   icon={<BrightnessHigh />}
                   checkedIcon={<Brightness3 />}
@@ -219,12 +234,12 @@ class OI4Base extends React.Component {
                             <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
                             <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
-                              <span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span>
+                              <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
                             </TableCell>
                             <TableCell align="right">
-                              <Fab size="small" color="default" onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
+                              <IconButton fullWidth={false} size='small' color='default' onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
                                 <RefreshIcon />
-                              </Fab>
+                              </IconButton>
                             </TableCell>
                           </TableRow>
                           <TableRow>
@@ -310,40 +325,48 @@ class OI4Base extends React.Component {
                   {this.displayEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
-              {/* TODO: Make this responsive and align with the rest of the page... */}
-              <Collapse
-                style={{ backgroundColor: this.state.theme.palette.background.paper, position: 'fixed', width: '87.4%', bottom: '21px', border: '3px', borderColor: 'black' }}
-                className={classes.paper}
-                in={this.state.footerExpanded}
-                timeout="auto"
-                unmountOnExit
-              >
-                <p>If started as the first container, the registry will display all oncoming Applications and Devices, as long as they are OI4-Conform.</p>
-                <p>It will also display the global OI4-Event trail.</p>
-                <p>When onboarding, each asset is tested for a base-set of compatible APIs. The results are displayed in the following form:</p>
-                <p>Fully passed GET/PUB Method and Payload-format of Resource: <span role='img' aria-label='ok'>✅</span></p>
-                <p>Partially passed (GET/PUB Method was answered, but payload was not correct): <span role='img' aria-label='warn'>⚠️</span></p>
-                <p>Failed GET/PUB Method (no answer on Resource topic): <span role='img' aria-label='nok'>❌</span></p>
-                <p>Not yet tested (neither success nor fail): <span role='img' aria-label='default'>❔</span></p>
-                <p>The conformity icon in the header bar is an indication of overall conformity.</p>
-                <p>The refresh button will initiate a new conformity check.</p>
-                <p><b>License</b>: BSD, <b>Copyright (C)</b>: 2019 Hilscher Gesellschaft für Systemautomation mbH, <b>Version</b>: v0.8-1</p>
-              </Collapse>
-              <ExpansionPanel style={{ position: 'fixed', bottom: 1, width: '87.4%' }}>
-                <ExpansionPanelSummary
-                  onClick={() => {
-                    this.setState({ footerExpanded: !this.state.footerExpanded });
-                  }}
-                  expandIcon={<ExpandLessIcon />}
-                >
-                  Additional Information
-                </ExpansionPanelSummary>
-              </ExpansionPanel>
+
             </div>
+            <div style={{ flexGrow: 1 }} />
+            <Dialog
+              open={this.state.dialogOpen}
+              onClose={() => this.setState({ dialogOpen: false })}
+              maxwidth='lg'
+            >
+              <DialogTitle titleStyle={{ textAlign: 'center' }}><img src={this.state.smallLogo} alt="OI4Logo2" style={{ maxWidth: '180px', height: 'auto' }} /> Registry Information</DialogTitle>
+              <DialogContent>
+                <DialogContentText>
+                  <p>If started as the first container, the registry will display all oncoming Applications and Devices, as long as they are OI4-Conform.</p>
+                  <p>It will also display the global OI4-Event trail.</p>
+                  <p>When onboarding, each asset is tested for a base-set of compatible APIs. The results are displayed in the following form:</p>
+                  <p>Fully passed GET/PUB Method and Payload-format of Resource: <span role='img' aria-label='ok'>✅</span></p>
+                  <p>Partially passed (GET/PUB Method was answered, but payload was not correct): <span role='img' aria-label='warn'>⚠️</span></p>
+                  <p>Failed GET/PUB Method (no answer on Resource topic): <span role='img' aria-label='nok'>❌</span></p>
+                  <p>Not yet tested (neither success nor fail): <span role='img' aria-label='default'>❔</span></p>
+                  <p>The conformity icon in the header bar is an indication of overall conformity.</p>
+                  <p>The refresh button will initiate a new conformity check.</p>
+                  <p><b>Copyright (C)</b>: 2019 Hilscher Gesellschaft für Systemautomation mbH</p>
+                </DialogContentText>
+              </DialogContent>
+            </Dialog>
+            <Grid container justify='center' style={{ paddingBottom: '10px' }}>
+              <Typography>License: BSD License | Version: 0.9.0 | <Link
+              color='inherit'
+              onClick={(e) => {
+                e.preventDefault();
+                this.setState({ dialogOpen: true });
+              }}>
+                Click for more Information
+                </Link></Typography>
+            </Grid>
           </div>
         </MuiThemeProvider>
       </React.Fragment>
     );
+  }
+
+  handleDetailClick() {
+
   }
 
   /**
@@ -351,9 +374,9 @@ class OI4Base extends React.Component {
    */
   toggleTheme() {
     if (this.state.darkActivated) {
-      this.setState({ darkActivated: false, theme: lightTheme, iconSource: 'https://i.imgur.com/LBYpKg3.png' });
+      this.setState({ darkActivated: false, theme: lightTheme, smallLogo: oi4SmallLogoLight, bigLogo: oi4BigLogoLight });
     } else {
-      this.setState({ darkActivated: true, theme: darkTheme, iconSource: 'https://i.imgur.com/7gAhh6X.png' });
+      this.setState({ darkActivated: true, theme: darkTheme, smallLogo: oi4SmallLogoDark, bigLogo: oi4BigLogoDark });
     }
   }
 
