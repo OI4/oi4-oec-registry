@@ -4,20 +4,21 @@ import { IConformity, EValidity } from '../Models/IConformityValidator';
 const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 
-import networkMessageSchemaJson = require('./Schemas/network-message.schema.json');
-import metadataVersionSchemaJson = require('./Schemas/metadata-version.schema.json');
-import oi4IdentifierSchemaJson = require('./Schemas/oi4-identifier.schema.json');
-import dataSetMessageSchemaJson = require('./Schemas/data-set-message.schema.json');
+import NetworkMessageSchemaJson = require('./Schemas/NetworkMessage.schema.json');
+import MetaDataVersionSchemaJson = require('./Schemas/MetaDataVersion.schema.json');
+import oi4IdentifierSchemaJson = require('./Schemas/oi4Identifier.schema.json');
+import DataSetMessageSchemaJson = require('./Schemas/DataSetMessage.schema.json');
 import descriptionSchemaJson = require('./Schemas/description.schema.json');
 
-import healthPayloadSchemaJson = require('./Schemas/health-payload.schema.json');
-import mamPayloadSchemaJson = require('./Schemas/mam-payload.schema.json');
-import licensePayloadSchemaJson = require('./Schemas/license-payload.schema.json');
-import licenseTextPayloadSchemaJson = require('./Schemas/licenseText-payload.schema.json');
-import profilePayloadSchemaJson = require('./Schemas/profile-payload.schema.json');
-import eventPayloadSchemaJson = require('./Schemas/event-payload.schema.json');
-import rtLicensePayloadSchemaJson = require('./Schemas/rtLicense-payload.schema.json');
-import configPayloadSchemaJson = require('./Schemas/config-payload.schema.json');
+// Payloads
+import healthSchemaJson = require('./Schemas/health.schema.json');
+import mamSchemaJson = require('./Schemas/mam.schema.json');
+import licenseSchemaJson = require('./Schemas/license.schema.json');
+import licenseTextSchemaJson = require('./Schemas/licenseText.schema.json');
+import profileSchemaJson = require('./Schemas/profile.schema.json');
+import eventSchemaJson = require('./Schemas/event.schema.json');
+import rtLicenseSchemaJson = require('./Schemas/rtLicense.schema.json');
+import configSchemaJson = require('./Schemas/config.schema.json');
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
@@ -63,21 +64,21 @@ export class ConformityValidator extends EventEmitter {
     this.jsonValidator = new Ajv();
     // Add Validation Schemas
     // First common Schemas
-    this.jsonValidator.addSchema(networkMessageSchemaJson, 'network-message.schema.json');
-    this.jsonValidator.addSchema(metadataVersionSchemaJson, 'metadata-version.schema.json');
-    this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4-identifier.schema.json');
-    this.jsonValidator.addSchema(dataSetMessageSchemaJson, 'data-set-message.schema.json');
+    this.jsonValidator.addSchema(NetworkMessageSchemaJson, 'NetworkMessage.schema.json');
+    this.jsonValidator.addSchema(MetaDataVersionSchemaJson, 'MetaDataVersion.schema.json');
+    this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4Identifier.schema.json');
+    this.jsonValidator.addSchema(DataSetMessageSchemaJson, 'DataSetMessage.schema.json');
     this.jsonValidator.addSchema(descriptionSchemaJson, 'description.schema.json');
 
     // Then payload Schemas
-    this.jsonValidator.addSchema(healthPayloadSchemaJson, 'health-payload.schema.json');
-    this.jsonValidator.addSchema(mamPayloadSchemaJson, 'mam-payload.schema.json');
-    this.jsonValidator.addSchema(licensePayloadSchemaJson, 'license-payload.schema.json');
-    this.jsonValidator.addSchema(licenseTextPayloadSchemaJson, 'licenseText-payload.schema.json');
-    this.jsonValidator.addSchema(profilePayloadSchemaJson, 'profile-payload.schema.json');
-    this.jsonValidator.addSchema(eventPayloadSchemaJson, 'event-payload.schema.json');
-    this.jsonValidator.addSchema(configPayloadSchemaJson, 'config-payload.schema.json');
-    this.jsonValidator.addSchema(rtLicensePayloadSchemaJson, 'rtLicense-payload.schema.json');
+    this.jsonValidator.addSchema(healthSchemaJson, 'health.schema.json');
+    this.jsonValidator.addSchema(mamSchemaJson, 'mam.schema.json');
+    this.jsonValidator.addSchema(licenseSchemaJson, 'license.schema.json');
+    this.jsonValidator.addSchema(licenseTextSchemaJson, 'licenseText.schema.json');
+    this.jsonValidator.addSchema(profileSchemaJson, 'profile.schema.json');
+    this.jsonValidator.addSchema(eventSchemaJson, 'event.schema.json');
+    this.jsonValidator.addSchema(rtLicenseSchemaJson, 'rtLicense.schema.json');
+    this.jsonValidator.addSchema(configSchemaJson, 'config.schema.json');
   }
 
   /**
@@ -222,7 +223,7 @@ export class ConformityValidator extends EventEmitter {
    * @param oi4Id - the oi4Id of the requestor
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
-  async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
+  async checkResourceConformity(fullTopic: string, tag: string, resource: string, orig) {
     const conformityPayload = this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
@@ -235,13 +236,13 @@ export class ConformityValidator extends EventEmitter {
           console.log();
         }
         try {
-          networkMessageValidationResult = await this.jsonValidator.validate('network-message.schema.json', parsedMessage);
+          networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', parsedMessage);
         } catch (validateErr) {
           this.logger.log(validateErr);
           networkMessageValidationResult = false;
         }
         try {
-          payloadValidationResult = await this.jsonValidator.validate(`${resource}-payload.schema.json`, parsedMessage.Messages[0].Payload);
+          payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
         } catch (validateErr) {
           this.logger.log(validateErr);
           payloadValidationResult = false;
