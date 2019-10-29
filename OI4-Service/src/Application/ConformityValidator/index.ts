@@ -223,7 +223,7 @@ export class ConformityValidator extends EventEmitter {
    * @param oi4Id - the oi4Id of the requestor
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
-  async checkResourceConformity(fullTopic: string, tag: string, resource: string, orig) {
+  async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
     const conformityPayload = this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
