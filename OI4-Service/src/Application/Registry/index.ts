@@ -15,12 +15,15 @@ export class Registry extends EventEmitter {
   private logger: Logger;
 
   // Individual timeouts
+  private timeoutEnabled: boolean;
+
   private healthTimeout: number;
   private licenseTimeout: number;
   private rtLicenseTimeout: number;
   private licenseTextTimeout: number;
   private configTimeout: number;
   private profileTimeout: number;
+
   constructor(logger: Logger, registryClient: mqtt.AsyncClient) {
     super();
     this.logger = logger;
@@ -35,6 +38,7 @@ export class Registry extends EventEmitter {
     this.globalEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
+    this.timeoutEnabled = false;
 
     this.builder = new OPCUABuilder('appIdRegistry'); // TODO: Better system for appId!
 
@@ -78,21 +82,24 @@ export class Registry extends EventEmitter {
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
             this.logger.log('Registry: Resetting timeout from health');
+            // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
             clearTimeout(this.healthTimeout);
-            this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
+            this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 60000);
           } else if (health.health === EDeviceHealth.FAILURE_1) {
             if (parsedPayload.health === EDeviceHealth.NORMAL_0) {
-              this.logger.log('Registry: Resetting timeout from ALL');
-              clearTimeout(this.healthTimeout);
-              this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
-              clearTimeout(this.licenseTimeout);
-              this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
-              clearTimeout(this.rtLicenseTimeout);
-              this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
-              clearTimeout(this.licenseTextTimeout);
-              this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
-              clearTimeout(this.configTimeout);
-              this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
+              if (this.timeoutEnabled) {
+                this.logger.log('Registry: Resetting timeout from ALL');
+                clearTimeout(this.healthTimeout);
+                this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
+                clearTimeout(this.licenseTimeout);
+                this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
+                clearTimeout(this.rtLicenseTimeout);
+                this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
+                clearTimeout(this.licenseTextTimeout);
+                this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
+                clearTimeout(this.configTimeout);
+                this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
+              }
             }
           }
         }
@@ -105,8 +112,10 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            clearTimeout(this.licenseTimeout);
-            this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
+            if (this.timeoutEnabled) {
+              clearTimeout(this.licenseTimeout);
+              this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
+            }
           }
         }
         this.applicationLookup[oi4Id].license = parsedPayload;
@@ -116,8 +125,10 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            clearTimeout(this.rtLicenseTimeout);
-            this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
+            if (this.timeoutEnabled) {
+              clearTimeout(this.rtLicenseTimeout);
+              this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
+            }
           }
         }
         this.applicationLookup[oi4Id].rtLicense = parsedPayload;
@@ -127,8 +138,10 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            clearTimeout(this.licenseTextTimeout);
-            this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
+            if (this.timeoutEnabled) {
+              clearTimeout(this.licenseTextTimeout);
+              this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
+            }
           }
         }
         this.applicationLookup[oi4Id].licenseText = parsedPayload;
@@ -138,8 +151,10 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            clearTimeout(this.configTimeout);
-            this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
+            if (this.timeoutEnabled) {
+              clearTimeout(this.configTimeout);
+              this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
+            }
           }
         }
         this.applicationLookup[oi4Id].config = parsedPayload;
@@ -149,8 +164,10 @@ export class Registry extends EventEmitter {
         const health = this.applicationLookup[oi4Id].health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            clearTimeout(this.profileTimeout);
-            this.profileTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'profile'), 10000);
+            if (this.timeoutEnabled) {
+              clearTimeout(this.profileTimeout);
+              this.profileTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'profile'), 10000);
+            }
           }
         }
         this.applicationLookup[oi4Id].profile = parsedPayload;
@@ -185,20 +202,26 @@ export class Registry extends EventEmitter {
         await this.getResourceFromDevice(assetId, 'health');
         this.applicationLookup[assetId]['registeredAt'] = new Date().toISOString();
         this.applicationLookup[assetId]['lastMessage'] = new Date().toISOString();
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'health'), 10000); // Trigger cyclic retrieval
         await this.getResourceFromDevice(assetId, 'license');
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'license'), 10000);
         await this.getResourceFromDevice(assetId, 'rtLicense');
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'rtLicense'), 10000);
         await this.getResourceFromDevice(assetId, 'config');
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'config'), 10000);
         await this.getResourceFromDevice(assetId, 'profile');
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'profile'), 10000);
+
+        if (this.timeoutEnabled) {
+          <any>setTimeout(() => this.getResourceFromDevice(assetId, 'health'), 10000); // Trigger cyclic retrieval
+          <any>setTimeout(() => this.getResourceFromDevice(assetId, 'license'), 10000);
+          <any>setTimeout(() => this.getResourceFromDevice(assetId, 'rtLicense'), 10000);
+          <any>setTimeout(() => this.getResourceFromDevice(assetId, 'config'), 10000);
+          <any>setTimeout(() => this.getResourceFromDevice(assetId, 'profile'), 10000);
+        }
+
         const licenseObj = this.applicationLookup[assetId].license;
         if (licenseObj) {
           for (const licenses of licenseObj.licenses) {
             await this.getLicenseTextFromDevice(assetId, 'licenseText', licenses.licenseId);
-            <any>setTimeout(() => this.getLicenseTextFromDevice(assetId, 'licenseText', licenses.licenseId), 10000);
+            if (this.timeoutEnabled) {
+              <any>setTimeout(() => this.getLicenseTextFromDevice(assetId, 'licenseText', licenses.licenseId), 10000);
+            }
           }
         }
       } catch (err) {
