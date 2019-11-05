@@ -55,6 +55,10 @@ export interface IContainerRTLicense {
   certificate: string; // TODO: this might be a file descriptor later on
 }
 
+export interface IContainerProfile {
+  resource: string[];
+}
+
 export interface IComponentObject {
   component: string;
   licAuthor: string[];
@@ -82,7 +86,7 @@ export interface IContainerState {
   rtLicense: IContainerRTLicense;
   config: IContainerConfig;
   dataLookup: IContainerData;
-  profile: string[];
+  profile: IContainerProfile;
   metaDataLookup: IContainerMetaData;
   masterAssetModel: IMasterAssetModel;
 

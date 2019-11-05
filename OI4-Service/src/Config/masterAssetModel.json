@@ -1,18 +1,24 @@
 {
-    "Manufacturer": "Hilscher",
-    "ManufacturerUri": "http://hilscher.com",
-    "Model": "Registry Application",
-    "ProductCode": "TESTING/ENCODING",
-    "HardwareRevision": "",
-    "SoftwareRevision": "ALPHA",
-    "DeviceRevision": "",
-    "DeviceManual": "No Manual available currently",
-    "DeviceClass": "Registry",
-    "SerialNumber": "",
-    "ProductInstanceUri": "",
-    "RevisionCounter": 0,
-    "Description": {
-      "Locale": "",
-      "Text": "This is an OI4-Compatible Registry Application"
-    }
+  "Manufacturer": {
+    "Locale": "en-US",
+    "Text": "Hilscher"
+  },
+  "ManufacturerUri": "http://hilscher.com",
+  "Model": {
+    "Locale": "en-US",
+    "Text": "Registry Application"
+  },
+  "ProductCode": "TESTING/ENCODING",
+  "HardwareRevision": "",
+  "SoftwareRevision": "ALPHA",
+  "DeviceRevision": "",
+  "DeviceManual": "No Manual available currently",
+  "DeviceClass": "Registry",
+  "SerialNumber": "",
+  "ProductInstanceUri": "",
+  "RevisionCounter": 0,
+  "Description": {
+    "Locale": "en-US",
+    "Text": "This is an OI4-Compatible Registry Application"
+  }
 }

@@ -227,8 +227,8 @@ class OI4Base extends React.Component {
                               this.setState({ expandedLookup: expandedLookupCopy });
                             }}
                           >
-                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer.Text}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model.Text}</TableCell>
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].DeviceClass}</TableCell>
                             <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
                             <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
@@ -354,7 +354,8 @@ class OI4Base extends React.Component {
               onClick={(e) => {
                 e.preventDefault();
                 this.setState({ dialogOpen: true });
-              }}>
+              }}
+                                                                  >
                 Click for more Information
                 </Link></Typography>
             </Grid>

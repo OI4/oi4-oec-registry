@@ -8,7 +8,7 @@ import NetworkMessageSchemaJson = require('./Schemas/NetworkMessage.schema.json'
 import MetaDataVersionSchemaJson = require('./Schemas/MetaDataVersion.schema.json');
 import oi4IdentifierSchemaJson = require('./Schemas/oi4Identifier.schema.json');
 import DataSetMessageSchemaJson = require('./Schemas/DataSetMessage.schema.json');
-import descriptionSchemaJson = require('./Schemas/description.schema.json');
+import LocalizedTextSchemaJson = require('./Schemas/LocalizedText.schema.json');
 
 // Payloads
 import healthSchemaJson = require('./Schemas/health.schema.json');
@@ -68,7 +68,7 @@ export class ConformityValidator extends EventEmitter {
     this.jsonValidator.addSchema(MetaDataVersionSchemaJson, 'MetaDataVersion.schema.json');
     this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4Identifier.schema.json');
     this.jsonValidator.addSchema(DataSetMessageSchemaJson, 'DataSetMessage.schema.json');
-    this.jsonValidator.addSchema(descriptionSchemaJson, 'description.schema.json');
+    this.jsonValidator.addSchema(LocalizedTextSchemaJson, 'LocalizedText.schema.json');
 
     // Then payload Schemas
     this.jsonValidator.addSchema(healthSchemaJson, 'health.schema.json');

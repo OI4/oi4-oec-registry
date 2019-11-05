@@ -7,9 +7,9 @@ export interface IOPCUAPayload {
 }
 
 export interface IMasterAssetModel {
-  Manufacturer: string;
+  Manufacturer: IOPCUALocalizedText;
   ManufacturerUri: string;
-  Model: string;
+  Model: IOPCUALocalizedText;
   ProductCode: string;
   HardwareRevision: string;
   SoftwareRevision: string;

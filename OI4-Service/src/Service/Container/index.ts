@@ -9,6 +9,7 @@ import {
   IContainerData,
   IContainerMetaData,
   EDeviceHealth,
+  IContainerProfile,
 } from '../Models/IContainer';
 
 import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel, EOPCUALocale } from '../Models/IOPCUAPayload';
@@ -24,7 +25,7 @@ class ContainerState extends ConfigParser implements IContainerState {
   public dataLookup: IContainerData;
   public metaDataLookup: IContainerMetaData;
   public masterAssetModel: IMasterAssetModel;
-  public profile: string[];
+  public profile: IContainerProfile;
 
   constructor() {
     super();
@@ -33,8 +34,8 @@ class ContainerState extends ConfigParser implements IContainerState {
     this.masterAssetModel.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
     this.masterAssetModel.SerialNumber = process.env.CONTAINERNAME as string;
 
-    this.appId = `${encodeURIComponent(this.masterAssetModel.ManufacturerUri)}/${encodeURIComponent(this.masterAssetModel.Model)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
-    this.masterAssetModel.ProductInstanceUri = `${this.masterAssetModel.ManufacturerUri}/${encodeURIComponent(this.masterAssetModel.Model)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
+    this.appId = `${encodeURIComponent(this.masterAssetModel.ManufacturerUri)}/${encodeURIComponent(this.masterAssetModel.Model.Text)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
+    this.masterAssetModel.ProductInstanceUri = `${this.masterAssetModel.ManufacturerUri}/${encodeURIComponent(this.masterAssetModel.Model.Text)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
 
     this.health = {
       health: EDeviceHealth.NORMAL_0,
@@ -184,15 +185,17 @@ class ContainerState extends ConfigParser implements IContainerState {
     this.dataLookup = {};
     this.metaDataLookup = {};
 
-    this.profile = [
-      'health',
-      'license',
-      'rtLicense',
-      'config',
-      'mam',
-      'profile',
-      'licenseText',
-    ];
+    this.profile = {
+      resource: [
+        'health',
+        'license',
+        'rtLicense',
+        'config',
+        'mam',
+        'profile',
+        'licenseText',
+      ],
+    };
   }
 
   /**
@@ -201,7 +204,7 @@ class ContainerState extends ConfigParser implements IContainerState {
    * @param data - the completely built OPCUA Data message
    * @param metadata - the completely build OPCUA Metadata message (optional)
    */
-  public addDataSet(key:string, data: IOPCUAData, metadata?: IOPCUAMetaData) {
+  public addDataSet(key: string, data: IOPCUAData, metadata?: IOPCUAMetaData) {
     this.dataLookup[key] = data;
     if (metadata) {
       this.metaDataLookup[key] = metadata;
