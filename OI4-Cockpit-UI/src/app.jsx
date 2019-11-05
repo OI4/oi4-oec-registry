@@ -32,7 +32,9 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { BrightnessHigh, Brightness3 } from '@material-ui/icons';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import RefreshIcon from '@material-ui/icons/Refresh';
+import Divider from '@material-ui/core/Divider';
 
 import _ from 'lodash';
 import { reject } from 'q';
@@ -207,7 +209,7 @@ class OI4Base extends React.Component {
                         <TableCell align="right">Health</TableCell>
                         <TableCell align="right">Last Message</TableCell>
                         <TableCell align="right">Conformity</TableCell>
-                        <TableCell align="right">Refresh</TableCell>
+                        <TableCell align="right">Expand</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -236,8 +238,8 @@ class OI4Base extends React.Component {
                               <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
                             </TableCell>
                             <TableCell align="right">
-                              <IconButton fullWidth={false} size='small' color='default' onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
-                                <RefreshIcon />
+                              <IconButton size='small' color='default'>
+                                {this.displayTableExpansion(oi4Id)}
                               </IconButton>
                             </TableCell>
                           </TableRow>
@@ -259,7 +261,11 @@ class OI4Base extends React.Component {
                                         </Paper>
                                       </div>
                                       <div>
-                                        <h3>Conformity Validation:</h3>
+                                        <h3>Conformity Validation:
+                                          <IconButton size='small' color='default' onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
+                                            <RefreshIcon />
+                                          </IconButton>
+                                        </h3>
                                         <Paper className={classes.paper}>
                                           {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id))}
                                         </Paper>
@@ -332,10 +338,35 @@ class OI4Base extends React.Component {
               onClose={() => this.setState({ dialogOpen: false })}
               maxwidth='lg'
             >
-              <DialogTitle titleStyle={{ textAlign: 'center' }}><img src={this.state.smallLogo} alt="OI4Logo2" style={{ maxWidth: '180px', height: 'auto' }} /> Registry Information</DialogTitle>
+              <DialogTitle titleStyle={{ display:'flex', alignItems:'center', justifyContent:'center' }}><img src={this.state.bigLogo} alt="OI4Logo2" style={{ textAlign: 'center', maxWidth: '550px', height: 'auto' }} /></DialogTitle>
               <DialogContent>
-                <DialogContentText>
-                  <p>If started as the first container, the registry will display all oncoming Applications and Devices, as long as they are OI4-Conform.</p>
+                <Divider variant='middle' />
+                <Typography variant='h5' style={{ textAlign: 'center' }}>Registry Information</Typography>
+                <DialogContentText style={{ paddingLeft: '13px', paddingRight: '13px' }}>
+                  <p>
+                    Be aware to start the Open Industry 4.0 Alliance's Registry as the very first application in the runtime.
+                    Otherwise, you might miss information from other applications and devices.
+                  </p>
+                  <p>
+                    The Registry will list all applications and devices, which are communicating in a conform way to Open Industry 4.0 Alliance.
+                    It also displays the event trail of all Open Industry 4.0 Alliance events on the message bus.
+                  </p>
+                  <p>
+                    Every recognized asset gets tested for a basic set of compatibility to Open Industry 4.0 Alliance specification. The result will be displayed as one of:
+                    <ul>
+                      <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
+                      <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <span role='img' aria-label='warn'>⚠️</span></li>
+                      <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li>
+                      <li>Not yet tested (neither successful nor fail): <span role='img' aria-label='default'>❔</span></li>
+                    </ul>
+                  </p>
+                  <p>
+                    The conformity icon in the header bar is an indication of overall conformity.
+                  </p>
+                  <p>
+                    The refresh button will initiate a new conformity check.
+                  </p>
+                  {/* <p>If started as the first container, the registry will display all oncoming Applications and Devices, as long as they are OI4-Conform.</p>
                   <p>It will also display the global OI4-Event trail.</p>
                   <p>When onboarding, each asset is tested for a base-set of compatible APIs. The results are displayed in the following form:</p>
                   <p>Fully passed GET/PUB Method and Payload-format of Resource: <span role='img' aria-label='ok'>✅</span></p>
@@ -344,18 +375,20 @@ class OI4Base extends React.Component {
                   <p>Not yet tested (neither success nor fail): <span role='img' aria-label='default'>❔</span></p>
                   <p>The conformity icon in the header bar is an indication of overall conformity.</p>
                   <p>The refresh button will initiate a new conformity check.</p>
-                  <p><b>Copyright (C)</b>: 2019 Hilscher Gesellschaft für Systemautomation mbH</p>
+                  <p><b>Copyright (C)</b>: 2019 Hilscher Gesellschaft für Systemautomation mbH</p> */}
                 </DialogContentText>
+                <Divider variant='middle' />
+                <Typography style={{ textAlign: 'center' }} variant='body2'>Copyright (C): 2019 Hilscher Gesellschaft für Systemautomation mbH</Typography>
               </DialogContent>
             </Dialog>
             <Grid container justify='center' style={{ paddingBottom: '10px' }}>
-              <Typography>License: BSD License | Version: 0.9.0 | <Link
-              color='inherit'
-              onClick={(e) => {
-                e.preventDefault();
-                this.setState({ dialogOpen: true });
-              }}
-                                                                  >
+              <Typography>License: BSD License | Version: 0.9.2 | <Link
+                color='inherit'
+                onClick={(e) => {
+                  e.preventDefault();
+                  this.setState({ dialogOpen: true });
+                }}
+              >
                 Click for more Information
                 </Link></Typography>
             </Grid>
@@ -393,6 +426,14 @@ class OI4Base extends React.Component {
       } else {
         return `Fetching ${prop}`;
       }
+    }
+  }
+
+  displayTableExpansion(oi4Id) {
+    if (!this.state.expandedLookup[oi4Id]) {
+      return <ExpandMoreIcon />;
+    } else {
+      return <ExpandLessIcon />;
     }
   }
 
