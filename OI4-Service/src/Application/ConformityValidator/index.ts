@@ -102,10 +102,15 @@ export class ConformityValidator extends EventEmitter {
    * If a resource passes, its entry in the conformity Object is set to 'OK', otherwise, the initialized 'NOK' values persist.
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
-  async checkConformity(fullTopic: string, resourceList?: string[]) {
-    const mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile'];
+  async checkConformity(fullTopic: string, appId: string, resourceList?: string[]) {
+    let mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile'];
     const topicArray = fullTopic.split('/');
-    const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
+    const oi4Id = appId;
+    const originator = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
+    if (originator !== oi4Id) { // FIXME: This needs to be changed to a real detection or a function parameter.
+      // Not every unequal originator/device combo has to be device - application pair...
+      mandatoryResourceList = ['mam', 'health', 'profile'];
+    }
     const conformityObject = this.initializeValidityObject();
     let errorSoFar = false;
     const licenseList: string[] = [];
@@ -132,7 +137,7 @@ export class ConformityValidator extends EventEmitter {
         } else {
           conformityObject.resource['profile'] = {
             validity: EValidity.partial,
-            validityError: 'Profile does not contain Mandatory Resoruces',
+            validityError: 'Profile does not contain Mandatory Resources',
           };
         }
       }
@@ -219,8 +224,8 @@ export class ConformityValidator extends EventEmitter {
    * If everything matches, an 'OK' response is returned.
    * If we receive an answer, but the payload / correlation ID is not conform, a 'Partial' response is returned.
    * If we don't receive an answer within the given timeframe, an error is returned.
-   * @param fullTopic - the oi4-topic of the requestor
-   * @param oi4Id - the oi4Id of the requestor
+   * @param fullTopic - the originator oi4Id of the requestor
+   * @param tag - the tag of the requestor, in most cases their oi4Id
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
   async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
@@ -232,7 +237,7 @@ export class ConformityValidator extends EventEmitter {
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
-        if (resource === 'rtLicense' || resource === 'config') {
+        if (resource === 'rtLicense' || resource === 'config' || resource === 'mam') {
           console.log();
         }
         try {

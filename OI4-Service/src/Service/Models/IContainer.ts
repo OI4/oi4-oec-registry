@@ -6,18 +6,6 @@ export interface IContainerInfo {
   appID: IEnvironmentAppID;
 }
 
-export interface IDeviceMessage extends IMasterAssetModel {
-  [key: string]: any;
-  health?: IContainerHealth;
-  license?: IContainerLicense;
-  rtLicense?: IContainerRTLicense;
-  licenseText?: IContainerLicenseText;
-  config?: IContainerConfig;
-  fullDevicePath?: string;
-  eventList: IEventObject[];
-  originator?: string;
-}
-
 export interface IEventObject {
   originId?: string;
   logLevel: string;

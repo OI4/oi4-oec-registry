@@ -134,7 +134,10 @@ class OI4Base extends React.Component {
       globalEventTrail: [],
     };
 
-    this.mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
+    this.mandatoryResource = {
+      application: ['health', 'license', 'licenseText', 'mam', 'profile'],
+      device: ['health', 'mam', 'profile'],
+    };
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
@@ -158,10 +161,13 @@ class OI4Base extends React.Component {
     // If we start out with a couple of applications, we should update their conformity right away
     setTimeout(() => {
       for (const oi4Id of Object.keys(this.state.applicationLookup)) {
-        this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath);
+        this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath, this.state.applicationLookup[oi4Id].appId);
+      }
+      for (const oi4Id of Object.keys(this.state.deviceLookup)) {
+        this.updateConformity(this.state.deviceLookup[oi4Id].fullDevicePath, this.state.deviceLookup[oi4Id].appId);
       }
     },
-      3000);
+      2000);
     this.updateAppID(); // This will retrieve the AppID of the registry itself.
     setTimeout(() => {
       this.toggleTheme();
@@ -229,10 +235,10 @@ class OI4Base extends React.Component {
                               this.setState({ expandedLookup: expandedLookupCopy });
                             }}
                           >
-                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Manufacturer.Text}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].Model.Text}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].DeviceClass}</TableCell>
-                            <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].health.health)}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.Model.Text}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
+                            <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].resources.health.health)}</TableCell>
                             <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
                               <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
@@ -257,12 +263,12 @@ class OI4Base extends React.Component {
                                       <div>
                                         <h3>Detailed MasterAssetModel:</h3>
                                         <Paper className={classes.paper}>
-                                          {this.ownJsonViewer(this.state.applicationLookup[oi4Id].mam)}
+                                          {this.ownJsonViewer(this.state.applicationLookup[oi4Id].resources.mam)}
                                         </Paper>
                                       </div>
                                       <div>
                                         <h3>Conformity Validation:
-                                          <IconButton size='small' color='default' onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath) }}>
+                                          <IconButton size='small' color='default' onClick={() => { this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath, oi4Id) }}>
                                             <RefreshIcon />
                                           </IconButton>
                                         </h3>
@@ -273,7 +279,7 @@ class OI4Base extends React.Component {
                                       <div>
                                         <h3>Detailed Health:</h3>
                                         <Paper className={classes.paper}>
-                                          {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].health)}
+                                          {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].resources.health)}
                                         </Paper>
                                       </div>
                                     </Grid>
@@ -295,28 +301,99 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}> Device Registry: ({Object.keys(this.state.deviceLookup).length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails>
-                  <Table className={classes.table}>
+                  <Table stickyHeader className={classes.table}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Manufacturer</TableCell>
                         <TableCell>Model</TableCell>
                         <TableCell>DeviceClass</TableCell>
                         <TableCell>SerialNumber</TableCell>
-                        <TableCell>Origin</TableCell>
+                        <TableCell align="right">Health</TableCell>
+                        <TableCell align="right">Last Message</TableCell>
+                        <TableCell align="right">Conformity</TableCell>
+                        <TableCell align="right">Expand</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {Object.keys(this.state.deviceLookup).map((oi4Id) => (
                         <React.Fragment>
-                          <TableRow key={this.state.deviceLookup[oi4Id].name}>
-                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Manufacturer}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].Model}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].DeviceClass}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].SerialNumber}</TableCell>
-                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].originator}</TableCell>
+                          <TableRow
+                            key={this.state.deviceLookup[oi4Id].name}
+                            hoverstyle={{ cursor: "pointer" }}
+                            onClick={() => {
+                              // A bit of a hack in order to not mutate the state...
+                              const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
+                              if (oi4Id in expandedLookupCopy) {
+                                expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
+                              } else {
+                                expandedLookupCopy[oi4Id] = true;
+                              }
+                              this.setState({ expandedLookup: expandedLookupCopy });
+                            }}
+                          >
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.Model.Text}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
+                            <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.SerialNumber}</TableCell>
+                            <TableCell align="right">{this.displayNamurHealth(this.state.deviceLookup[oi4Id].resources.health.health)}</TableCell>
+                            <TableCell align="right">{this.state.deviceLookup[oi4Id].lastMessage}</TableCell>
+                            <TableCell align="right">
+                              <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size='small' color='default'>
+                                {this.displayTableExpansion(oi4Id)}
+                              </IconButton>
+                            </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5} />
+                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                              <Collapse
+                                className={classes.tableInside}
+                                in={this.state.expandedLookup[oi4Id]}
+                                timeout='auto'
+                                unmountOnExit
+                              >
+                                <div>
+                                  <Grid item xs={12}>
+                                    <Grid container justify='space-evenly'>
+                                      <div>
+                                        <h3>Detailed MasterAssetModel:</h3>
+                                        <Paper className={classes.paper}>
+                                          {this.ownJsonViewer(this.state.deviceLookup[oi4Id].resources.mam)}
+                                        </Paper>
+                                      </div>
+                                      <div>
+                                        <h3>Conformity Validation:
+                                          <IconButton size='small' color='default' onClick={() => { this.updateConformity(this.state.deviceLookup[oi4Id].fullDevicePath, oi4Id) }}>
+                                            <RefreshIcon />
+                                          </IconButton>
+                                        </h3>
+                                        <Paper className={classes.paper}>
+                                          {this.displayConformity(this.convertConformityToEmoji(this.state.conformityLookup, oi4Id), 'device')}
+                                        </Paper>
+                                      </div>
+                                      <div>
+                                        <h3>Detailed Health:</h3>
+                                        <Paper className={classes.paper}>
+                                          {this.detailedHealthViewer(this.state.deviceLookup[oi4Id].resources.health)}
+                                        </Paper>
+                                      </div>
+                                    </Grid>
+                                  </Grid>
+                                  <div>
+                                    <h3>Originator:</h3>
+                                    <Paper className={classes.paper}>
+                                      {this.state.deviceLookup[oi4Id].originator}
+                                    </Paper>
+                                  </div>
+                                  <div>
+                                    <h3>Last 3 Events:</h3>
+                                    {this.displayEvents(this.state.deviceLookup[oi4Id].eventList, 'local')}
+                                  </div>
+                                </div>
+                              </Collapse>
+                            </TableCell>
                           </TableRow>
                         </React.Fragment>
                       ))}
@@ -338,7 +415,7 @@ class OI4Base extends React.Component {
               onClose={() => this.setState({ dialogOpen: false })}
               maxwidth='lg'
             >
-              <DialogTitle titleStyle={{ display:'flex', alignItems:'center', justifyContent:'center' }}><img src={this.state.bigLogo} alt="OI4Logo2" style={{ textAlign: 'center', maxWidth: '550px', height: 'auto' }} /></DialogTitle>
+              <DialogTitle titleStyle={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src={this.state.bigLogo} alt="OI4Logo2" style={{ textAlign: 'center', maxWidth: '550px', height: 'auto' }} /></DialogTitle>
               <DialogContent>
                 <Divider variant='middle' />
                 <Typography variant='h5' style={{ textAlign: 'center' }}>Registry Information</Typography>
@@ -545,9 +622,10 @@ class OI4Base extends React.Component {
   /**
    * Converts a conformity Object to a displayable fashion and displays
    * all conformity values (ok, partial, nok) in a table
+   * @param {string} assetType - The type of the asset (device/application)
    * @param {object} conformityObject - The conformity object that is to be displayed
    */
-  displayConformity(conformityObject) {
+  displayConformity(conformityObject, assetType = 'application') {
     if (typeof conformityObject === 'object' && conformityObject !== null) {
       return <div>
         <b>OI4-Id Conformity: </b>{conformityObject.oi4Id}
@@ -558,7 +636,7 @@ class OI4Base extends React.Component {
             if (conformityObject.nonProfileResourceList.includes(resources)) {
               resourceColor = this.state.theme.palette.secondary.light;
             }
-            if (this.mandatoryResource.includes(resources)) {
+            if (this.mandatoryResource[assetType].includes(resources)) {
               resourceWeight = 600;
             }
             if (conformityObject.resource[resources].validityError) {
@@ -573,14 +651,13 @@ class OI4Base extends React.Component {
   }
 
   // -- CONFORMITY HELPERS
-  updateConformity(fullTopic) {
-    console.log(`Updating Conformity for ${fullTopic}`);
+  updateConformity(fullTopic, appId) {
+    console.log(`Updating Conformity for ${fullTopic} with appId: ${appId}`);
+    const oi4Id = appId;
     if (this.state.config.developmentMode === true) {
-      this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}`)
+      this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
         .then(data => {
           const jsonData = JSON.parse(data);
-          const topicArray = fullTopic.split('/');
-          const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
           const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
@@ -588,11 +665,9 @@ class OI4Base extends React.Component {
           this.setState({ conformityLookup: confLookup });
         });
     } else {
-      this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}`)
+      this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
         .then(data => {
           const jsonData = JSON.parse(data);
-          const topicArray = fullTopic.split('/');
-          const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
           const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
@@ -621,7 +696,19 @@ class OI4Base extends React.Component {
   updateDevices() {
     this.fetch.get(`/registry/device`)
       .then(data => {
-        this.setState({ deviceLookup: JSON.parse(data) });
+        const jsonData = JSON.parse(data);
+        const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
+        for (const oi4Id of Object.keys(jsonData)) {
+          if (this.state.deviceLookup[oi4Id] === undefined || this.state.deviceLookup[oi4Id] === null) {
+            const fullTopic = jsonData[oi4Id].fullDevicePath;
+            const appId = jsonData[oi4Id].appId;
+            this.updateConformity(fullTopic, appId);
+          }
+          if (oi4Id in confLookupLoc) {
+            delete confLookupLoc[oi4Id];
+          }
+        }
+        this.setState({ deviceLookup: jsonData, confLookup: confLookupLoc });
       });
   }
 
@@ -636,7 +723,8 @@ class OI4Base extends React.Component {
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.applicationLookup[oi4Id] === undefined || this.state.applicationLookup[oi4Id] === null) {
             const fullTopic = jsonData[oi4Id].fullDevicePath;
-            this.updateConformity(fullTopic);
+            const appId = jsonData[oi4Id].appId;
+            this.updateConformity(fullTopic, appId);
           }
           if (oi4Id in confLookupLoc) {
             delete confLookupLoc[oi4Id];

@@ -26,7 +26,7 @@ const registry = new Registry(logger, busProxy.mqttClient);
 busProxy.on('pubMam', async (mqttObj) => {
   const topicArr = mqttObj.topic.split('/');
   const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-  if (registry.getApplication(assetId)) {
+  if (registry.getApplication(assetId) || registry.getDevice(assetId)) {
     logger.log('MasterAssetModel already in Registry');
   } else {
     try {
@@ -57,8 +57,8 @@ busProxy.on('getMam', async (tag) => {
   if (tag === '') {
     const devices = registry.applications as IDeviceLookup;
     for (const device of Object.keys(devices)) {
-      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device], new Date(), 'registryClassID')));
-      logger.log(`Sent device with OI4-ID ${devices[device].ProductInstanceUri}`);
+      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device], new Date(), 'registryClassID')));
+      logger.log(`Sent device with OI4-ID ${devices[device].resources.mam.ProductInstanceUri}`);
     }
   }
 });
@@ -101,10 +101,10 @@ import { ConformityValidator } from './Application/ConformityValidator';
 import { IDeviceLookup } from './Application/Models/IRegistry';
 
 const confChecker = new ConformityValidator(logger);
-webClient.get('/conformity/:oi4Id', async (conformityReq, conformityResp) => {
+webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
   let conformityObject = confChecker.initializeValidityObject();
   try {
-    conformityObject = await confChecker.checkConformity(conformityReq.params.oi4Id);
+    conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id);
   } catch (err) {
     console.log(`Got hard error in conformity REST request: ${err}`);
   }
@@ -112,11 +112,11 @@ webClient.get('/conformity/:oi4Id', async (conformityReq, conformityResp) => {
   conformityResp.send(JSON.stringify(conformityObject));
 });
 
-webClient.get('/fullConformity/:oi4Id', async (conformityReq, conformityResp) => {
+webClient.get('/fullConformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
   let conformityObject = confChecker.initializeValidityObject();
   const fullResourceList = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
   try {
-    conformityObject = await confChecker.checkConformity(conformityReq.params.oi4Id, fullResourceList);
+    conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id, fullResourceList);
   } catch (err) {
     console.log(`Got hard error in conformity REST request: ${err}`);
   }
