@@ -42,7 +42,6 @@ interface IResultObject {
 export class ConformityValidator extends EventEmitter {
   private conformityClient: mqtt.AsyncClient;
   private readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
-  private readonly mandatoryResource = ['health', 'license', 'licenseText', 'mam', 'profile'];
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
@@ -201,7 +200,7 @@ export class ConformityValidator extends EventEmitter {
               validity: EValidity.default,
             };
           }
-          if (this.mandatoryResource.includes(resource)) { // If it's not mandatory, we do not count the error!
+          if (mandatoryResourceList.includes(resource)) { // If it's not mandatory, we do not count the error!
             errorSoFar = true;
             // No response means NOK
           }
