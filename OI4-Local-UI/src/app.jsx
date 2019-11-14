@@ -238,7 +238,7 @@ class OI4Base extends React.Component {
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.Model.Text}</TableCell>
                             <TableCell component="th" scope="row">{this.state.applicationLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
-                            <TableCell align="right">{this.displayNamurHealth(this.state.applicationLookup[oi4Id].resources.health.health)}</TableCell>
+                            <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
                             <TableCell align="right">{this.state.applicationLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
                               <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
@@ -279,7 +279,7 @@ class OI4Base extends React.Component {
                                       <div>
                                         <h3>Detailed Health:</h3>
                                         <Paper className={classes.paper}>
-                                          {this.detailedHealthViewer(this.state.applicationLookup[oi4Id].resources.health)}
+                                          {this.detailedHealthViewer(this.getResourceObject(oi4Id, 'health', 'application'))}
                                         </Paper>
                                       </div>
                                     </Grid>
@@ -335,7 +335,7 @@ class OI4Base extends React.Component {
                             <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.Model.Text}</TableCell>
                             <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
                             <TableCell component="th" scope="row">{this.state.deviceLookup[oi4Id].resources.mam.SerialNumber}</TableCell>
-                            <TableCell align="right">{this.displayNamurHealth(this.state.deviceLookup[oi4Id].resources.health.health)}</TableCell>
+                            <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'device'))}</TableCell>
                             <TableCell align="right">{this.state.deviceLookup[oi4Id].lastMessage}</TableCell>
                             <TableCell align="right">
                               <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
@@ -376,7 +376,7 @@ class OI4Base extends React.Component {
                                       <div>
                                         <h3>Detailed Health:</h3>
                                         <Paper className={classes.paper}>
-                                          {this.detailedHealthViewer(this.state.deviceLookup[oi4Id].resources.health)}
+                                          {this.detailedHealthViewer(this.getResourceObject(oi4Id, 'health', 'device'))}
                                         </Paper>
                                       </div>
                                     </Grid>
@@ -459,14 +459,15 @@ class OI4Base extends React.Component {
               </DialogContent>
             </Dialog>
             <Grid container justify='center' style={{ paddingBottom: '10px' }}>
-              <Typography>License: BSD License | Version: 0.9.2 | <Link
-                color='inherit'
-                onClick={(e) => {
-                  e.preventDefault();
-                  this.setState({ dialogOpen: true });
-                }}
-              >
-                Click for more Information
+              <Typography>License: BSD License | Version: 0.9.2 |
+                <Link
+                  color='inherit'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    this.setState({ dialogOpen: true });
+                  }}
+                >
+                  Click for more Information
                 </Link></Typography>
             </Grid>
           </div>
@@ -477,6 +478,44 @@ class OI4Base extends React.Component {
 
   handleDetailClick() {
 
+  }
+
+  /**
+   * Checks if health is available and returns it, if possible
+   */
+  getHealth(oi4Id, type = 'application') {
+    let lookup;
+    if (type === 'application') {
+      lookup = this.state.applicationLookup;
+    } else if (type === 'device') {
+      lookup = this.state.deviceLookup;
+    } else {
+      return 'wrong type selected';
+    }
+    if ('health' in lookup[oi4Id].resources) {
+      if ('health' in lookup[oi4Id].resources.health) {
+        return lookup[oi4Id].resources.health.health;
+      }
+    }
+    return 'err: health string not found in lookup';
+  }
+
+  /**
+ * Checks if health object is available and returns it, if possible
+ */
+  getResourceObject(oi4Id, resource, type = 'application') {
+    let lookup;
+    if (type === 'application') {
+      lookup = this.state.applicationLookup;
+    } else if (type === 'device') {
+      lookup = this.state.deviceLookup;
+    } else {
+      return 'wrong type selected';
+    }
+    if (resource in lookup[oi4Id].resources) {
+      return lookup[oi4Id].resources[resource];
+    }
+    return 'err: resource not found in lookup';
   }
 
   /**
@@ -745,6 +784,8 @@ class OI4Base extends React.Component {
         if (resource === 'eventList' || resource === 'lastMessage') {
           this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
             .then(data => {
+              // console.log(`Cockpit-Only for Resource ${resource}:`);
+              // console.log(data);
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
