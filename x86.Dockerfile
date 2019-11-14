@@ -1,5 +1,8 @@
 FROM node:10-alpine
 
+# -------FIX NPM ERRORS ON LOW MEM MACHINE
+RUN npm config set unsafe-perm true
+
 # -------ADD SERVE DEPENDENCY
 RUN npm install serve
 
