@@ -37,13 +37,15 @@ export class OPCUABuilder {
    * @param timestamp - the current timestamp in Date format
    * @param classId - the DataSetClassId that is used for the MAM
    */
-  buildMasterAssetData(masterAssetPayload: any, timestamp: Date, classId: string) {
+  buildMasterAssetData(masterAssetPayload: any, timestamp: Date, classId: string, correlationId: string = '') {
     const opcUaDataPayload: IOPCUADataMessage[] = [this.buildOPCUAData(masterAssetPayload, timestamp)];
     const opcUaMasterAssetMessage: IOPCUAMasterAssetModel = {
       MessageId: `${Date.now().toString()}-${this.appId}`,
       MessageType: EOPCUAMessageType.uadata,
-      DataSetClassID: classId,
+      DataSetClassId: classId,
       Messages: opcUaDataPayload,
+      PublisherId: this.appId,
+      CorrelationId: correlationId,
     };
     return opcUaMasterAssetMessage;
   }
@@ -57,11 +59,13 @@ export class OPCUABuilder {
    */
   buildOPCUADataMessage(actualPayload: any, timestamp: Date, classId: string, correlationId: string = ''): IOPCUAData {
     let opcUaDataPayload: IOPCUADataMessage[];
-    if (Object.keys(actualPayload).length === 0 && actualPayload.constructor === Object) {
-      opcUaDataPayload = [];
-    } else {
-      opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
-    }
+    // Not sure why empty objects were converted to an empty array. The correct behaviour is building an Empty DataSetMessage...
+    // if (Object.keys(actualPayload).length === 0 && actualPayload.constructor === Object) {
+    //   opcUaDataPayload = [];
+    // } else {
+    //   opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
+    // }
+    opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
     const opcUaDataMessage: IOPCUAData = {
       MessageId: `${Date.now().toString()}-${this.appId}`,
       MessageType: EOPCUAMessageType.uadata,

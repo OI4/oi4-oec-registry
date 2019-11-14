@@ -21,8 +21,7 @@ export interface IContainerMetaData {
 }
 
 export interface IContainerConfig {
-  updateInterval: number;
-  textColor: string;
+
 }
 
 export interface IContainerHealth {
@@ -37,10 +36,7 @@ export interface IContainerEvent {
 }
 
 export interface IContainerRTLicense {
-  expiryDate: string;
-  validated: boolean;
-  customerName: string;
-  certificate: string; // TODO: this might be a file descriptor later on
+
 }
 
 export interface IContainerProfile {

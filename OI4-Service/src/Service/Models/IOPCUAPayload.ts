@@ -25,8 +25,10 @@ export interface IMasterAssetModel {
 interface IMessageBusMasterAssetModel {
   MessageId: string;
   MessageType: EOPCUAMessageType;
-  DataSetClassID: GUID;
+  DataSetClassId: GUID;
   Messages: IOPCUADataMessage[];
+  PublisherId: string; // TODO: string in the OI4-format, need to add validators
+  CorrelationId: string;
 }
 
 // (NetworkMessage!)

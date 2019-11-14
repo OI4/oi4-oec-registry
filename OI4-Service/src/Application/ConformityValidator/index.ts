@@ -241,7 +241,7 @@ export class ConformityValidator extends EventEmitter {
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
-        if (resource === 'rtLicense' || resource === 'config' || resource === 'mam') {
+        if (resource === 'config') {
           console.log();
         }
         try {
@@ -250,11 +250,17 @@ export class ConformityValidator extends EventEmitter {
           this.logger.log(`ConformityValidator-AJV:${validateErr}`);
           networkMessageValidationResult = false;
         }
+        if (!networkMessageValidationResult) {
+          this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
+        }
         try {
           payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
         } catch (validateErr) {
           this.logger.log(`ConformityValidator-AJV:${validateErr}`);
           payloadValidationResult = false;
+        }
+        if (!payloadValidationResult) {
+          this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`);
         }
         if (networkMessageValidationResult && payloadValidationResult) {
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) {
@@ -264,7 +270,6 @@ export class ConformityValidator extends EventEmitter {
             this.logger.log(`ConformityValidator: CorrelationID did not pass for ${tag} with resource ${resource}`);
           }
         } else {
-          this.logger.log(`AJV: ${this.jsonValidator.errorsText()}`);
           eRes = EValidity.partial;
         }
         const resObj: IResultObject = {

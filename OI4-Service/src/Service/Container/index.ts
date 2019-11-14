@@ -176,10 +176,7 @@ class ContainerState extends ConfigParser implements IContainerState {
     };
 
     this.rtLicense = {
-      expiryDate: new Date('December 24, 2022 00:00:00').toISOString(),
-      validated: true,
-      customerName: 'MyCompanyName',
-      certificate: 'myCert.crt',
+
     };
 
     this.dataLookup = {};

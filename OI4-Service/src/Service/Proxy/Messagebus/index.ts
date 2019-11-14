@@ -135,7 +135,7 @@ class OI4MessageBusProxy extends OI4Proxy {
               break;
             }
             case 'mam': {
-              await this.sendMam(topicTag); // TODO: This means sending our own MasterAssetSet
+              await this.sendMam(topicTag, parsedMessage.MessageId); // TODO: This means sending our own MasterAssetSet
               this.emit('getMam', { topic, message: parsedMessage });
               break;
             }
@@ -335,11 +335,11 @@ class OI4MessageBusProxy extends OI4Proxy {
    * Sends the saved MasterAssetModel on the message bus
    * @param cutTopic - the cuttopic, containing only the tag-element
    */
-  async sendMam(cutTopic: string) {
+  async sendMam(cutTopic: string, messageId: string = '') {
     // Independent of the cutTopic, if we send our MAM, we send it with our AppID as <tag>
     await this.client.publish(
       `${this.standardRoute}/pub/mam/${this.appId}`,
-      JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID')));
+      JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID', messageId)));
     this.logger.log(`BusProxy: Published MasterAssetData on ${this.standardRoute}/pub/mam/${this.appId}`);
   }
 
@@ -367,7 +367,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     if (typeof this.containerState.licenseText[license] === 'undefined') { // FIXME: REMOVE THE HOTFIX AND BUILD A CHECKER INTO OPCUABUILDER
       return;
     }
-    await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.licenseText[license], new Date(), 'licenseTextClass', messageId)));
+    await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({ licText: this.containerState.licenseText[license] }, new Date(), 'licenseTextClass', messageId)));
     this.logger.log(`BusProxy: Published LicenseText on ${this.standardRoute}/pub/licenseText/${this.appId}`);
   }
 
