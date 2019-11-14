@@ -13,7 +13,7 @@ if (!(process.env.OI4_ADDR) || !(process.env.OI4_PORT) || !(process.env.CONTAINE
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 2, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
+const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
@@ -53,13 +53,16 @@ busProxy.on('deleteMam', async (deleteId) => {
  * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
  */
 busProxy.on('getMam', async (tag) => {
-  logger.log(`Sending MAM with topic: ${tag}`);
   if (tag === '') {
     const devices = registry.applications as IDeviceLookup;
+    logger.log(`Sending all known Mams...count: ${Object.keys(devices).length}`);
     for (const device of Object.keys(devices)) {
-      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device], new Date(), 'registryClassID')));
+      // TODO: URL ENCODING????
+      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device].resources.mam, new Date(), 'registryClassID')));
       logger.log(`Sent device with OI4-ID ${devices[device].resources.mam.ProductInstanceUri}`);
     }
+  } else {
+    logger.log(`Sending Mam with Requested tag: ${tag} <-- Not implemented!`);
   }
 });
 
@@ -106,7 +109,7 @@ webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformity
   try {
     conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id);
   } catch (err) {
-    console.log(`Got hard error in conformity REST request: ${err}`);
+    console.log(`Got error in conformity REST request: ${err}`);
   }
 
   conformityResp.send(JSON.stringify(conformityObject));
@@ -118,7 +121,7 @@ webClient.get('/fullConformity/:originator/:oi4Id', async (conformityReq, confor
   try {
     conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id, fullResourceList);
   } catch (err) {
-    console.log(`Got hard error in conformity REST request: ${err}`);
+    console.log(`Got error in conformity REST request: ${err}`);
   }
 
   conformityResp.send(JSON.stringify(conformityObject));

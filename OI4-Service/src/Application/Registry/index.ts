@@ -50,6 +50,11 @@ export class Registry extends EventEmitter {
 
   private processMqttMessage = (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
+    const firstPayload = JSON.parse(message.toString());
+    if (firstPayload.Messages.length === 0) {
+      this.logger.log('Messages Array empty');
+      return;
+    }
     const parsedPayload = JSON.parse(message.toString()).Messages[0].Payload;
     const baseIdOffset = topicArr.length - 4;
     const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
