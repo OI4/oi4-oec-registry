@@ -459,7 +459,7 @@ class OI4Base extends React.Component {
               </DialogContent>
             </Dialog>
             <Grid container justify='center' style={{ paddingBottom: '10px' }}>
-              <Typography>License: BSD License | Version: 0.9.2 |
+              <Typography>License: BSD License | Version: 0.10.0 |
                 <Link
                   color='inherit'
                   onClick={(e) => {
