@@ -45,10 +45,10 @@ export class ConformityValidator extends EventEmitter {
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
-  constructor(logger: Logger) {
+  constructor(logger: Logger, appId: string) {
     super();
     this.logger = logger;
-    this.builder = new OPCUABuilder('appId'); // TODO: Set appId to something useful
+    this.builder = new OPCUABuilder(appId); // TODO: Set appId to something useful
     const serverObj = {
       host: process.env.OI4_ADDR as string,
       port: parseInt(process.env.OI4_PORT as string, 10),
@@ -103,6 +103,7 @@ export class ConformityValidator extends EventEmitter {
    */
   async checkConformity(fullTopic: string, appId: string, resourceList?: string[]) {
     let mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile'];
+    const ignoredResources = ['data', 'metadata', 'event'];
     const topicArray = fullTopic.split('/');
     const oi4Id = appId;
     const originator = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
@@ -185,11 +186,19 @@ export class ConformityValidator extends EventEmitter {
               validity: EValidity.ok,
             };
           } else if (validity === EValidity.partial) {
+
+            let evaluatedValidity = EValidity.partial;
             if (mandatoryResourceList.includes(resource)) { // TODO: This is a little strict, but we are strict for now
               errorSoFar = true;
+            } else {
+              if (ignoredResources.includes(resource)) {
+                evaluatedValidity = EValidity.default;
+                errorSoFar = false;
+              }
             }
+
             conformityObject.resource[resource] = {
-              validity: EValidity.partial,
+              validity: evaluatedValidity,
             };
           }
         } catch (err) {
@@ -197,7 +206,7 @@ export class ConformityValidator extends EventEmitter {
           conformityObject.resource[resource] = {
             validity: EValidity.nok,
           };
-          if (resource === 'data' || resource === 'metadata' || resource === 'event') {
+          if (ignoredResources.includes(resource)) {
             conformityObject.resource[resource] = {
               validity: EValidity.default,
             };
@@ -230,7 +239,7 @@ export class ConformityValidator extends EventEmitter {
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
   async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
-    const conformityPayload = this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`);
+    const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
       this.logger.log(`ConformityValidator:Received conformity message on ${resource} from ${tag}`);
@@ -241,7 +250,7 @@ export class ConformityValidator extends EventEmitter {
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
-        if (resource === 'config') {
+        if (resource === 'mam') {
           console.log();
         }
         try {
@@ -282,13 +291,13 @@ export class ConformityValidator extends EventEmitter {
     });
     await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${tag}`);
     await this.conformityClient.publish(`${fullTopic}/get/${resource}/${tag}`, JSON.stringify(conformityPayload));
-    this.logger.log(`ConformityValidator: Trying to validate resource on ${fullTopic}/get/${resource}/${tag}`);
+    this.logger.log(`ConformityValidator: Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`);
     return await promiseTimeout(new Promise((resolve, reject) => {
       this.once(`${resource}${fullTopic}Success`, (res) => {
         resolve(res);
       });
     }),
-      400, /*tslint:disable-line*/ // 400ms as the timeout
+      700, /*tslint:disable-line*/ // 700ms as the timeout
       `ConformityValidator-${resource}Error`, /*tslint:disable-line*/
     );
 

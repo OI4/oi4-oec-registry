@@ -103,7 +103,7 @@ webClient.get('/registry/event', (deviceHealthReq, deviceHealthResp) => {
 import { ConformityValidator } from './Application/ConformityValidator';
 import { IDeviceLookup } from './Application/Models/IRegistry';
 
-const confChecker = new ConformityValidator(logger);
+const confChecker = new ConformityValidator(logger, contState.appId);
 webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
   let conformityObject = confChecker.initializeValidityObject();
   try {

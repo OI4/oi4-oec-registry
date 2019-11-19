@@ -8,17 +8,17 @@
     "Locale": "en-US",
     "Text": "Registry Application"
   },
-  "ProductCode": "TESTING/ENCODING",
+  "ProductCode": "OI4-REG",
   "HardwareRevision": "",
-  "SoftwareRevision": "ALPHA",
+  "SoftwareRevision": "0.9.1",
   "DeviceRevision": "",
-  "DeviceManual": "No Manual available currently",
+  "DeviceManual": "Not available",
   "DeviceClass": "Registry",
-  "SerialNumber": "",
+  "SerialNumber": "OI4-Registry",
   "ProductInstanceUri": "",
   "RevisionCounter": 0,
   "Description": {
     "Locale": "en-US",
-    "Text": "This is an OI4-Compatible Registry Application"
+    "Text": "OI4 Registry application"
   }
 }

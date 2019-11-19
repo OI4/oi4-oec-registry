@@ -1,5 +1,5 @@
 import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
-import { IDeviceLookup } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage } from '../Models/IRegistry';
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -225,10 +225,11 @@ export class Registry extends EventEmitter {
       await this.getResourceFromDevice(assetId, 'health');
       assetLookup[assetId]['registeredAt'] = new Date().toISOString();
       assetLookup[assetId]['lastMessage'] = new Date().toISOString();
-      await this.getResourceFromDevice(assetId, 'license');
-      await this.getResourceFromDevice(assetId, 'rtLicense');
-      await this.getResourceFromDevice(assetId, 'config');
-      await this.getResourceFromDevice(assetId, 'profile');
+      // If too many devices onboard at the same time, the bus will get spammed...
+      // await this.getResourceFromDevice(assetId, 'license');
+      // await this.getResourceFromDevice(assetId, 'rtLicense');
+      // await this.getResourceFromDevice(assetId, 'config');
+      // await this.getResourceFromDevice(assetId, 'profile');
 
       if (this.timeoutEnabled) {
         <any>setTimeout(() => this.getResourceFromDevice(assetId, 'health'), 10000); // Trigger cyclic retrieval
@@ -296,14 +297,39 @@ export class Registry extends EventEmitter {
   }
 
   getResourceFromLookup(oi4Id: string, resource: string) {
+    // TODO: Resource intensive, we should push to the error object only if we actually have an error
+    // FIXME: Better yet, don't separate between device and application lookup
+    const oi4ToObjectList: IDeviceMessage[] = [];
     if (oi4Id in this.applicationLookup) {
-      return this.applicationLookup[oi4Id].resources[resource];
+      oi4ToObjectList.push(this.applicationLookup[oi4Id]);
+      if (resource === 'lastMessage' || resource === 'eventList') {
+        if (resource in this.applicationLookup[oi4Id]) {
+          return this.applicationLookup[oi4Id][resource];
+        }
+      }
+      if ('resources' in this.applicationLookup[oi4Id]) {
+        if (resource in this.applicationLookup[oi4Id].resources) {
+          return this.applicationLookup[oi4Id].resources[resource];
+        }
+      }
+
     }
     if (oi4Id in this.deviceLookup) {
-      return this.deviceLookup[oi4Id].resources[resource];
+      oi4ToObjectList.push(this.deviceLookup[oi4Id]);
+      if (resource === 'lastMessage' || resource === 'eventList') {
+        if (resource in this.deviceLookup[oi4Id]) {
+          return this.deviceLookup[oi4Id][resource];
+        }
+      }
+      if ('resources' in this.deviceLookup[oi4Id]) {
+        if (resource in this.deviceLookup[oi4Id].resources) {
+          return this.deviceLookup[oi4Id].resources[resource];
+        }
+      }
     }
     return {
       err: 'Could not get resource from registry',
+      foundObjects: oi4ToObjectList,
     };
 
   }
