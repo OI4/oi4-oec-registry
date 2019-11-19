@@ -3,7 +3,7 @@ FROM balenalib/generic-armv7ahf-alpine-node:latest
 RUN apk add --no-cache python2 && apk add --no-cache make && apk add --no-cache g++
 
 # -------ADD SERVE DEPENDENCY
-RUN npm install serve
+
 
 # -------ADD ENVIRONMENT PATHS
 ENV UI_SRC_PATH=/usr/OI4-Local-UI/build
@@ -11,6 +11,8 @@ ENV COCKPIT_UI_SRC_PATH=/usr/OI4-Service/uiplugin
 
 # -------NOW LOCALUI
 WORKDIR /usr/OI4-Local-UI
+# --- Install serve to host local build
+RUN npm install serve
 COPY ./OI4-Local-UI/package.json ./
 COPY ./OI4-Local-UI/build ./build/
 
