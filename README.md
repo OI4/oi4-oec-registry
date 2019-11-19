@@ -100,7 +100,7 @@ some people might remove the Cockpit-UI as they don't support cockpit on their d
 Just comment out the 3 lines below **# -------COCKPIT UI**. This will stop the Cockpit UI from being copied.
 
 
-***The entire project is in a development stage until the final specification of TC-T6 is finished. Use at own discretion.***
-***Take a look at the code examples, especially the ```src/Service/Proxy/Messagebus/index.ts``` *processMqttMessage* function and its calls. It is responsible for handling the OI4-Messagebus API.***
-***Also, take a look at ```src/Service/Utilities/OPCUABuilder/index.ts``` in order to understand how the OPCUA Json Payloads are built.***
+***The entire project is in a development stage until the final specification of TC-T6 is finished. Use at own discretion.***\
+***Take a look at the code examples, especially the ```src/Service/Proxy/Messagebus/index.ts``` *processMqttMessage* function and its calls. It is responsible for handling the OI4-Messagebus API.***\
+***Also, take a look at ```src/Service/Utilities/OPCUABuilder/index.ts``` in order to understand how the OPCUA Json Payloads are built.***\
 ***The models are available in their respective folders.***
