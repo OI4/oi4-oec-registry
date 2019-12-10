@@ -72,7 +72,7 @@ export interface IContainerState {
   dataLookup: IContainerData;
   profile: IContainerProfile;
   metaDataLookup: IContainerMetaData;
-  masterAssetModel: IMasterAssetModel;
+  mam: IMasterAssetModel;
 
   // Methods
   addDataSet(dataname: string, data: IOPCUAData, metadata: IOPCUAMetaData): void;

@@ -43,6 +43,10 @@ class OI4WebProxy extends OI4Proxy {
       rtLicenseResp.send(JSON.stringify(this.containerState.rtLicense));
     });
 
+    this.client.get('/mam', (mamReq, mamResp) => {
+      mamResp.send(JSON.stringify(this.containerState.mam));
+    });
+
     this.client.get('/data/:tagName', (dataReq, dataResp) => {
       dataResp.send(JSON.stringify(this.containerState.dataLookup[dataReq.params.tagName]));
     });

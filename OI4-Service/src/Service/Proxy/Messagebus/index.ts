@@ -14,11 +14,9 @@ interface TMqttOpts {
 
 class OI4MessageBusProxy extends OI4Proxy {
   private client: mqtt.AsyncClient;
-  private masterAssetPayload: IMasterAssetModel;
   private logger: Logger;
   constructor(container: IContainerState) {
     super(container);
-    this.masterAssetPayload = container.masterAssetModel;
 
     // Add Server Object depending on configuration
     const serverObj = {
@@ -60,7 +58,7 @@ class OI4MessageBusProxy extends OI4Proxy {
       this.logger.log('BusProxy: Connected successfully', 'w' , 2);
       await this.client.publish(
         `${this.standardRoute}/pub/mam/${this.appId}`,
-        JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID')),
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.mam, new Date(), 'BIRTHMESSAGECLASSID')),
       );
       this.logger.log(`BusProxy: Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, 'w', 2);
 
@@ -100,7 +98,6 @@ class OI4MessageBusProxy extends OI4Proxy {
 
     // The message is directed directly at us
     if (topicAppId === this.appId) {
-
       switch (topicMethod) {
         case 'get': {
           switch (topicResource) {
@@ -135,7 +132,7 @@ class OI4MessageBusProxy extends OI4Proxy {
               break;
             }
             case 'mam': {
-              await this.sendMam(topicTag, parsedMessage.MessageId); // TODO: This means sending our own MasterAssetSet
+              await this.sendResource(topicResource, parsedMessage.MessageId);
               this.emit('getMam', { topic, message: parsedMessage });
               break;
             }
@@ -219,7 +216,7 @@ class OI4MessageBusProxy extends OI4Proxy {
           switch (topicResource) {
             case 'mam': {
               if (topicServiceType === 'Registry') {
-                this.sendMam(topicTag);
+                this.sendResource(topicResource);
                 this.emit('getMam', topicTag);
               }
               break;
@@ -332,18 +329,6 @@ class OI4MessageBusProxy extends OI4Proxy {
   }
 
   /**
-   * Sends the saved MasterAssetModel on the message bus
-   * @param cutTopic - the cuttopic, containing only the tag-element
-   */
-  async sendMam(cutTopic: string, messageId: string = '') {
-    // Independent of the cutTopic, if we send our MAM, we send it with our AppID as <tag>
-    await this.client.publish(
-      `${this.standardRoute}/pub/mam/${this.appId}`,
-      JSON.stringify(this.builder.buildMasterAssetData(this.masterAssetPayload, new Date(), 'BIRTHMESSAGECLASSID', messageId)));
-    this.logger.log(`BusProxy: Published MasterAssetData on ${this.standardRoute}/pub/mam/${this.appId}`);
-  }
-
-  /**
    * Sends the saved Resource from containerState to the message bus
    * @param resource - the resource that is to be sent to the bus (health, license etc.)
    * @param messageId - the messageId that was sent to us with the request. If it's present, we need to put it into the correlationID of our response
@@ -440,11 +425,6 @@ class OI4MessageBusProxy extends OI4Proxy {
       this.logger.log(`BusProxy: Cannot find ${tagName} in lookup`);
     }
   }
-
-  // Obsolete
-  // escapeString(oldString: string) {
-  //   return oldString.replace(/[.\/*+?^${}()|[\]\\]/g, '\\$&');
-  // }
 
   /**
    * Makes the MQTT Client available to be used by other applications

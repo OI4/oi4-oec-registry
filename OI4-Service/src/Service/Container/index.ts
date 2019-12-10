@@ -24,18 +24,18 @@ class ContainerState extends ConfigParser implements IContainerState {
   public rtLicense: IContainerRTLicense;
   public dataLookup: IContainerData;
   public metaDataLookup: IContainerMetaData;
-  public masterAssetModel: IMasterAssetModel;
+  public mam: IMasterAssetModel;
   public profile: IContainerProfile;
 
   constructor() {
     super();
 
-    this.masterAssetModel = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
-    this.masterAssetModel.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
-    this.masterAssetModel.SerialNumber = process.env.CONTAINERNAME as string;
+    this.mam = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
+    this.mam.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
+    this.mam.SerialNumber = process.env.CONTAINERNAME as string;
 
-    this.appId = `${encodeURIComponent(this.masterAssetModel.ManufacturerUri)}/${encodeURIComponent(this.masterAssetModel.Model.Text)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
-    this.masterAssetModel.ProductInstanceUri = `${this.masterAssetModel.ManufacturerUri}/${encodeURIComponent(this.masterAssetModel.Model.Text)}/${encodeURIComponent(this.masterAssetModel.ProductCode)}/${encodeURIComponent(this.masterAssetModel.SerialNumber)}`;
+    this.appId = `${encodeURIComponent(this.mam.ManufacturerUri)}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
+    this.mam.ProductInstanceUri = `${this.mam.ManufacturerUri}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
 
     this.health = {
       health: EDeviceHealth.NORMAL_0,

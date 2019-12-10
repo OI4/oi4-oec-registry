@@ -32,25 +32,6 @@ export class OPCUABuilder {
   }
 
   /**
-   * Builds an entire MasterAssetData Payload including NetworkMessage
-   * @param masterAssetPayload - the actual MasterAssetPayload according to TC-T6
-   * @param timestamp - the current timestamp in Date format
-   * @param classId - the DataSetClassId that is used for the MAM
-   */
-  buildMasterAssetData(masterAssetPayload: any, timestamp: Date, classId: string, correlationId: string = '') {
-    const opcUaDataPayload: IOPCUADataMessage[] = [this.buildOPCUAData(masterAssetPayload, timestamp)];
-    const opcUaMasterAssetMessage: IOPCUAMasterAssetModel = {
-      MessageId: `${Date.now().toString()}-${this.appId}`,
-      MessageType: EOPCUAMessageType.uadata,
-      DataSetClassId: classId,
-      Messages: opcUaDataPayload,
-      PublisherId: this.appId,
-      CorrelationId: correlationId,
-    };
-    return opcUaMasterAssetMessage;
-  }
-
-  /**
    * Builds an OPCUA and OI4-conform Data Message (Including NetworkMessage)
    * @param actualPayload - the payload that is to be encapsulated inside the OPCUA Packet (key-value pair of valid data)
    * @param timestamp - the current timestamp in Date format
@@ -69,8 +50,8 @@ export class OPCUABuilder {
     const opcUaDataMessage: IOPCUAData = {
       MessageId: `${Date.now().toString()}-${this.appId}`,
       MessageType: EOPCUAMessageType.uadata,
-      PublisherId: this.appId,
       DataSetClassId: classId, // TODO: Generate UUID, but not here, make a lookup,
+      PublisherId: this.appId,
       Messages: opcUaDataPayload,
       CorrelationId: correlationId,
     };
