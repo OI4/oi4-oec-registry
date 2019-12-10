@@ -298,7 +298,7 @@ export class ConformityValidator extends EventEmitter {
       });
     }),
       700, /*tslint:disable-line*/ // 700ms as the timeout
-      `ConformityValidator-${resource}Error`, /*tslint:disable-line*/
+      `checkResourceConformity-${resource}Error-in-${fullTopic}`, /*tslint:disable-line*/
     );
 
   }
