@@ -110,7 +110,9 @@ class OI4Base extends React.Component {
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
-
+    // Update apps and devices right away
+    setTimeout(() => { this.updateApplications() }, 500);
+    setTimeout(() => { this.updateDevices() }, 800);
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
      * The resources kept by the registry of all applications are updated individually.

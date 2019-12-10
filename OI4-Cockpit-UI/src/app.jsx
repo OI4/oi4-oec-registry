@@ -87,7 +87,7 @@ class OI4Base extends React.Component {
     // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
     // the local UI and the cockpit frontend.
     // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
-    this.fetch = new CommonFetch('fetch', this.address, this.port);
+    this.fetch = new CommonFetch('cockpit', this.address, this.port);
     /* eslint-enable */
 
     this.state = {
@@ -110,7 +110,9 @@ class OI4Base extends React.Component {
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
-
+    // Update apps and devices right away
+    setTimeout(() => { this.updateApplications() }, 500);
+    setTimeout(() => { this.updateDevices() }, 800);
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
      * The resources kept by the registry of all applications are updated individually.
