@@ -4,21 +4,21 @@ import { IConformity, EValidity } from '../Models/IConformityValidator';
 const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 
-import NetworkMessageSchemaJson = require('./Schemas/NetworkMessage.schema.json');
-import MetaDataVersionSchemaJson = require('./Schemas/MetaDataVersion.schema.json');
-import oi4IdentifierSchemaJson = require('./Schemas/oi4Identifier.schema.json');
-import DataSetMessageSchemaJson = require('./Schemas/DataSetMessage.schema.json');
-import LocalizedTextSchemaJson = require('./Schemas/LocalizedText.schema.json');
+import NetworkMessageSchemaJson = require('../../Config/Schemas/NetworkMessage.schema.json');
+import MetaDataVersionSchemaJson = require('../../Config/Schemas/MetaDataVersion.schema.json');
+import oi4IdentifierSchemaJson = require('../../Config/Schemas/oi4Identifier.schema.json');
+import DataSetMessageSchemaJson = require('../../Config/Schemas/DataSetMessage.schema.json');
+import LocalizedTextSchemaJson = require('../../Config/Schemas/LocalizedText.schema.json');
 
 // Payloads
-import healthSchemaJson = require('./Schemas/health.schema.json');
-import mamSchemaJson = require('./Schemas/mam.schema.json');
-import licenseSchemaJson = require('./Schemas/license.schema.json');
-import licenseTextSchemaJson = require('./Schemas/licenseText.schema.json');
-import profileSchemaJson = require('./Schemas/profile.schema.json');
-import eventSchemaJson = require('./Schemas/event.schema.json');
-import rtLicenseSchemaJson = require('./Schemas/rtLicense.schema.json');
-import configSchemaJson = require('./Schemas/config.schema.json');
+import healthSchemaJson = require('../../Config/Schemas/health.schema.json');
+import mamSchemaJson = require('../../Config/Schemas/mam.schema.json');
+import licenseSchemaJson = require('../../Config/Schemas/license.schema.json');
+import licenseTextSchemaJson = require('../../Config/Schemas/licenseText.schema.json');
+import profileSchemaJson = require('../../Config/Schemas/profile.schema.json');
+import eventSchemaJson = require('../../Config/Schemas/event.schema.json');
+import rtLicenseSchemaJson = require('../../Config/Schemas/rtLicense.schema.json');
+import configSchemaJson = require('../../Config/Schemas/config.schema.json');
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
