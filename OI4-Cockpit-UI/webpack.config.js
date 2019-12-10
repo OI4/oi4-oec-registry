@@ -119,6 +119,9 @@ module.exports = {
     externals: externals,
     output: output,
     devtool: "source-map",
+    resolve: {
+        extensions: ['.js', '.jsx']
+    },
     module: {
         rules: [
             {
