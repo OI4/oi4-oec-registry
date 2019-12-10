@@ -48,9 +48,14 @@ export class Registry extends EventEmitter {
     this.registryClient.subscribe('oi4/+/+/+/+/+/pub/event/+/#');
   }
 
-  private processMqttMessage = (topic: string, message: Buffer) => {
+  private processMqttMessage = async (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
     const firstPayload = JSON.parse(message.toString());
+    const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
+    if (!schemaResult) {
+      this.logger.log('Registry: Error in payload schema validation');
+      return;
+    }
     if (firstPayload.Messages.length === 0) {
       this.logger.log('Messages Array empty');
       return;

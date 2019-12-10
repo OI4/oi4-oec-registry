@@ -11,6 +11,23 @@ import {
   EValueRank,
 } from '../../Models/IOPCUAPayload';
 
+import Ajv from 'ajv'; /*tslint:disable-line*/
+import NetworkMessageSchemaJson = require('../../../Config/Schemas/NetworkMessage.schema.json');
+import MetaDataVersionSchemaJson = require('../../../Config/Schemas/MetaDataVersion.schema.json');
+import oi4IdentifierSchemaJson = require('../../../Config/Schemas/oi4Identifier.schema.json');
+import DataSetMessageSchemaJson = require('../../../Config/Schemas/DataSetMessage.schema.json');
+import LocalizedTextSchemaJson = require('../../../Config/Schemas/LocalizedText.schema.json');
+
+// Payloads
+import healthSchemaJson = require('../../../Config/Schemas/health.schema.json');
+import mamSchemaJson = require('../../../Config/Schemas/mam.schema.json');
+import licenseSchemaJson = require('../../../Config/Schemas/license.schema.json');
+import licenseTextSchemaJson = require('../../../Config/Schemas/licenseText.schema.json');
+import profileSchemaJson = require('../../../Config/Schemas/profile.schema.json');
+import eventSchemaJson = require('../../../Config/Schemas/event.schema.json');
+import rtLicenseSchemaJson = require('../../../Config/Schemas/rtLicense.schema.json');
+import configSchemaJson = require('../../../Config/Schemas/config.schema.json');
+
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
 
 export interface IOPCUABuilderFieldProperties {
@@ -27,8 +44,27 @@ interface IOPCUABuilderProps {
 
 export class OPCUABuilder {
   appId: string;
+  jsonValidator: Ajv.Ajv;
   constructor(appId: string) {
     this.appId = appId;
+    this.jsonValidator = new Ajv();
+    // Add Validation Schemas
+    // First common Schemas
+    this.jsonValidator.addSchema(NetworkMessageSchemaJson, 'NetworkMessage.schema.json');
+    this.jsonValidator.addSchema(MetaDataVersionSchemaJson, 'MetaDataVersion.schema.json');
+    this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4Identifier.schema.json');
+    this.jsonValidator.addSchema(DataSetMessageSchemaJson, 'DataSetMessage.schema.json');
+    this.jsonValidator.addSchema(LocalizedTextSchemaJson, 'LocalizedText.schema.json');
+
+    // Then payload Schemas
+    this.jsonValidator.addSchema(healthSchemaJson, 'health.schema.json');
+    this.jsonValidator.addSchema(mamSchemaJson, 'mam.schema.json');
+    this.jsonValidator.addSchema(licenseSchemaJson, 'license.schema.json');
+    this.jsonValidator.addSchema(licenseTextSchemaJson, 'licenseText.schema.json');
+    this.jsonValidator.addSchema(profileSchemaJson, 'profile.schema.json');
+    this.jsonValidator.addSchema(eventSchemaJson, 'event.schema.json');
+    this.jsonValidator.addSchema(rtLicenseSchemaJson, 'rtLicense.schema.json');
+    this.jsonValidator.addSchema(configSchemaJson, 'config.schema.json');
   }
 
   /**
@@ -193,4 +229,17 @@ export class OPCUABuilder {
 
   }
 
+  async checkOPCUAJSONValidity(payload: any): Promise<boolean> {
+    let networkMessageValidationResult = false;
+    try {
+      networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
+    } catch (validateErr) {
+      console.log(`OPCUABuilder-AJV:${validateErr}`);
+      networkMessageValidationResult = false;
+    }
+    if (!networkMessageValidationResult) {
+      console.log(`OPCUABuilder-AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
+    }
+    return networkMessageValidationResult;
+  }
 }
