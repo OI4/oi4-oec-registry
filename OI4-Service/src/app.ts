@@ -54,12 +54,14 @@ busProxy.on('deleteMam', async (deleteId) => {
  */
 busProxy.on('getMam', async (tag) => {
   if (tag === '') {
-    const devices = registry.applications as IDeviceLookup;
-    logger.log(`Sending all known Mams...count: ${Object.keys(devices).length}`);
-    for (const device of Object.keys(devices)) {
-      // TODO: URL ENCODING????
-      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${devices[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(devices[device].resources.mam, new Date(), 'registryClassID')));
-      logger.log(`Sent device with OI4-ID ${devices[device].resources.mam.ProductInstanceUri}`);
+    const apps = registry.applications as IDeviceLookup;
+    const devices = registry.devices as IDeviceLookup;
+    const assets = Object.assign({}, apps, devices);
+    logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
+    for (const device of Object.keys(assets)) {
+      // TODO: URL ENCODING???
+      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), 'registryClassID')));
+      logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
     }
   } else {
     logger.log(`Sending Mam with Requested tag: ${tag} <-- Not implemented!`);
