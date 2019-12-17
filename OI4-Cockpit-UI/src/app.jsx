@@ -105,6 +105,7 @@ class OI4Base extends React.Component {
       smallLogo: oi4SmallLogoLight,
       bigLogo: oi4BigLogoLight,
       globalEventTrail: [],
+      updatingConformity: false,
     };
 
     this.controller = new AbortController();
@@ -130,15 +131,15 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
     // If we start out with a couple of applications, we should update their conformity right away
-    setTimeout(() => {
-      for (const oi4Id of Object.keys(this.state.applicationLookup)) {
-        this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath, this.state.applicationLookup[oi4Id].appId);
-      }
-      for (const oi4Id of Object.keys(this.state.deviceLookup)) {
-        this.updateConformity(this.state.deviceLookup[oi4Id].fullDevicePath, this.state.deviceLookup[oi4Id].appId);
-      }
-    },
-      2000);
+    // setTimeout(() => {
+    //   for (const oi4Id of Object.keys(this.state.applicationLookup)) {
+    //     this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath, this.state.applicationLookup[oi4Id].appId);
+    //   }
+    //   for (const oi4Id of Object.keys(this.state.deviceLookup)) {
+    //     this.updateConformity(this.state.deviceLookup[oi4Id].fullDevicePath, this.state.deviceLookup[oi4Id].appId);
+    //   }
+    // },
+    //   2000);
     this.updateAppID(); // This will retrieve the AppID of the registry itself.
     setTimeout(() => {
       this.toggleTheme();
@@ -175,19 +176,19 @@ class OI4Base extends React.Component {
             </AppBar>
             <div style={{ marginTop: '30px' }}>
               <ExpansionTable
-                tableType='Application Registry'
                 lookupType='application'
                 assetLookup={this.state.applicationLookup}
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
                 fontColor={this.state.theme.palette.text.default}
+                updatingConformity={this.state.updatingConformity}
               />
               <ExpansionTable
-                tableType='Device Registry'
                 lookupType='device'
                 assetLookup={this.state.deviceLookup}
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
+                updatingConformity={this.state.updatingConformity}
               />
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMore />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
@@ -229,20 +230,20 @@ class OI4Base extends React.Component {
         return <Table>
           <TableHead>
             <TableRow>
-              <TableCell>OriginID</TableCell>
-              <TableCell>Number</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Payload</TableCell>
+              <TableCell key='GlobalEventsOrigin'>OriginID</TableCell>
+              <TableCell key='GlobalEventsNumber'>Number</TableCell>
+              <TableCell key='GlobalEventsDesc'>Description</TableCell>
+              <TableCell key='GlobalEventsPayload'>Payload</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {
-              eventArray.map((events) => {
+              eventArray.map((events, idx) => {
                 return <TableRow>
-                  <TableCell component="th" scope="row">{events.originId}</TableCell>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                  <TableCell key={`GlobalEventsOrigin-${idx}`} component="th" scope="row">{events.originId}</TableCell>
+                  <TableCell key={`GlobalEventsNumber-${idx}`} component="th" scope="row">{events.number}</TableCell>
+                  <TableCell key={`GlobalEventsDescription-${idx}`} component="th" scope="row">{events.description}</TableCell>
+                  <TableCell key={`GlobalEventsPayload-${idx}`} component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
                 </TableRow>;
               })
             }
@@ -252,18 +253,18 @@ class OI4Base extends React.Component {
         return <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Number</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Payload</TableCell>
+              <TableCell key='LocalEventsNumber'>Number</TableCell>
+              <TableCell key='LocalEventsDesc'>Description</TableCell>
+              <TableCell key='LocalEventsPayload'>Payload</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {
-              eventArray.map((events) => {
+              eventArray.map((events, idx) => {
                 return <TableRow>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                  <TableCell key={`LocalEventsNumber-${idx}`} component="th" scope="row">{events.number}</TableCell>
+                  <TableCell key={`LocalEventsDesc-${idx}`} component="th" scope="row">{events.description}</TableCell>
+                  <TableCell key={`LocalEventsPayload-${idx}`} component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
                 </TableRow>;
               })
             }
@@ -282,27 +283,28 @@ class OI4Base extends React.Component {
    * @memberof OI4Base
    */
   updateConformity(fullTopic, appId) {
+    this.setState({ updatingConformity: true });
     console.log(`Updating Conformity for ${fullTopic} with appId: ${appId}`);
     const oi4Id = appId;
     if (this.state.config.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
       this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
         .then(data => {
+          this.setState({ updatingConformity: false });
           const jsonData = JSON.parse(data);
           const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
-          // console.log(`Fetched conformity for ${oi4Id}: ${JSON.stringify(data)} and updated in ${JSON.stringify(confLookup)}`)
-          this.setState({ conformityLookup: confLookup });
+          this.setState({ conformityLookup: confLookup, updatingConformity: false });
         });
     } else { // If not, retrieve only mandatory conformity values
       this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
         .then(data => {
+          this.setState({ updatingConformity: false });
           const jsonData = JSON.parse(data);
           const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
-          // console.log(`Fetched conformity for ${oi4Id}: ${JSON.stringify(data)} and updated in ${JSON.stringify(confLookup)}`)
-          this.setState({ conformityLookup: confLookup });
+          this.setState({ conformityLookup: confLookup, updatingConformity: false });
         });
     }
   }
@@ -320,15 +322,16 @@ class OI4Base extends React.Component {
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.deviceLookup[oi4Id] === undefined || this.state.deviceLookup[oi4Id] === null) {
-            const fullTopic = jsonData[oi4Id].fullDevicePath;
-            const appId = jsonData[oi4Id].appId;
-            this.updateConformity(fullTopic, appId);
+            // const fullTopic = jsonData[oi4Id].fullDevicePath;
+            // const appId = jsonData[oi4Id].appId;
+            // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
           }
           if (oi4Id in confLookupLoc) {
             delete confLookupLoc[oi4Id];
           }
+          confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
         }
-        this.setState({ deviceLookup: jsonData, confLookup: confLookupLoc });
+        this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
       });
   }
 
@@ -344,15 +347,18 @@ class OI4Base extends React.Component {
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.applicationLookup[oi4Id] === undefined || this.state.applicationLookup[oi4Id] === null) {
-            const fullTopic = jsonData[oi4Id].fullDevicePath;
-            const appId = jsonData[oi4Id].appId;
-            this.updateConformity(fullTopic, appId);
+            // const fullTopic = jsonData[oi4Id].fullDevicePath;
+            // const appId = jsonData[oi4Id].appId;
+            // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
           }
           if (oi4Id in confLookupLoc) {
             delete confLookupLoc[oi4Id];
           }
+          confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
+          // console.log(`New Conformity object for ${oi4Id}`);
+          // console.log(confLookupLoc[oi4Id]);
         }
-        this.setState({ applicationLookup: jsonData, confLookup: confLookupLoc });
+        this.setState({ applicationLookup: jsonData, conformityLookup: confLookupLoc });
       });
   }
 
@@ -367,8 +373,6 @@ class OI4Base extends React.Component {
         if (resource === 'eventList' || resource === 'lastMessage') {
           this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
             .then(data => {
-              // console.log(`Cockpit-Only for Resource ${resource}:`);
-              // console.log(data);
               const resourceObject = JSON.parse(data);
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));

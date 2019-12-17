@@ -57,6 +57,7 @@ class ExpansionTable extends React.Component {
         OFF_SPEC_3: namur3,
         MAINTENANCE_REQUIRED_4: namur4,
       },
+      tableName: `${this.props.lookupType.substring(0, 1).toUpperCase()}${this.props.lookupType.substring(1)} Table`, // First character to UpperCase, concatenate the rest
       validityLookup: {
         0: '❔',
         1: '✅',
@@ -70,7 +71,7 @@ class ExpansionTable extends React.Component {
     const { classes } = this.props;
     return (
       <ExpansionPanel>
-        <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.props.tableType}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
+        <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
         <ExpansionPanelDetails className={classes.tableWrap}>
           <Table stickyHeader className={classes.table}>
             <TableHead>
@@ -134,6 +135,7 @@ class ExpansionTable extends React.Component {
                             updateConformity={this.updateConformity.bind(this)}
                             lookupType={this.props.lookupType}
                             fontColor={this.props.fontColor}
+                            updatingConformity={this.props.updatingConformity}
                           />
                           <div>
                             <h3>Last 3 Events:</h3>
@@ -241,7 +243,7 @@ class ExpansionTable extends React.Component {
           </TableHead>
           <TableBody>
             {
-              eventArray.map((events) => {
+              eventArray.map((events, idx) => {
                 return <TableRow>
                   <TableCell component="th" scope="row">{events.originId}</TableCell>
                   <TableCell component="th" scope="row">{events.number}</TableCell>

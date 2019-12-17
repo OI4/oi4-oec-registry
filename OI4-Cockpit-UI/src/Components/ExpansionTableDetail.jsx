@@ -201,27 +201,31 @@ class ExpansionTableDetail extends React.Component {
    * @param {object} conformityObject - The conformity object that is to be displayed
    */
   displayConformity(conformityObject, assetType = 'application') {
-    if (typeof conformityObject === 'object' && conformityObject !== null) {
-      return <div>
-        <b>OI4-Id Conformity: </b>{conformityObject.oi4Id}
-        {
-          Object.keys(conformityObject.resource).map((resources) => {
-            let resourceColor = this.props.fontColor;
-            let resourceWeight = 400;
-            if (conformityObject.nonProfileResourceList.includes(resources)) {
-              resourceColor = 'red';
-            }
-            if (this.mandatoryResource[assetType].includes(resources)) {
-              resourceWeight = 600;
-            }
-            if (conformityObject.resource[resources].validityError) {
-              return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
-            } else {
-              return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
-            }
-          })
-        }
-      </div>;
+    if (this.props.updatingConformity) {
+      return <CircularProgress />;
+    } else {
+      if (typeof conformityObject === 'object' && conformityObject !== null) {
+        return <div>
+          <b>OI4-Id Conformity: </b>{conformityObject.oi4Id}
+          {
+            Object.keys(conformityObject.resource).map((resources) => {
+              let resourceColor = this.props.fontColor;
+              let resourceWeight = 400;
+              if (conformityObject.nonProfileResourceList.includes(resources)) {
+                resourceColor = 'red';
+              }
+              if (this.mandatoryResource[assetType].includes(resources)) {
+                resourceWeight = 600;
+              }
+              if (conformityObject.resource[resources].validityError) {
+                return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
+              } else {
+                return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
+              }
+            })
+          }
+        </div>;
+      }
     }
   }
 
