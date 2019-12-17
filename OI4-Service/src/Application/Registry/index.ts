@@ -7,6 +7,7 @@ import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/Utilities/Logger';
 import { IConformity } from '../Models/IConformityValidator';
+import { SequentialTaskQueue } from 'sequential-task-queue';
 
 export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;
@@ -17,6 +18,7 @@ export class Registry extends EventEmitter {
   private logger: Logger;
   private oi4DeviceWildCard: string;
   private appId: string;
+  private queue: SequentialTaskQueue;
 
   // Timeout container
   private healthTimeout: number;
@@ -26,6 +28,7 @@ export class Registry extends EventEmitter {
   constructor(logger: Logger, registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
     this.logger = logger;
+    this.queue = new SequentialTaskQueue();
 
     this.healthTimeout = 0;
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
@@ -196,7 +199,9 @@ export class Registry extends EventEmitter {
       this.logger.log('Registry: MasterAssetModel already in Registry');
     } else {
       try {
-        await this.addDevice(mqttObj.topic, mqttObj.message);
+        this.queue.push(async () => {
+          return await this.addDevice(mqttObj.topic, mqttObj.message);
+        });
       } catch (addErr) {
         this.logger.log(`Registry: Add-Error: ${addErr}`);
       }

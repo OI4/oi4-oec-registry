@@ -58,7 +58,6 @@ export class ConformityValidator extends EventEmitter {
       clientId: `ConformityCheck${process.env.CONTAINERNAME as string}${appId as string}`,
       servers: [serverObj],
     };
-    console.log(`CONFORMITYVALIDATOR WITH CLIENT ID ${mqttOpts.clientId}`);
     this.conformityClient = mqtt.connect(mqttOpts);
 
     this.jsonValidator = new Ajv();
@@ -128,8 +127,8 @@ export class ConformityValidator extends EventEmitter {
       const profileRes = await this.checkResourceConformity(fullTopic, oi4Id, 'profile') as IResultObject;
       if (profileRes.eRes === EValidity.ok) {
         conformityObject.profileResourceList = profileRes.payload.resource;
-        console.log(mandatoryResourceList);
-        console.log(conformityObject.profileResourceList);
+        // console.log(mandatoryResourceList);
+        // console.log(conformityObject.profileResourceList);
         if (mandatoryResourceList.every(i => conformityObject.profileResourceList.includes(i))) {
           conformityObject.resource['profile'] = {
             validity: EValidity.ok,
@@ -244,11 +243,10 @@ export class ConformityValidator extends EventEmitter {
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
       this.logger.log(`ConformityValidator:Received conformity message on ${resource} from ${tag}`);
-      this.logger.log('Payload:');
-      this.logger.log(rawMsg.toString());
+      // this.logger.log('Payload:');
+      // this.logger.log(rawMsg.toString());
       if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString());
-        console.log(parsedMessage);
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
@@ -312,7 +310,7 @@ export class ConformityValidator extends EventEmitter {
       });
     }),
       700, /*tslint:disable-line*/ // 700ms as the timeout
-      `checkResourceConformity-${resource}Error-in-${fullTopic}`, /*tslint:disable-line*/
+      `checkResourceConformity-${resource}Error-onTopic-${fullTopic}/get/${resource}/${tag}`, /*tslint:disable-line*/
     );
 
   }
