@@ -136,7 +136,6 @@ class OI4MessageBusProxy extends OI4Proxy {
             }
             case 'data': {
               this.emit('getData', { topic, message: parsedMessage });
-              // this.sendData(topicTag);
               break;
             }
             case 'metadata': {
@@ -212,19 +211,7 @@ class OI4MessageBusProxy extends OI4Proxy {
           break;
         }
         case 'pub': {
-          switch (topicResource) {
-            case 'mam': { // Add the device to our Registry
-              if (Array.isArray(parsedMessage.Messages)) {
-              } else {
-                console.log('Payload Error');
-              }
-              break;
-            }
-            default: {
-              break;
-            }
-          }
-          break;
+          break; // Only break here, we don't listen to pubs
         }
         case 'set': {
           switch (topicResource) {
@@ -247,10 +234,6 @@ class OI4MessageBusProxy extends OI4Proxy {
           switch (topicResource) {
             case 'data': {
               this.deleteData(topicTag);
-              break;
-            }
-            case 'mam': {
-              // this.emit('delMam', topicTag);
               break;
             }
             default: {
