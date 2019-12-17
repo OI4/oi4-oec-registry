@@ -85,7 +85,7 @@ export class ConformityValidator extends EventEmitter {
    * A huge function with a simple purpose: Initialize a validity object with NOK values.
    * The validator functions set the individual tested methods to OK. Anything not set to OK remains in a failed state.
    */
-  initializeValidityObject(): IConformity {
+  static initializeValidityObject(): IConformity {
     const validityObject: IConformity = {
       oi4Id: EValidity.default,
       validity: EValidity.default,
@@ -112,7 +112,7 @@ export class ConformityValidator extends EventEmitter {
       // Not every unequal originator/device combo has to be device - application pair...
       mandatoryResourceList = ['mam', 'health', 'profile'];
     }
-    const conformityObject = this.initializeValidityObject();
+    const conformityObject = ConformityValidator.initializeValidityObject();
     let errorSoFar = false;
     const licenseList: string[] = [];
     let oi4Result;

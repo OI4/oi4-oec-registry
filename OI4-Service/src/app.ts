@@ -18,6 +18,8 @@ const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy
 // -------- Registry Application
 import { Registry } from './Application/Registry';
 import { IDeviceLookup } from './Application/Models/IRegistry';
+import { IConformity } from './Application/Models/IConformityValidator';
+import { ConformityValidator } from './Application/ConformityValidator';
 const registry = new Registry(logger, busProxy.mqttClient, contState.appId);
 /**
  * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
@@ -101,14 +103,11 @@ webClient.get('/registry/event', (deviceHealthReq, deviceHealthResp) => {
   deviceHealthResp.send(JSON.stringify(registry.eventTrail));
 });
 
-// -------- Conformity Checker Application
-import { ConformityValidator } from './Application/ConformityValidator';
-
-const confChecker = new ConformityValidator(logger, `${contState.appId}2`);
+// -------- Conformity Checker Application (Used to be ConformityValidator instance, now we use the Registry)
 webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
-  let conformityObject = confChecker.initializeValidityObject();
+  let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
   try {
-    conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id);
+    conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, []);
   } catch (err) {
     console.log(`Got error in conformity REST request: ${err}`);
   }
@@ -117,10 +116,10 @@ webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformity
 });
 
 webClient.get('/fullConformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
-  let conformityObject = confChecker.initializeValidityObject();
+  let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
   const fullResourceList = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
   try {
-    conformityObject = await confChecker.checkConformity(conformityReq.params.originator, conformityReq.params.oi4Id, fullResourceList);
+    conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, fullResourceList);
   } catch (err) {
     console.log(`Got error in conformity REST request: ${err}`);
   }

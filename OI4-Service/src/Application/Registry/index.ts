@@ -6,6 +6,7 @@ import { EventEmitter } from 'events';
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/Utilities/Logger';
+import { IConformity } from '../Models/IConformityValidator';
 
 export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;
@@ -14,6 +15,8 @@ export class Registry extends EventEmitter {
   private globalEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
+
+  private fullResourceList: string[] = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
 
   // Individual timeouts
   private timeoutEnabled: boolean;
@@ -286,16 +289,18 @@ export class Registry extends EventEmitter {
     }
   }
 
-  async updateConformityInDevice(oi4Id: string) {
-    this.logger.log(`Registry: Checking conformity for ${oi4Id}`)
+  async updateConformityInDevice(oi4Id: string, resourceList: string[]): Promise<IConformity> {
+    this.logger.log(`Registry: Checking conformity for ${oi4Id}`);
+    let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
     if (oi4Id in this.applicationLookup) {
-      const conformityObject = await this.conformityValidator.checkConformity(this.applicationLookup[oi4Id].fullDevicePath, this.applicationLookup[oi4Id].appId);
+      conformityObject = await this.conformityValidator.checkConformity(this.applicationLookup[oi4Id].fullDevicePath, this.applicationLookup[oi4Id].appId, resourceList);
       this.applicationLookup[oi4Id].conformityObject = conformityObject;
     }
     if (oi4Id in this.deviceLookup) {
-      const conformityObject = await this.conformityValidator.checkConformity(this.deviceLookup[oi4Id].fullDevicePath, this.deviceLookup[oi4Id].appId);
+      conformityObject = await this.conformityValidator.checkConformity(this.deviceLookup[oi4Id].fullDevicePath, this.deviceLookup[oi4Id].appId, resourceList);
       this.deviceLookup[oi4Id].conformityObject = conformityObject;
     }
+    return conformityObject;
   }
 
   async getResourceFromDevice(oi4Id: string, resource: string) {
