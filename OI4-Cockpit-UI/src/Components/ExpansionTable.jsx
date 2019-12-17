@@ -8,6 +8,8 @@ import namur2 from '../Images/namur_2.png';
 import namur3 from '../Images/namur_3.png';
 import namur4 from '../Images/namur_4.png';
 
+// import MaterialTable from 'material-table';
+
 import PropTypes from 'prop-types';
 
 import {
@@ -70,87 +72,136 @@ class ExpansionTable extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-      <ExpansionPanel>
-        <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
-        <ExpansionPanelDetails className={classes.tableWrap}>
-          <Table stickyHeader className={classes.table}>
-            <TableHead>
-              <TableRow>
-                <TableCell>Manufacturer</TableCell>
-                <TableCell>Model</TableCell>
-                <TableCell>DeviceClass</TableCell>
-                <TableCell>SerialNumber</TableCell>
-                <TableCell align="right">Health</TableCell>
-                <TableCell align="right">Last Message</TableCell>
-                <TableCell align="right">Conformity</TableCell>
-                <TableCell align="right">Expand</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Object.keys(this.props.assetLookup).map((oi4Id) => (
-                <React.Fragment>
-                  <TableRow
-                    key={this.props.assetLookup[oi4Id].name}
-                    hoverstyle={{ cursor: "pointer" }}
-                    onClick={() => {
-                      // A bit of a hack in order to not mutate the state...
-                      const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
-                      if (oi4Id in expandedLookupCopy) {
-                        expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
-                      } else {
-                        expandedLookupCopy[oi4Id] = true;
-                      }
-                      this.setState({ expandedLookup: expandedLookupCopy });
-                    }}
-                  >
-                    <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
-                    <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Model.Text}</TableCell>
-                    <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
-                    <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.SerialNumber}</TableCell>
-                    <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
-                    <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
-                    <TableCell align="right">
-                      <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size='small' color='default'>
-                        {this.displayTableExpansion(oi4Id)}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow key={`${this.props.assetLookup[oi4Id].name}Detail`}>
-                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
-                      <Collapse
-                        className={classes.tableInside}
-                        in={this.state.expandedLookup[oi4Id]}
-                        timeout='auto'
-                        unmountOnExit
-                      >
-                        <div>
-                          <ExpansionTableDetail
-                            asset={this.props.assetLookup[oi4Id]}
-                            conformityLookup={this.props.conformityLookup}
-                            oi4Id={oi4Id}
-                            assetLookup={this.props.assetLookup}
-                            updateConformity={this.updateConformity.bind(this)}
-                            lookupType={this.props.lookupType}
-                            fontColor={this.props.fontColor}
-                            updatingConformity={this.props.updatingConformity}
-                          />
+      <>
+        {/* <MaterialTable
+          title={this.state.tableName}
+          columns={[
+            { title: 'Manufacturer', field: 'manufacturer' },
+            { title: 'Model', field: 'model' },
+            { title: 'DeviceClass', field: 'deviceclass' },
+            { title: 'SerialNumber', field: 'serialnumber' },
+            { title: 'Health', field: 'health' },
+            { title: 'Last Message', field: 'lastmessage' },
+            { title: 'Conformity', field: 'conformity' },
+            { title: 'Expand', field: 'expand' },
+          ]}
+          data={
+            Object.keys(this.props.assetLookup).map((oi4Id) => {
+              return {
+                oi4Id: oi4Id,
+                 manufacturer: this.props.assetLookup[oi4Id].resources.mam.Manufacturer.Text,
+                 model: this.props.assetLookup[oi4Id].resources.mam.Model.Text,
+                 deviceclass: this.props.assetLookup[oi4Id].resources.mam.DeviceClass,
+                 serialnumber: this.props.assetLookup[oi4Id].resources.mam.SerialNumber,
+                 health: this.displayNamurHealth(this.getHealth(oi4Id, 'application')),
+                 lastmessage: this.props.assetLookup[oi4Id].lastMessage,
+                 conformity: <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>,
+              };
+            })
+          }
+          detailPanel={rowData => {
+            return (
+              <div>
+                <ExpansionTableDetail
+                  asset={this.props.assetLookup[rowData.oi4Id]}
+                  conformityLookup={this.props.conformityLookup}
+                  oi4Id={rowData.oi4Id}
+                  assetLookup={this.props.assetLookup}
+                  updateConformity={this.updateConformity.bind(this)}
+                  lookupType={this.props.lookupType}
+                  fontColor={this.props.fontColor}
+                  updatingConformity={this.props.updatingConformity}
+                />
+                <div>
+                  <h3>Last 3 Events:</h3>
+                  {this.displayEvents(this.props.assetLookup[rowData.oi4Id].eventList, 'local')}
+                </div>
+              </div>
+            );
+          }}
+        /> */}
+        <ExpansionPanel>
+          <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
+          <ExpansionPanelDetails className={classes.tableWrap}>
+            <Table stickyHeader className={classes.table}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Manufacturer</TableCell>
+                  <TableCell>Model</TableCell>
+                  <TableCell>DeviceClass</TableCell>
+                  <TableCell>SerialNumber</TableCell>
+                  <TableCell align="right">Health</TableCell>
+                  <TableCell align="right">Last Message</TableCell>
+                  <TableCell align="right">Conformity</TableCell>
+                  <TableCell align="right">Expand</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Object.keys(this.props.assetLookup).map((oi4Id) => (
+                  <React.Fragment>
+                    <TableRow
+                      key={this.props.assetLookup[oi4Id].name}
+                      hoverstyle={{ cursor: "pointer" }}
+                      onClick={() => {
+                        // A bit of a hack in order to not mutate the state...
+                        const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
+                        if (oi4Id in expandedLookupCopy) {
+                          expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
+                        } else {
+                          expandedLookupCopy[oi4Id] = true;
+                        }
+                        this.setState({ expandedLookup: expandedLookupCopy });
+                      }}
+                    >
+                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
+                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Model.Text}</TableCell>
+                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
+                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.SerialNumber}</TableCell>
+                      <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
+                      <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
+                      <TableCell align="right">
+                        <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size='small' color='default'>
+                          {this.displayTableExpansion(oi4Id)}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow key={`${this.props.assetLookup[oi4Id].name}Detail`}>
+                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                        <Collapse
+                          className={classes.tableInside}
+                          in={this.state.expandedLookup[oi4Id]}
+                          timeout='auto'
+                          unmountOnExit
+                        >
                           <div>
-                            <h3>Last 3 Events:</h3>
-                            {this.displayEvents(this.props.assetLookup[oi4Id].eventList, 'local')}
+                            <ExpansionTableDetail
+                              asset={this.props.assetLookup[oi4Id]}
+                              conformityLookup={this.props.conformityLookup}
+                              oi4Id={oi4Id}
+                              assetLookup={this.props.assetLookup}
+                              updateConformity={this.updateConformity.bind(this)}
+                              lookupType={this.props.lookupType}
+                              fontColor={this.props.fontColor}
+                              updatingConformity={this.props.updatingConformity}
+                            />
+                            <div>
+                              <h3>Last 3 Events:</h3>
+                              {this.displayEvents(this.props.assetLookup[oi4Id].eventList, 'local')}
+                            </div>
                           </div>
-                        </div>
-                      </Collapse>
-                    </TableCell>
-                  </TableRow>
-                </React.Fragment>
-              ))}
-            </TableBody>
-          </Table>
-        </ExpansionPanelDetails>
-      </ExpansionPanel>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </ExpansionPanelDetails>
+        </ExpansionPanel>
+      </>
     );
   }
 
