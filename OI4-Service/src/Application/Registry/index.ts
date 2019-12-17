@@ -15,18 +15,11 @@ export class Registry extends EventEmitter {
   private globalEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
+  private oi4DeviceWildCard: string;
+  private appId: string;
 
-  private fullResourceList: string[] = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
-
-  // Individual timeouts
-  private timeoutEnabled: boolean;
-
+  // Timeout container
   private healthTimeout: number;
-  private licenseTimeout: number;
-  private rtLicenseTimeout: number;
-  private licenseTextTimeout: number;
-  private configTimeout: number;
-  private profileTimeout: number;
 
   private conformityValidator: ConformityValidator;
 
@@ -35,16 +28,11 @@ export class Registry extends EventEmitter {
     this.logger = logger;
 
     this.healthTimeout = 0;
-    this.licenseTimeout = 0;
-    this.rtLicenseTimeout = 0;
-    this.licenseTextTimeout = 0;
-    this.configTimeout = 0;
-    this.profileTimeout = 0;
-
+    this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
-    this.timeoutEnabled = false;
+    this.appId = appId;
 
     this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
 
@@ -54,6 +42,11 @@ export class Registry extends EventEmitter {
     this.registryClient = registryClient;
     this.registryClient.on('message', this.processMqttMessage);
     this.registryClient.subscribe('oi4/+/+/+/+/+/pub/event/+/#');
+
+    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
+    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
+    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
+    this.registryClient.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
   }
 
   private processMqttMessage = async (topic: string, message: Buffer) => {
@@ -71,6 +64,14 @@ export class Registry extends EventEmitter {
     const parsedPayload = JSON.parse(message.toString()).Messages[0].Payload;
     const baseIdOffset = topicArr.length - 4;
     const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
+
+    const topicArray = topic.split('/');
+    const topicServiceType = topicArray[1];
+    const topicAppId = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
+    const topicMethod = topicArray[6];
+    const topicResource = topicArray[7];
+    const topicTag = topicArray.splice(8).join('/');
+
     let assetLookup: IDeviceLookup = {};
     if (oi4Id in this.applicationLookup) {
       assetLookup = this.applicationLookup;
@@ -111,22 +112,6 @@ export class Registry extends EventEmitter {
             // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
             clearTimeout(this.healthTimeout);
             this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 60000);
-          } else if (health.health === EDeviceHealth.FAILURE_1) {
-            if (parsedPayload.health === EDeviceHealth.NORMAL_0) {
-              if (this.timeoutEnabled) {
-                this.logger.log('Registry: Resetting timeout from ALL');
-                clearTimeout(this.healthTimeout);
-                this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 10000);
-                clearTimeout(this.licenseTimeout);
-                this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
-                clearTimeout(this.rtLicenseTimeout);
-                this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
-                clearTimeout(this.licenseTextTimeout);
-                this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
-                clearTimeout(this.configTimeout);
-                this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
-              }
-            }
           }
         }
         this.logger.log(`Registry: Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
@@ -135,68 +120,85 @@ export class Registry extends EventEmitter {
       }
     } else if (topic.includes('/pub/license')) {
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            if (this.timeoutEnabled) {
-              clearTimeout(this.licenseTimeout);
-              this.licenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'license'), 10000);
-            }
-          }
-        }
         assetLookup[oi4Id].resources.license = parsedPayload;
       }
     } else if (topic.includes('/pub/rtLicense')) {
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            if (this.timeoutEnabled) {
-              clearTimeout(this.rtLicenseTimeout);
-              this.rtLicenseTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'rtLicense'), 10000);
-            }
-          }
-        }
         assetLookup[oi4Id].resources.rtLicense = parsedPayload;
       }
     } else if (topic.includes('/pub/licenseText')) {
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            if (this.timeoutEnabled) {
-              clearTimeout(this.licenseTextTimeout);
-              this.licenseTextTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'licenseText'), 10000);
-            }
-          }
-        }
         assetLookup[oi4Id].resources.licenseText = parsedPayload;
       }
     } else if (topic.includes('/pub/config')) {
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            if (this.timeoutEnabled) {
-              clearTimeout(this.configTimeout);
-              this.configTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'config'), 10000);
-            }
-          }
-        }
         assetLookup[oi4Id].resources.config = parsedPayload;
       }
     } else if (topic.includes('/pub/profile')) {
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            if (this.timeoutEnabled) {
-              clearTimeout(this.profileTimeout);
-              this.profileTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'profile'), 10000);
+        assetLookup[oi4Id].resources.profile = parsedPayload;
+      }
+    }
+    if (topicAppId === this.appId) {
+      switch (topicMethod) {
+        case 'get': {
+          switch (topicResource) {
+            case 'mam': {
+              this.sendOutMam(topicTag);
+              break;
+            }
+            default: {
+              break;
             }
           }
         }
-        assetLookup[oi4Id].resources.profile = parsedPayload;
+        default: {
+          break;
+        }
+      }
+    } else {
+      switch (topicMethod) {
+        case 'get': {
+          switch (topicResource) {
+            case 'mam': {
+              if (topicServiceType === 'Registry') {
+                this.sendOutMam(topicTag);
+              }
+              break;
+            }
+            default: {
+              break;
+            }
+          }
+        }
+        case 'pub': {
+          switch (topicResource) {
+            case 'mam': {
+              this.addToRegistry({ topic, message: parsedPayload });
+            }
+          }
+        }
+        default: {
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
+   * If not, we add it to the registry, if yes, we don't.
+   */
+  async addToRegistry(mqttObj: any) {
+    const topicArr = mqttObj.topic.split('/');
+    const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    if (this.getApplication(assetId) || this.getDevice(assetId)) {
+      this.logger.log('Registry: MasterAssetModel already in Registry');
+    } else {
+      try {
+        await this.addDevice(mqttObj.topic, mqttObj.message);
+      } catch (addErr) {
+        this.logger.log(`Registry: Add-Error: ${addErr}`);
       }
     }
   }
@@ -246,21 +248,10 @@ export class Registry extends EventEmitter {
       // await this.getResourceFromDevice(assetId, 'config');
       // await this.getResourceFromDevice(assetId, 'profile');
 
-      if (this.timeoutEnabled) {
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'health'), 10000); // Trigger cyclic retrieval
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'license'), 10000);
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'rtLicense'), 10000);
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'config'), 10000);
-        <any>setTimeout(() => this.getResourceFromDevice(assetId, 'profile'), 10000);
-      }
-
       const licenseObj = assetLookup[assetId].resources.license;
       if (licenseObj) {
         for (const licenses of licenseObj.licenses) {
           await this.getLicenseTextFromDevice(assetId, 'licenseText', licenses.licenseId);
-          if (this.timeoutEnabled) {
-            <any>setTimeout(() => this.getLicenseTextFromDevice(assetId, 'licenseText', licenses.licenseId), 10000);
-          }
         }
       }
     } catch (err) {
@@ -268,7 +259,26 @@ export class Registry extends EventEmitter {
     }
     // Subscribe to events
     this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/event/+/${assetId}`);
+  }
 
+  /**
+   * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
+   * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
+   */
+  async sendOutMam(tag: string) {
+    if (tag === '') {
+      const apps = this.applications as IDeviceLookup;
+      const devices = this.devices as IDeviceLookup;
+      const assets = Object.assign({}, apps, devices);
+      this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
+      for (const device of Object.keys(assets)) {
+        // TODO: URL ENCODING???
+        await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), 'registryClassID')));
+        this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
+      }
+    } else {
+      this.logger.log(`Sending Mam with Requested tag: ${tag} <-- Not implemented!`);
+    }
   }
 
   /**

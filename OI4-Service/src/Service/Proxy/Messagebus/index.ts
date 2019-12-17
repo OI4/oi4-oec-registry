@@ -67,11 +67,6 @@ class OI4MessageBusProxy extends OI4Proxy {
       this.client.subscribe(`${this.standardRoute}/set/#`);
       this.client.subscribe(`${this.standardRoute}/del/#`);
 
-      // Listen to external OI4 devices
-      this.client.subscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
-      this.client.subscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // BirthMessage
-      this.client.subscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // BirthMessage
-      this.client.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
       this.client.on('message', this.processMqttMessage);
       setInterval(() => { this.sendResource('health'); }, 60000); // send our own health every 30 seconds!
     });
@@ -137,7 +132,6 @@ class OI4MessageBusProxy extends OI4Proxy {
             }
             case 'mam': {
               await this.sendResource(topicResource, parsedMessage.MessageId);
-              this.emit('getMam', { topic, message: parsedMessage });
               break;
             }
             case 'data': {
@@ -163,26 +157,12 @@ class OI4MessageBusProxy extends OI4Proxy {
           break;
         }
         case 'pub': {
-          switch (topicResource) {
-            case 'mam': { // Commented because we should not react to our own birthmessage!
-              // console.log(parsedMessage);
-              // this.emit('pubMam', { topic, message: parsedMessage.Messages[0].Payload });
-              break;
-            }
-            default: {
-              break;
-            }
-          }
-          break;
+          break; // Only break here, because we should not react to our own publication messages
         }
         case 'set': {
           switch (topicResource) {
             case 'data': {
               this.setData(topicTag, parsedMessage);
-              break;
-            }
-            case 'mam': {
-              this.emit('setMam', { topic, message: parsedMessage });
               break;
             }
             case 'config': {
@@ -220,8 +200,7 @@ class OI4MessageBusProxy extends OI4Proxy {
           switch (topicResource) {
             case 'mam': {
               if (topicServiceType === 'Registry') {
-                this.sendResource(topicResource);
-                this.emit('getMam', topicTag);
+                this.sendResource(topicResource); // Exception in base-app. Since the registry does not know itself, we need to send out the mam here
               }
               break;
             }
@@ -236,7 +215,6 @@ class OI4MessageBusProxy extends OI4Proxy {
           switch (topicResource) {
             case 'mam': { // Add the device to our Registry
               if (Array.isArray(parsedMessage.Messages)) {
-                this.emit('pubMam', { topic, message: parsedMessage.Messages[0].Payload });
               } else {
                 console.log('Payload Error');
               }
@@ -252,10 +230,6 @@ class OI4MessageBusProxy extends OI4Proxy {
           switch (topicResource) {
             case 'data': {
               this.setData(topicTag, parsedMessage);
-              break;
-            }
-            case 'mam': {
-              this.emit('setMam', { topic: `oi4/${topicServiceType}/${topicTag}`, message: parsedMessage });
               break;
             }
             case 'config': {
@@ -276,7 +250,7 @@ class OI4MessageBusProxy extends OI4Proxy {
               break;
             }
             case 'mam': {
-              this.emit('delMam', topicTag);
+              // this.emit('delMam', topicTag);
               break;
             }
             default: {

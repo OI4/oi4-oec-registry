@@ -17,27 +17,9 @@ const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
-import { IDeviceLookup } from './Application/Models/IRegistry';
 import { IConformity } from './Application/Models/IConformityValidator';
 import { ConformityValidator } from './Application/ConformityValidator';
 const registry = new Registry(logger, busProxy.mqttClient, contState.appId);
-/**
- * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
- * If not, we add it to the registry, if yes, we don't.
- */
-busProxy.on('pubMam', async (mqttObj) => {
-  const topicArr = mqttObj.topic.split('/');
-  const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-  if (registry.getApplication(assetId) || registry.getDevice(assetId)) {
-    logger.log('MasterAssetModel already in Registry');
-  } else {
-    try {
-      await registry.addDevice(mqttObj.topic, mqttObj.message);
-    } catch (addErr) {
-      logger.log(`App.ts: Add-Error: ${addErr}`);
-    }
-  }
-});
 
 /**
  * Deletes a Mam from the registry (TODO: this is not specified yet and only used for debug purposes)
@@ -47,26 +29,6 @@ busProxy.on('deleteMam', async (deleteId) => {
     await registry.removeDevice(deleteId);
   } catch (delErr) {
     logger.log('App.ts: Del-Error');
-  }
-});
-
-/**
- * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
- * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
- */
-busProxy.on('getMam', async (tag) => {
-  if (tag === '') {
-    const apps = registry.applications as IDeviceLookup;
-    const devices = registry.devices as IDeviceLookup;
-    const assets = Object.assign({}, apps, devices);
-    logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
-    for (const device of Object.keys(assets)) {
-      // TODO: URL ENCODING???
-      await busProxy.mqttClient.publish(`oi4/Registry/${busProxy.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(busProxy.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), 'registryClassID')));
-      logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
-    }
-  } else {
-    logger.log(`Sending Mam with Requested tag: ${tag} <-- Not implemented!`);
   }
 });
 

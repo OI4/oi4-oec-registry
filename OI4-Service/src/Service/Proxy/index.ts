@@ -6,7 +6,6 @@ export class OI4Proxy extends EventEmitter {
   public serviceType: string;
   public containerState: IContainerState;
   public standardRoute: string;
-  public oi4DeviceWildCard: string;
   public builder: OPCUABuilder;
 
   constructor(containerState: IContainerState) {
@@ -17,7 +16,6 @@ export class OI4Proxy extends EventEmitter {
     this.serviceType = containerState.mam.DeviceClass;
 
     this.standardRoute = `oi4/${this.serviceType}/${this.appId}`;
-    this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.containerState = containerState;
   }
 }
