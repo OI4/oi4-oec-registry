@@ -8,14 +8,17 @@ import {
   IContainerLicenseText,
 } from '../../Service/Models/IContainer';
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
+import { IConformity } from './IConformityValidator';
 
 export interface IDeviceMessage {
   resources: IResourceObject;
   fullDevicePath: string;
+  appId: string;
   eventList: IEventObject[];
   originator: string;
   lastMessage: string;
   registeredAt: string;
+  conformityObject: IConformity;
 }
 
 export interface IResourceObject {

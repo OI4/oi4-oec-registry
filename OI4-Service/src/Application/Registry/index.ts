@@ -4,6 +4,7 @@ import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
+import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/Utilities/Logger';
 
 export class Registry extends EventEmitter {
@@ -24,7 +25,9 @@ export class Registry extends EventEmitter {
   private configTimeout: number;
   private profileTimeout: number;
 
-  constructor(logger: Logger, registryClient: mqtt.AsyncClient) {
+  private conformityValidator: ConformityValidator;
+
+  constructor(logger: Logger, registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
     this.logger = logger;
 
@@ -40,7 +43,9 @@ export class Registry extends EventEmitter {
     this.deviceLookup = {};
     this.timeoutEnabled = false;
 
-    this.builder = new OPCUABuilder('appIdRegistry'); // TODO: Better system for appId!
+    this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
+
+    this.conformityValidator = new ConformityValidator(this.logger, appId); // TODO: Better system for appId!
 
     // Take registryClient from parameter Registry-MQTT-Client
     this.registryClient = registryClient;
@@ -198,7 +203,8 @@ export class Registry extends EventEmitter {
     const topicArr = fullTopic.split('/');
     const originator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-    const fullDevice = {
+    const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${originator}`, assetId);
+    const fullDevice: IDeviceMessage = {
       originator,
       appId: assetId,
       eventList: [],
@@ -208,6 +214,7 @@ export class Registry extends EventEmitter {
         mam: device,
       },
       fullDevicePath: `oi4/${topicArr[1]}/${originator}`,
+      conformityObject: conf,
     };
     let assetLookup: IDeviceLookup;
     if (device.HardwareRevision === '') {
@@ -276,6 +283,18 @@ export class Registry extends EventEmitter {
       this.logger.log(`Registry: Deleted Device: ${device}`, 'r', 2);
     } else {
       this.logger.log('Registry: Nothing to remove here!');
+    }
+  }
+
+  async updateConformityInDevice(oi4Id: string) {
+    this.logger.log(`Registry: Checking conformity for ${oi4Id}`)
+    if (oi4Id in this.applicationLookup) {
+      const conformityObject = await this.conformityValidator.checkConformity(this.applicationLookup[oi4Id].fullDevicePath, this.applicationLookup[oi4Id].appId);
+      this.applicationLookup[oi4Id].conformityObject = conformityObject;
+    }
+    if (oi4Id in this.deviceLookup) {
+      const conformityObject = await this.conformityValidator.checkConformity(this.deviceLookup[oi4Id].fullDevicePath, this.deviceLookup[oi4Id].appId);
+      this.deviceLookup[oi4Id].conformityObject = conformityObject;
     }
   }
 

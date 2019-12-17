@@ -55,9 +55,10 @@ export class ConformityValidator extends EventEmitter {
     };
 
     const mqttOpts: TMqttOpts = {
-      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}`,
+      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}${appId as string}`,
       servers: [serverObj],
     };
+    console.log(`CONFORMITYVALIDATOR WITH CLIENT ID ${mqttOpts.clientId}`);
     this.conformityClient = mqtt.connect(mqttOpts);
 
     this.jsonValidator = new Ajv();
@@ -115,7 +116,7 @@ export class ConformityValidator extends EventEmitter {
     let errorSoFar = false;
     const licenseList: string[] = [];
     let oi4Result;
-    let resObj;
+    let resObj: IResultObject;
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
@@ -247,6 +248,7 @@ export class ConformityValidator extends EventEmitter {
       this.logger.log(rawMsg.toString());
       if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString());
+        console.log(parsedMessage);
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
@@ -262,14 +264,20 @@ export class ConformityValidator extends EventEmitter {
         if (!networkMessageValidationResult) {
           this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
         }
-        try {
-          payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
-        } catch (validateErr) {
-          this.logger.log(`ConformityValidator-AJV:${validateErr}`);
-          payloadValidationResult = false;
-        }
-        if (!payloadValidationResult) {
-          this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`);
+        if (networkMessageValidationResult) {
+          if (parsedMessage.MessageType === 'ua-metadata') {
+            payloadValidationResult = true; // We accept all metadata messages since we cannot check their contents
+          } else { // Since it's a data message, we can check against schemas
+            try {
+              payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
+            } catch (validateErr) {
+              this.logger.log(`ConformityValidator-AJV:${validateErr}`);
+              payloadValidationResult = false;
+            }
+            if (!payloadValidationResult) {
+              this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`);
+            }
+          }
         }
         if (networkMessageValidationResult && payloadValidationResult) {
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) {
@@ -281,9 +289,15 @@ export class ConformityValidator extends EventEmitter {
         } else {
           eRes = EValidity.partial;
         }
+        let resPayload;
+        if (parsedMessage.MessageType === 'ua-data') {
+          resPayload = parsedMessage.Messages[0].Payload;
+        } else {
+          resPayload = 'metadata';
+        }
         const resObj: IResultObject = {
           eRes,
-          payload: parsedMessage.Messages[0].Payload,
+          payload: resPayload, // was parsedMessage.Messages[0].Payload...Not sure, why we add the payload here...(probably because of license or profile)
         };
         this.emit(`${resource}${fullTopic}Success`, resObj); // God knows how many hours I wasted here! We send the OI4ID with the success emit
         // This way, ONLY the corresponding Conformity gets updated!

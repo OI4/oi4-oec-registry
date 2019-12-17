@@ -17,8 +17,8 @@ const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
-
-const registry = new Registry(logger, busProxy.mqttClient);
+import { IDeviceLookup } from './Application/Models/IRegistry';
+const registry = new Registry(logger, busProxy.mqttClient, contState.appId);
 /**
  * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
  * If not, we add it to the registry, if yes, we don't.
@@ -32,7 +32,7 @@ busProxy.on('pubMam', async (mqttObj) => {
     try {
       await registry.addDevice(mqttObj.topic, mqttObj.message);
     } catch (addErr) {
-      logger.log('App.ts: Add-Error');
+      logger.log(`App.ts: Add-Error: ${addErr}`);
     }
   }
 });
@@ -103,9 +103,8 @@ webClient.get('/registry/event', (deviceHealthReq, deviceHealthResp) => {
 
 // -------- Conformity Checker Application
 import { ConformityValidator } from './Application/ConformityValidator';
-import { IDeviceLookup } from './Application/Models/IRegistry';
 
-const confChecker = new ConformityValidator(logger, contState.appId);
+const confChecker = new ConformityValidator(logger, `${contState.appId}2`);
 webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
   let conformityObject = confChecker.initializeValidityObject();
   try {
