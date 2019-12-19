@@ -176,17 +176,17 @@ class ExpansionTableDetail extends React.Component {
     if (typeof jsonObject === 'object' && jsonObject !== null) {
       return Object.keys(jsonObject).map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {jsonObject[keys].toString()}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {jsonObject[keys].toString()}</div>;
         }
       });
     } else if (Array.isArray(jsonObject)) {
       return jsonObject.map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
         }
       });
     } else {
@@ -218,9 +218,9 @@ class ExpansionTableDetail extends React.Component {
                 resourceWeight = 600;
               }
               if (conformityObject.resource[resources].validityError) {
-                return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
+                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
               } else {
-                return <div style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
+                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
               }
             })
           }

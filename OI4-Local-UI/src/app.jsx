@@ -76,18 +76,19 @@ const styles = theme => ({
 class OI4Base extends React.Component {
   constructor(props) {
     super(props);
-
+    this.platform = 'fetch';
     // The following lines will give access to the external Endpoint for the REST API defined by the Environment variables.
     // This way, the registry backend is fully decoupled from the front-end
     /* eslint-disable */
     if (typeof serviceEndpoint === 'object' && serviceEndpoint !== null) {
       this.address = serviceEndpoint.address;
       this.port = serviceEndpoint.port;
+      this.platform = serviceEndpoint.platform;
     }
     // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
     // the local UI and the cockpit frontend.
     // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
-    this.fetch = new CommonFetch('fetch', this.address, this.port);
+    this.fetch = new CommonFetch(this.platform, this.address, this.port);
     /* eslint-enable */
 
     this.state = {
@@ -239,11 +240,11 @@ class OI4Base extends React.Component {
           <TableBody>
             {
               eventArray.map((events, idx) => {
-                return <TableRow>
-                  <TableCell key={`GlobalEventsOrigin-${idx}`} component="th" scope="row">{events.originId}</TableCell>
-                  <TableCell key={`GlobalEventsNumber-${idx}`} component="th" scope="row">{events.number}</TableCell>
-                  <TableCell key={`GlobalEventsDescription-${idx}`} component="th" scope="row">{events.description}</TableCell>
-                  <TableCell key={`GlobalEventsPayload-${idx}`} component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                return <TableRow key={`GlobalEvents-${idx}`}>
+                  <TableCell component="th" scope="row">{events.originId}</TableCell>
+                  <TableCell component="th" scope="row">{events.number}</TableCell>
+                  <TableCell component="th" scope="row">{events.description}</TableCell>
+                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
                 </TableRow>;
               })
             }
@@ -253,18 +254,18 @@ class OI4Base extends React.Component {
         return <Table>
           <TableHead>
             <TableRow>
-              <TableCell key='LocalEventsNumber'>Number</TableCell>
-              <TableCell key='LocalEventsDesc'>Description</TableCell>
-              <TableCell key='LocalEventsPayload'>Payload</TableCell>
+              <TableCell>Number</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Payload</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {
               eventArray.map((events, idx) => {
-                return <TableRow>
-                  <TableCell key={`LocalEventsNumber-${idx}`} component="th" scope="row">{events.number}</TableCell>
-                  <TableCell key={`LocalEventsDesc-${idx}`} component="th" scope="row">{events.description}</TableCell>
-                  <TableCell key={`LocalEventsPayload-${idx}`} component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                return <TableRow key={`LocalEvents-${idx}`}>
+                  <TableCell component="th" scope="row">{events.number}</TableCell>
+                  <TableCell component="th" scope="row">{events.description}</TableCell>
+                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
                 </TableRow>;
               })
             }

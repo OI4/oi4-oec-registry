@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import OI4Base from './app.jsx';
 import * as serviceWorker from './serviceWorker';
 

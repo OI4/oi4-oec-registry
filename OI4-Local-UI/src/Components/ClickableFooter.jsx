@@ -4,7 +4,6 @@ import {
   Typography,
   Dialog,
   DialogTitle,
-  DialogContentText,
   DialogContent,
   Divider,
   Link,
@@ -30,7 +29,7 @@ export class ClickableFooter extends React.Component {
         <DialogContent>
           <Divider variant='middle' />
           <Typography variant='h5' style={{ textAlign: 'center' }}>Registry Information</Typography>
-          <DialogContentText style={{ paddingLeft: '13px', paddingRight: '13px' }}>
+          <DialogContent style={{ paddingLeft: '13px', paddingRight: '13px' }}>
             <p>
               Be aware to start the Open Industry 4.0 Alliance's Registry as the very first application in the runtime.
               Otherwise, you might miss information from other applications and devices.
@@ -41,20 +40,20 @@ export class ClickableFooter extends React.Component {
                         </p>
             <p>
               Every recognized asset gets tested for a basic set of compatibility to Open Industry 4.0 Alliance specification. The result will be displayed as one of:
-                            <ul>
-                <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
-                <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <span role='img' aria-label='warn'>⚠️</span></li>
-                <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li>
-                <li>Not yet tested (neither successful nor fail): <span role='img' aria-label='default'>❔</span></li>
-              </ul>
-            </p>
+              </p>
+            <ul>
+              <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
+              <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <span role='img' aria-label='warn'>⚠️</span></li>
+              <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li>
+              <li>Not yet tested (neither successful nor fail): <span role='img' aria-label='default'>❔</span></li>
+            </ul>
             <p>
               The conformity icon in the header bar is an indication of overall conformity.
                         </p>
             <p>
               The refresh button will initiate a new conformity check.
                         </p>
-          </DialogContentText>
+          </DialogContent>
           <Divider variant='middle' />
           <Typography style={{ textAlign: 'center' }} variant='body2'>Copyright (C): 2019 Hilscher Gesellschaft für Systemautomation mbH</Typography>
         </DialogContent>

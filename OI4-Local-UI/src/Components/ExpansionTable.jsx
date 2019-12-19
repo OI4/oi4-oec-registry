@@ -123,7 +123,7 @@ class ExpansionTable extends React.Component {
         <ExpansionPanel>
           <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
           <ExpansionPanelDetails className={classes.tableWrap}>
-            <Table stickyHeader className={classes.table}>
+            <Table className={classes.table}>
               <TableHead>
                 <TableRow>
                   <TableCell>Manufacturer</TableCell>
@@ -137,10 +137,10 @@ class ExpansionTable extends React.Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {Object.keys(this.props.assetLookup).map((oi4Id) => (
-                  <React.Fragment>
+                {Object.keys(this.props.assetLookup).map((oi4Id, idx) => (
+                  <React.Fragment key={`AssetTable-${oi4Id}-${idx}`}>
                     <TableRow
-                      key={this.props.assetLookup[oi4Id].name}
+                      key={`AssetTable-${oi4Id}-${idx}`}
                       hoverstyle={{ cursor: "pointer" }}
                       onClick={() => {
                         // A bit of a hack in order to not mutate the state...
@@ -168,7 +168,7 @@ class ExpansionTable extends React.Component {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                    <TableRow key={`${this.props.assetLookup[oi4Id].name}Detail`}>
+                    <TableRow key={`AssetTableDetail-${oi4Id}-${idx}`}>
                       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
                         <Collapse
                           className={classes.tableInside}
@@ -295,7 +295,7 @@ class ExpansionTable extends React.Component {
           <TableBody>
             {
               eventArray.map((events, idx) => {
-                return <TableRow>
+                return <TableRow key={`GlobalEvents-${idx}`}>
                   <TableCell component="th" scope="row">{events.originId}</TableCell>
                   <TableCell component="th" scope="row">{events.number}</TableCell>
                   <TableCell component="th" scope="row">{events.description}</TableCell>
@@ -316,8 +316,8 @@ class ExpansionTable extends React.Component {
           </TableHead>
           <TableBody>
             {
-              eventArray.map((events) => {
-                return <TableRow>
+              eventArray.map((events, idx) => {
+                return <TableRow key={`LocalEvents-${idx}`}>
                   <TableCell component="th" scope="row">{events.number}</TableCell>
                   <TableCell component="th" scope="row">{events.description}</TableCell>
                   <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
