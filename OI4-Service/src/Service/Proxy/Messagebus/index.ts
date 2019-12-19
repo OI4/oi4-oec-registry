@@ -79,7 +79,13 @@ class OI4MessageBusProxy extends OI4Proxy {
    */
   private processMqttMessage = async (topic: string, message: Buffer) => {
     // Convert message to JSON, TODO: if this fails, we return an Error
-    const parsedMessage = JSON.parse(message.toString());
+    let parsedMessage;
+    try {
+      parsedMessage = JSON.parse(message.toString());
+    } catch (e) {
+      this.logger.log(`Registry: Error when parsing JSON in processMqttMessage: ${e}`);
+      return;
+    }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(parsedMessage);
     if (!schemaResult) {
       this.logger.log('BusProxy: Error in payload schema validation');

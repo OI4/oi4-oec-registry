@@ -1,6 +1,6 @@
 export type IOPCUAData = IMessageBusDataPayload;
 export type IOPCUAMetaData = IMessageBusMetaDataPayload;
-export type IOPCUAMasterAssetModel = IMessageBusMasterAssetModel;
+export type IOPCUAMasterAssetModel = IMessageBusDataPayload;
 
 export interface IOPCUAPayload {
   [key:string]: any;
@@ -22,23 +22,14 @@ export interface IMasterAssetModel {
   Description: IOPCUALocalizedText;
 }
 
-interface IMessageBusMasterAssetModel {
-  MessageId: string;
-  MessageType: EOPCUAMessageType;
-  DataSetClassId: GUID;
-  Messages: IOPCUADataMessage[];
-  PublisherId: string; // TODO: string in the OI4-format, need to add validators
-  CorrelationId: string;
-}
-
 // (NetworkMessage!)
 interface IMessageBusDataPayload {
   MessageId: string; // TODO: Not yet defined
   MessageType: EOPCUAMessageType;
-  PublisherId: string; // TODO: string in the OI4-format, need to add validators
   DataSetClassId: GUID; // TODO: STRING for now, validators found below (thanks to node-opcua)
-  CorrelationId: string;
   Messages: IOPCUADataMessage[]; // TODO: This should be generic (either Messages or MetaData)
+  PublisherId: string; // TODO: string in the OI4-format, need to add validators
+  CorrelationId: string;
 }
 
 // Data Message containing the values
