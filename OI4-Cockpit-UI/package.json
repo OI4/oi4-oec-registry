@@ -1,6 +1,6 @@
 {
   "name": "oi4-registry-plugin",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Scaffolding for a cockpit module",
   "main": "index.js",
   "repository": "git@github.com:cockpit/starter-kit.git",
