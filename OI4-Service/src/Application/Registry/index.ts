@@ -49,12 +49,19 @@ export class Registry extends EventEmitter {
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
+    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
     this.registryClient.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
   }
 
   private processMqttMessage = async (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
-    const firstPayload = JSON.parse(message.toString());
+    let firstPayload = { Messages:[] };
+    try {
+      firstPayload = JSON.parse(message.toString());
+    } catch (e) {
+      this.logger.log(`Registry: Error when parsing JSON in processMqttMessage: ${e}`);
+      return;
+    }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
     if (!schemaResult) {
       this.logger.log('Registry: Error in payload schema validation');
@@ -120,6 +127,9 @@ export class Registry extends EventEmitter {
         this.logger.log(`Registry: Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
         parsedPayload.lastMessage = new Date().toISOString();
         assetLookup[oi4Id].resources.health = parsedPayload;
+      } else {
+        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, 'MamRegistry')));
+        this.logger.log(`Registry: Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`);
       }
     } else if (topic.includes('/pub/license')) {
       if (oi4Id in assetLookup) {
@@ -214,6 +224,9 @@ export class Registry extends EventEmitter {
     const originator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${originator}`, assetId);
+    if (Object.keys(device).length === 0) {
+      this.logger.log('Registry: Critical Error: MAM of device to be added is empty', 'w', 3);
+    }
     const fullDevice: IDeviceMessage = {
       originator,
       appId: assetId,
