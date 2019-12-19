@@ -378,9 +378,11 @@ class OI4Base extends React.Component {
               // TODO: Remove everything except setState and update function!
               const applicationLookupLoc = JSON.parse(JSON.stringify(this.state.applicationLookup));
               if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
-                if ('err' in resourceObject) {
-                  console.log(`Received Error in updateRegistryResource (${resource})`);
-                  console.log(resourceObject);
+                if (typeof resourceObject === 'object' && resourceObject !== null) {
+                  if ('err' in resourceObject) {
+                    console.log(`Received Error in updateRegistryResource (${resource})`);
+                    console.log(resourceObject);
+                  }
                 } else {
                   applicationLookupLoc[oi4Id][resource] = resourceObject;
                 }

@@ -89,10 +89,10 @@ class ExpansionTable extends React.Component {
             Object.keys(this.props.assetLookup).map((oi4Id) => {
               return {
                 oi4Id: oi4Id,
-                 manufacturer: this.props.assetLookup[oi4Id].resources.mam.Manufacturer.Text,
-                 model: this.props.assetLookup[oi4Id].resources.mam.Model.Text,
-                 deviceclass: this.props.assetLookup[oi4Id].resources.mam.DeviceClass,
-                 serialnumber: this.props.assetLookup[oi4Id].resources.mam.SerialNumber,
+                 manufacturer: this.getResourceObject(oi4Id, 'mam').Manufacturer.Text,
+                 model: this.getResourceObject(oi4Id, 'mam').Model.Text,
+                 deviceclass: this.getResourceObject(oi4Id, 'mam').DeviceClass,
+                 serialnumber: this.getResourceObject(oi4Id, 'mam').SerialNumber,
                  health: this.displayNamurHealth(this.getHealth(oi4Id, 'application')),
                  lastmessage: this.props.assetLookup[oi4Id].lastMessage,
                  conformity: <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>,
@@ -153,10 +153,10 @@ class ExpansionTable extends React.Component {
                         this.setState({ expandedLookup: expandedLookupCopy });
                       }}
                     >
-                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Manufacturer.Text}</TableCell>
-                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.Model.Text}</TableCell>
-                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.DeviceClass}</TableCell>
-                      <TableCell component="th" scope="row">{this.props.assetLookup[oi4Id].resources.mam.SerialNumber}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.Text}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.Text}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
                       <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
                       <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
                       <TableCell align="right">
@@ -203,6 +203,22 @@ class ExpansionTable extends React.Component {
         </ExpansionPanel>
       </>
     );
+  }
+
+  /**
+   * Checks whether the resource is available in the lookup and returns it
+   *
+   * @param {string} oi4Id - The oi4Id that si to be looked up
+   * @param {string} resource - The resource that will be displayed if the lookup succeedes
+   * @returns The requested resource, if found. An error, if not
+   * @memberof ExpansionTableDetail
+   */
+  getResourceObject(oi4Id, resource) {
+    const lookup = this.props.assetLookup;
+    if (resource in lookup[oi4Id].resources) {
+      return lookup[oi4Id].resources[resource];
+    }
+    return 'Error - getResourceObject: resource not found in lookup';
   }
 
   /**
