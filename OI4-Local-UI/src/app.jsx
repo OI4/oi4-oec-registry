@@ -148,6 +148,10 @@ class OI4Base extends React.Component {
       100);
   }
 
+  componentDidMount() {
+    document.body.style.fontSize = '14px';
+  }
+
   // On close, clear all cyclic intervals
   componentWillUnmount() {
     for (const intervals of this.activeIntervals) {
