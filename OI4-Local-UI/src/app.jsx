@@ -132,8 +132,6 @@ class OI4Base extends React.Component {
       updatingConformity: false,
     };
 
-    setInterval(() => console.log(this.state.config.developmentMode), 1000);
-
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];

@@ -47,7 +47,11 @@ export class CommonFetch {
         });
       });
     } else if (this.mode === 'cockpit') {
-      return this.http.delete(url);
+      return this.http.request({
+        body: '',
+        method: 'DELETE',
+        path: url,
+      });
     }
   }
 }
