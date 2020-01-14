@@ -306,15 +306,49 @@ export class Registry extends EventEmitter {
   removeDevice(device: string) {
     if (device in this.applicationLookup) {
       this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/event/+/${device}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/health/${device}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/license/${device}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/licenseText/#`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/config/${device}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.applicationLookup[device];
       this.logger.log(`Registry: Deleted App: ${device}`, 'w', 2);
     } else if (device in this.deviceLookup) {
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/health/${device}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/license/${device}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/licenseText/#`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/config/${device}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.deviceLookup[device];
       this.logger.log(`Registry: Deleted Device: ${device}`, 'r', 2);
     } else {
       this.logger.log('Registry: Nothing to remove here!');
     }
+  }
+
+  clearRegistry() {
+    for (const assets of Object.keys(this.applicationLookup)) { // Unsubscribe topics of every asset
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/health/${assets}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/license/${assets}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/licenseText/#`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/config/${assets}`);
+      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+    }
+    this.applicationLookup = {}; // Clear application lookup
+
+    for (const assets of Object.keys(this.deviceLookup)) { // Unsubscribe topics of every asset
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/health/${assets}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/license/${assets}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/licenseText/#`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/config/${assets}`);
+      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+    }
+    this.deviceLookup = {}; // Clear device lookup
   }
 
   async updateConformityInDevice(oi4Id: string, resourceList: string[]): Promise<IConformity> {

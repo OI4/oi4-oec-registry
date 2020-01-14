@@ -43,6 +43,27 @@ webClient.get('/registry/device', (deviceReq, deviceResp) => {
   deviceResp.send(JSON.stringify(registry.devices));
 });
 
+webClient.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
+  const oi4Id = deviceReq.params.oi4Id;
+  console.log(`Trying to remove asset with Id: ${oi4Id}`);
+  try {
+    await registry.removeDevice(oi4Id);
+  } catch (e) {
+    console.log(e);
+    deviceResp.sendStatus(404);
+  }
+  deviceResp.sendStatus(200);
+});
+
+webClient.delete('/registry/assets', async (deviceReq, deviceResp) => {
+  try {
+    await registry.clearRegistry();
+  } catch (e) {
+    console.log(e);
+  }
+  deviceResp.send('OK, cleared Registry');
+});
+
 // In this resourceList, eventList, lastMessage and mam are custom resources only used by the registry
 const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList', 'lastMessage', 'mam'];
 

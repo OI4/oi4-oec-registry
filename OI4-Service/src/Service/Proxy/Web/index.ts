@@ -1,5 +1,6 @@
 import express = require('express');
 import bodyParser = require('body-parser');
+import cors = require('cors');
 import { IContainerState, IContainerConfig } from '../../Container/index';
 import { OI4Proxy } from '../index.js';
 import { IOPCUAData, IOPCUAMetaData } from '../../Models/IOPCUAPayload';
@@ -20,7 +21,9 @@ class OI4WebProxy extends OI4Proxy {
       initRes.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
       initNext();
     });
+    this.client.use(cors());
     this.client.use(bodyParser.json());
+    this.client.options('*', cors());
     this.client.listen(4567);
     // Handle Get Requests
     this.client.get('/', (indexReq, indexResp) => {
