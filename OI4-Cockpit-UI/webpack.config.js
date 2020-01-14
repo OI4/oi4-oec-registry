@@ -109,6 +109,9 @@ var babel_loader = {
                 }
             }],
             "@babel/preset-react"
+        ],
+        plugins: [
+           "@babel/plugin-proposal-class-properties"
         ]
     }
 }
