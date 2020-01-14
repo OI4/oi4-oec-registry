@@ -24,8 +24,8 @@ function TabPanel(props) {
 
   return (
     <Typography
-      component="div"
-      role="tabpanel"
+      component='div'
+      role='tabpanel'
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
@@ -48,7 +48,6 @@ export class ClickableFooter extends React.Component {
     this.state = {
       dialogOpen: false,
       selectedTab: 0,
-      expertMode: props.expertMode,
     };
   }
 
@@ -99,10 +98,9 @@ export class ClickableFooter extends React.Component {
               <p>In this section, expert configurations can be set by the maintainer.</p>
               <p>First, enable the expert checkbox to the right:
                 <Checkbox
-                  checked={this.state.expertMode}
-                  onChange={this.handleExpertChange}
-                  value="primary"
-                  inputProps={{ 'aria-label': 'primary checkbox' }}
+                  checked={this.props.expertMode || false} // Default value needed to stay in controlled mode
+                  onChange={this.props.handleExpertChange} // lifting state up
+                  value='primary'
                 />
               </p>
               <p>The expert mode will allow the following options:</p>
@@ -112,7 +110,7 @@ export class ClickableFooter extends React.Component {
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
-              {this.state.expertMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
+              {this.props.expertMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
                 <DeleteForever />
               </IconButton></> : null}
             </DialogContent>
@@ -141,8 +139,4 @@ export class ClickableFooter extends React.Component {
   handleChange = (event, newValue) => {
     this.setState({ selectedTab: newValue });
   };
-
-  handleExpertChange = (event, newValue) => {
-    this.setState({ expertMode: newValue });
-  }
 }

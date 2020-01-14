@@ -29,6 +29,7 @@ import {
 import {
   ExpandMore,
   ExpandLess,
+  Delete,
 } from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail';
@@ -134,6 +135,7 @@ class ExpansionTable extends React.Component {
                   <TableCell align="right">Last Message</TableCell>
                   <TableCell align="right">Conformity</TableCell>
                   <TableCell align="right">Expand</TableCell>
+                  {this.props.expertMode ? <TableCell align='right'>Delete</TableCell> : null}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -142,16 +144,6 @@ class ExpansionTable extends React.Component {
                     <TableRow
                       key={`AssetTable-${oi4Id}-${idx}`}
                       hoverstyle={{ cursor: "pointer" }}
-                      onClick={() => {
-                        // A bit of a hack in order to not mutate the state...
-                        const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
-                        if (oi4Id in expandedLookupCopy) {
-                          expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
-                        } else {
-                          expandedLookupCopy[oi4Id] = true;
-                        }
-                        this.setState({ expandedLookup: expandedLookupCopy });
-                      }}
                     >
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.Text}</TableCell>
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.Text}</TableCell>
@@ -163,10 +155,34 @@ class ExpansionTable extends React.Component {
                         <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <IconButton size='small' color='default'>
+                        <IconButton
+                          size='small'
+                          color='default'
+                          onClick={() => {
+                            const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
+                            if (oi4Id in expandedLookupCopy) {
+                              expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
+                            } else {
+                              expandedLookupCopy[oi4Id] = true;
+                            }
+                            this.setState({ expandedLookup: expandedLookupCopy });
+                          }}
+                        >
                           {this.displayTableExpansion(oi4Id)}
                         </IconButton>
                       </TableCell>
+                      {this.props.expertMode ? <TableCell align="right">
+                        <IconButton
+                          size='small'
+                          color='default'
+                          onClick={(evt) => {
+                            evt.preventDefault();
+                            this.props.clearAsset(oi4Id);
+                           }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </TableCell> : null}
                     </TableRow>
                     <TableRow key={`AssetTableDetail-${oi4Id}-${idx}`}>
                       <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>

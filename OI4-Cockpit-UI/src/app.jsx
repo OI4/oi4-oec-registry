@@ -46,13 +46,36 @@ const pjson = require('../package.json');
 
 const darkTheme = createMuiTheme({
   palette: {
+    secondary: {
+      light: '#80e27e',
+      main: '#4caf50',
+      dark: '#087f23',
+      contrastText: '#fff',
+    },
+    primary: {
+      light: '#8559da',
+      main: '#512da8',
+      dark: '#140078',
+      contrastText: '#000',
+    },
     type: 'dark',
   },
 });
 
 const lightTheme = createMuiTheme({
   palette: {
-
+    secondary: {
+      light: '#80e27e',
+      main: '#4caf50',
+      dark: '#087f23',
+      contrastText: '#fff',
+    },
+    primary: {
+      light: '#8559da',
+      main: '#512da8',
+      dark: '#140078',
+      contrastText: '#000',
+    },
   }
 });
 
@@ -108,6 +131,8 @@ class OI4Base extends React.Component {
       globalEventTrail: [],
       updatingConformity: false,
     };
+
+    setInterval(() => console.log(this.state.config.developmentMode), 1000);
 
     this.controller = new AbortController();
     this.signal = this.controller.signal;
@@ -187,6 +212,8 @@ class OI4Base extends React.Component {
                 updateConformity={this.updateConformity.bind(this)}
                 fontColor={this.state.theme.palette.text.default}
                 updatingConformity={this.state.updatingConformity}
+                expertMode={this.state.config.developmentMode}
+                clearAsset={this.clearAssetById.bind(this)}
               />
               <ExpansionTable
                 lookupType='device'
@@ -194,6 +221,8 @@ class OI4Base extends React.Component {
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
                 updatingConformity={this.state.updatingConformity}
+                expertMode={this.state.config.developmentMode}
+                clearAsset={this.clearAssetById.bind(this)}
               />
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMore />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
@@ -206,7 +235,8 @@ class OI4Base extends React.Component {
             <div style={{ flexGrow: 1 }} />
             <ClickableFooter
               clearAllAssets={this.clearAllAssets.bind(this)}
-              expertMode={this.state.expertMode}
+              expertMode={this.state.config.developmentMode}
+              handleExpertChange={this.handleExpertChange.bind(this)}
               license='BSD License'
               version={pjson.version}
               bigLogo={this.state.bigLogo}
@@ -215,6 +245,13 @@ class OI4Base extends React.Component {
         </MuiThemeProvider>
       </React.Fragment>
     );
+  }
+
+  handleExpertChange = (event, newValue) => {
+    const configObj = {
+      developmentMode: newValue,
+    };
+    this.setState({ config: configObj });
   }
 
   /**
@@ -430,6 +467,14 @@ class OI4Base extends React.Component {
   clearAllAssets() {
     console.log('caa clicked');
     this.fetch.delete(`/registry/assets`)
+      .then(data => {
+        console.log(data);
+      });
+  }
+
+  clearAssetById(oi4Id) {
+    console.log('cabid clicked');
+    this.fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
       .then(data => {
         console.log(data);
       });
