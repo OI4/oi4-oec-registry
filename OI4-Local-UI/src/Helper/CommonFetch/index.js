@@ -35,4 +35,19 @@ export class CommonFetch {
       return this.http.get(url);
     }
   }
+
+  delete(url) {
+    if (this.mode === 'fetch') {
+      return new Promise((resolve, reject) => {
+        fetch(`http://${this.address}:${this.port}${url}`, {
+          method: 'DELETE',
+        })
+        .then(resp => {
+          resolve(resp.text());
+        });
+      });
+    } else if (this.mode === 'cockpit') {
+      return this.http.delete(url);
+    }
+  }
 }

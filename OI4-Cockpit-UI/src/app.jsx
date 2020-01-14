@@ -204,7 +204,13 @@ class OI4Base extends React.Component {
 
             </div>{/* Padding for dialog */}
             <div style={{ flexGrow: 1 }} />
-            <ClickableFooter license='BSD License' version={pjson.version} bigLogo={this.state.bigLogo} />
+            <ClickableFooter
+              clearAllAssets={this.clearAllAssets.bind(this)}
+              expertMode={this.state.expertMode}
+              license='BSD License'
+              version={pjson.version}
+              bigLogo={this.state.bigLogo}
+            />
           </div>
         </MuiThemeProvider>
       </React.Fragment>
@@ -419,6 +425,14 @@ class OI4Base extends React.Component {
         }
       }
     }
+  }
+
+  clearAllAssets() {
+    console.log('caa clicked');
+    this.fetch.delete(`/registry/assets`)
+      .then(data => {
+        console.log(data);
+      });
   }
 
   /**
