@@ -14,7 +14,9 @@ import {
   Tab,
   Box,
   Checkbox,
-  IconButton
+  IconButton,
+  TextField,
+  Button
 } from '@material-ui/core';
 
 import { DeleteForever } from '@material-ui/icons';
@@ -98,7 +100,7 @@ export class ClickableFooter extends React.Component {
               <p>In this section, expert configurations can be set by the maintainer.</p>
               <p>First, enable the expert checkbox to the right:
                 <Checkbox
-                  checked={this.props.expertMode || false} // Default value needed to stay in controlled mode
+                  checked={this.props.config.developmentMode || false} // Default value needed to stay in controlled mode
                   onChange={this.props.handleExpertChange} // lifting state up
                   value='primary'
                 />
@@ -110,9 +112,78 @@ export class ClickableFooter extends React.Component {
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
-              {this.props.expertMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
+              {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
                 <DeleteForever />
               </IconButton></> : null}
+              {/* <div>Local (Frontend)</div>
+              <div>
+                <TextField
+                  id="outlined-number"
+                  label="Asset"
+                  type="number"
+                  value={this.props.config.assetEventListLength}
+                  onChange={this.props.handleLocalTrailLength}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  size='small'
+                  style={{ margin: '10px' }}
+                />
+                <TextField
+                  id="outlined-number"
+                  label="Global"
+                  type="number"
+                  value={this.props.config.globalEventListLength}
+                  onChange={this.props.handleGlobalTrailLength}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  size='small'
+                  style={{ margin: '10px' }}
+                />
+              </div> */}
+              <div>
+                {this.props.config.developmentMode ? <>
+                  <div>
+                    Registry (Backend)
+              </div>
+                  <TextField
+                    id="outlined-number"
+                    label="Asset"
+                    type="number"
+                    value={this.props.config.assetEventListLength}
+                    onChange={this.props.handleLocalTrailLength}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    size='small'
+                    style={{ margin: '10px' }}
+                  />
+                  <TextField
+                    id="outlined-number"
+                    label="Global"
+                    type="number"
+                    value={this.props.config.globalEventListLength}
+                    onChange={this.props.handleGlobalTrailLength}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    size='small'
+                    style={{ margin: '10px' }}
+                  />
+                  <div>
+                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetTrailLength}>
+                      Get
+                    </Button>
+                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleSetTrailLength}>
+                      Set
+                    </Button>
+                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>
+                      Force Update Global Trail
+                    </Button>
+                  </div>
+                </> : null}
+              </div>
             </DialogContent>
           </TabPanel>
           <Divider variant='middle' />
@@ -121,13 +192,13 @@ export class ClickableFooter extends React.Component {
       </Dialog>
       <Grid container justify='center' style={{ paddingBottom: '10px' }}>
         <Typography>License: {this.props.license} | Version: {this.props.version} |
-            <Link
+          <Link
             color='inherit'
             onClick={(e) => {
               e.preventDefault();
               this.setState({ dialogOpen: true });
             }}
-            >
+          >
             Click for more Information
             </Link>
         </Typography>

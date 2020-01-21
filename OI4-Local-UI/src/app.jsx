@@ -122,6 +122,8 @@ class OI4Base extends React.Component {
       footerExpanded: false,
       config: {
         developmentMode: false,
+        globalEventListLength: 10,
+        assetEventListLength: 3,
       },
       theme: lightTheme,
       darkActivated: false,
@@ -233,8 +235,13 @@ class OI4Base extends React.Component {
             <div style={{ flexGrow: 1 }} />
             <ClickableFooter
               clearAllAssets={this.clearAllAssets.bind(this)}
-              expertMode={this.state.config.developmentMode}
+              config={this.state.config}
               handleExpertChange={this.handleExpertChange.bind(this)}
+              handleLocalTrailLength={this.setlocalTrailLength.bind(this)}
+              handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
+              handleGetTrailLength={this.getTrailLength.bind(this)}
+              handleSetTrailLength={this.setTrailLength.bind(this)}
+              handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               license='BSD License'
               version={pjson.version}
               bigLogo={this.state.bigLogo}
@@ -246,10 +253,9 @@ class OI4Base extends React.Component {
   }
 
   handleExpertChange = (event, newValue) => {
-    const configObj = {
-      developmentMode: newValue,
-    };
-    this.setState({ config: configObj });
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    oldConfigObj.developmentMode = !oldConfigObj.developmentMode;
+    this.setState({ config: oldConfigObj });
   }
 
   /**
@@ -531,6 +537,43 @@ class OI4Base extends React.Component {
   // setConfig(newConfig) { // eslint-disable-line no-unused-vars
   //   // TODO!
   // }
+  setlocalTrailLength(ev) {
+    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    configObj.assetEventListLength = ev.target.value;
+    this.setState({ config: configObj });
+  }
+
+  setGlobalTrailLength(ev) {
+    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    configObj.globalEventListLength = ev.target.value;
+    this.setState({ config: configObj });
+  }
+
+  setTrailLength() {
+    const myConf = {
+      globalEventListLength: this.state.config.globalEventListLength,
+      assetEventListLength: this.state.config.assetEventListLength,
+    };
+    console.log('setting myconf to');
+    console.log(myConf);
+    this.fetch.put(`/registry/config`, JSON.stringify(myConf))
+      .then(data => {
+        console.log(data);
+      });
+  }
+
+  getTrailLength() {
+    this.fetch.get(`/registry/config`)
+      .then(data => {
+        const regConfData = JSON.parse(data);
+        const globLength = regConfData.globalEventListLength;
+        const assetLength = regConfData.assetEventListLength;
+        const confCopy = JSON.parse(JSON.stringify(this.state.config));
+        confCopy.globalEventListLength = globLength;
+        confCopy.assetEventListLength = assetLength;
+        this.setState({ config: confCopy });
+      });
+  }
 }
 
 OI4Base.propTypes = {
