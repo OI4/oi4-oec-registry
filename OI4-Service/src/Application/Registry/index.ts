@@ -104,7 +104,7 @@ export class Registry extends EventEmitter {
         const eventList: any = assetLookup[oi4Id].eventList;
         if (eventList.length >= this.config.assetEventListLength) {
           // If we have too many elements in the list, we purge them
-          for (let it = 0; it < eventList.length - this.config.assetEventListLength; it = it + 1) {
+          for (let it = 0; it <= (eventList.length - this.config.assetEventListLength) + 1; it = it + 1) {
             assetLookup[oi4Id].eventList.shift();
           }
         }
@@ -115,7 +115,7 @@ export class Registry extends EventEmitter {
       }
       if (this.globalEventList.length >= this.config.globalEventListLength) {
         // If we have too many elements in the list, we purge them
-        for (let it = 0; it < this.globalEventList.length - this.config.globalEventListLength; it = it + 1) {
+        for (let it = 0; it <= (this.globalEventList.length - this.config.globalEventListLength) + 1; it = it + 1) {
           this.globalEventList.shift();
         }
       }
