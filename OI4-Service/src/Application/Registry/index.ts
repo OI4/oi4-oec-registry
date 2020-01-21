@@ -19,6 +19,7 @@ export class Registry extends EventEmitter {
   private oi4DeviceWildCard: string;
   private appId: string;
   private queue: SequentialTaskQueue;
+  private config: any;
 
   // Timeout container
   private healthTimeout: number;
@@ -36,6 +37,10 @@ export class Registry extends EventEmitter {
     this.applicationLookup = {};
     this.deviceLookup = {};
     this.appId = appId;
+    this.config = {
+      globalEventListLength: 20,
+      assetEventListLength: 3,
+    }; // TODO: need solid model and good default values for this...
 
     this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
 
@@ -55,7 +60,7 @@ export class Registry extends EventEmitter {
 
   private processMqttMessage = async (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
-    let firstPayload = { Messages:[] };
+    let firstPayload = { Messages: [] };
     try {
       firstPayload = JSON.parse(message.toString());
     } catch (e) {
@@ -97,16 +102,22 @@ export class Registry extends EventEmitter {
       // const logLevel = topicArr[8]; // If we don't save the logLevel in the payload, we can discard it
       if (oi4Id in assetLookup) {
         const eventList: any = assetLookup[oi4Id].eventList;
-        if (eventList.length >= 3) {
-          assetLookup[oi4Id].eventList.shift();
+        if (eventList.length >= this.config.assetEventListLength) {
+          // If we have too many elements in the list, we purge them
+          for (let it = 0; it < eventList.length - this.config.assetEventListLength; it = it + 1) {
+            assetLookup[oi4Id].eventList.shift();
+          }
         }
         console.log('GOT EVENT FROM DEVICE!');
         assetLookup[oi4Id].eventList.push({
           ...parsedPayload,
         });
       }
-      if (this.globalEventList.length >= 20) {
-        this.globalEventList.shift();
+      if (this.globalEventList.length >= this.config.globalEventListLength) {
+        // If we have too many elements in the list, we purge them
+        for (let it = 0; it < this.globalEventList.length - this.config.globalEventListLength; it = it + 1) {
+          this.globalEventList.shift();
+        }
       }
       this.globalEventList.push({
         ...parsedPayload,
@@ -385,6 +396,15 @@ export class Registry extends EventEmitter {
       await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
+  }
+
+  async updateConfig(newConfig: any) {
+    this.config = newConfig;
+  }
+
+  getConfig(): any {
+    console.log(this.config);
+    return this.config;
   }
 
   getResourceFromLookup(oi4Id: string, resource: string) {

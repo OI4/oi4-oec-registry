@@ -64,6 +64,19 @@ webClient.delete('/registry/assets', async (deviceReq, deviceResp) => {
   deviceResp.send('OK, cleared Registry');
 });
 
+webClient.get('/registry/config', async (confReq, confResp) => {
+  confResp.send(JSON.stringify(registry.getConfig()));
+});
+
+webClient.put('/registry/config', async (confReq, confResp) => {
+  try {
+    await registry.updateConfig(confReq.body);
+  } catch (e) {
+    console.log(e);
+  }
+  confResp.send(`OK, updated Registry Config with ${JSON.stringify(confReq.body)}`);
+});
+
 // In this resourceList, eventList, lastMessage and mam are custom resources only used by the registry
 const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList', 'lastMessage', 'mam'];
 
