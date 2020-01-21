@@ -26,6 +26,12 @@ export class Registry extends EventEmitter {
 
   private conformityValidator: ConformityValidator;
 
+  /**
+   * The constructor of the Registry
+   * @param logger The global logger allowing the registry to set different loglevels
+   * @param registryClient The global mqtt client used to avoid multiple client connections inside the container
+   * @param appId The appId used by the registry application for any kind of oi4-communication
+   */
   constructor(logger: Logger, registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
     this.logger = logger;
@@ -58,6 +64,10 @@ export class Registry extends EventEmitter {
     this.registryClient.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
   }
 
+  /**
+   * The main update callback for incoming registry-related mqtt messages
+   * If an incoming message matches a registered asset, the values of that resource are taken from the payload and updated in the registry
+   */
   private processMqttMessage = async (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
     let firstPayload = { Messages: [] };
@@ -132,7 +142,7 @@ export class Registry extends EventEmitter {
             this.logger.log('Registry: Resetting timeout from health');
             // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
             clearTimeout(this.healthTimeout);
-            this.healthTimeout = <any>setTimeout(() => this.getResourceFromDevice(oi4Id, 'health'), 60000);
+            this.healthTimeout = <any>setTimeout(() => this.updateResourceInDevice(oi4Id, 'health'), 60000);
           }
         }
         this.logger.log(`Registry: Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
@@ -212,6 +222,7 @@ export class Registry extends EventEmitter {
   /**
    * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
    * If not, we add it to the registry, if yes, we don't.
+   * @param mqttObj The full mqtt message containing a potential addition to the registry
    */
   async addToRegistry(mqttObj: any) {
     const topicArr = mqttObj.topic.split('/');
@@ -229,6 +240,12 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Adds an asset based on the topic it registered on and its MasterAssetModel to the registry.
+   * The asset is either classified into a device or an application
+   * @param fullTopic The topic that contains information about the device being added
+   * @param device The MasterAssetModel of the device
+   */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
     this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`, 'w', 2);
     const topicArr = fullTopic.split('/');
@@ -268,7 +285,7 @@ export class Registry extends EventEmitter {
     this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/profile/${assetId}`);
     // Try to get them at least once!
     try {
-      await this.getResourceFromDevice(assetId, 'health');
+      await this.updateResourceInDevice(assetId, 'health');
       assetLookup[assetId]['registeredAt'] = new Date().toISOString();
       assetLookup[assetId]['lastMessage'] = new Date().toISOString();
       // If too many devices onboard at the same time, the bus will get spammed...
@@ -340,6 +357,9 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Clears the entire Registry by removing every asset from the applicationLookup and deviceLookup
+   */
   clearRegistry() {
     for (const assets of Object.keys(this.applicationLookup)) { // Unsubscribe topics of every asset
       this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/health/${assets}`);
@@ -362,6 +382,11 @@ export class Registry extends EventEmitter {
     this.deviceLookup = {}; // Clear device lookup
   }
 
+  /**
+   * Runs a conformity check on an asset by utilizing the ConformityValidator and returns the conformity Object.
+   * @param oi4Id The oi4Id of the asset that is to be checked for conformity
+   * @param resourceList The resourceList that is to be checked for conformity
+   */
   async updateConformityInDevice(oi4Id: string, resourceList: string[]): Promise<IConformity> {
     this.logger.log(`Registry: Checking conformity for ${oi4Id}`);
     let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
@@ -376,7 +401,12 @@ export class Registry extends EventEmitter {
     return conformityObject;
   }
 
-  async getResourceFromDevice(oi4Id: string, resource: string) {
+  /**
+   * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
+   * @param oi4Id The oi4Id of the asset that is to be updated
+   * @param resource The resource that is to be updated
+   */
+  async updateResourceInDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
@@ -387,6 +417,13 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Updates the licenseText of a registered asset by publishing a /get/ request on the corresponding oi4-topic
+   * @param oi4Id The oi4Id of the asset that is to be updated
+   * @param resource The resource that is to be updated (in this case..licenseText)
+   * @param license The license that is to be updated
+   * TODO: merge this functionality into updateResourceInDevice by utilizing a default empty string parameter...
+   */
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.applicationLookup) {
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
@@ -398,15 +435,11 @@ export class Registry extends EventEmitter {
     }
   }
 
-  async updateConfig(newConfig: any) {
-    this.config = newConfig;
-  }
-
-  getConfig(): any {
-    console.log(this.config);
-    return this.config;
-  }
-
+  /**
+   * Retrieves a specific resource from an asset via its oi4Id. This includes devices and applications
+   * @param oi4Id The oi4Id of the Asset that provides the resource
+   * @param resource The name of the resource that needs to be retireved
+   */
   getResourceFromLookup(oi4Id: string, resource: string) {
     // TODO: Resource intensive, we should push to the error object only if we actually have an error
     // FIXME: Better yet, don't separate between device and application lookup
@@ -457,27 +490,64 @@ export class Registry extends EventEmitter {
     };
   }
 
+  /**
+   * Updates the config of the Registry
+   * @param newConfig the new config object
+   */
+  async updateConfig(newConfig: any) {
+    this.config = newConfig;
+  }
+
+  /**
+   * Retrieves the config of the Registry
+   * @returns The config of the registry
+   */
+  getConfig(): any {
+    console.log(this.config);
+    return this.config;
+  }
+
+  /**
+   * Getter for applicationLookup
+   * @returns {IDeviceLookup} The applicationLookup of the Registry
+   */
   get applications() {
     return this.applicationLookup;
   }
 
+  /**
+   * Getter for deviceLookup
+   * @returns {IDeviceLookup} The deviceLookup of the Registry
+   */
   get devices() {
     return this.deviceLookup;
   }
 
+  /**
+   * Getter for globalEventList
+   * @returns {IEventObject[]} The global event list of the Registry
+   */
+  get eventTrail() {
+    return this.globalEventList;
+  }
+
+  /**
+   * Retrieves a single application-asset by its appId
+   * @param oi4Id The oi4Id of the asset that is to be retrieved
+   */
   getApplication(oi4Id: string) {
     if (oi4Id in this.applicationLookup) {
       return this.applicationLookup[oi4Id];
     }
   }
 
+  /**
+   * Retrieves a single device-asset by its appId
+   * @param oi4Id The oi4Id of the asset that is to be retrieved
+   */
   getDevice(oi4Id: string) {
     if (oi4Id in this.deviceLookup) {
       return this.deviceLookup[oi4Id];
     }
-  }
-
-  get eventTrail() {
-    return this.globalEventList;
   }
 }
