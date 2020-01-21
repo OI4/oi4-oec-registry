@@ -242,6 +242,7 @@ class OI4Base extends React.Component {
               handleGetTrailLength={this.getTrailLength.bind(this)}
               handleSetTrailLength={this.setTrailLength.bind(this)}
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
+              saveToFile={this.saveToFile.bind(this)}
               license='BSD License'
               version={pjson.version}
               bigLogo={this.state.bigLogo}
@@ -573,6 +574,16 @@ class OI4Base extends React.Component {
         confCopy.assetEventListLength = assetLength;
         this.setState({ config: confCopy });
       });
+  }
+
+  saveToFile() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state.config));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", 'configDmp' + ".json");
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
   }
 }
 

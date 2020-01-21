@@ -19,7 +19,7 @@ import {
   Button
 } from '@material-ui/core';
 
-import { DeleteForever } from '@material-ui/icons';
+import { DeleteForever, GetApp } from '@material-ui/icons';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -112,6 +112,9 @@ export class ClickableFooter extends React.Component {
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
+              {this.props.config.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
+                <GetApp />
+              </IconButton></> : null}
               {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
                 <DeleteForever />
               </IconButton></> : null}
