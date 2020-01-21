@@ -54,4 +54,32 @@ export class CommonFetch {
       });
     }
   }
+
+  put(url, body) {
+    if (this.mode === 'fetch') {
+      return new Promise((resolve, reject) => {
+        fetch(`http://${this.address}:${this.port}${url}`, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: body,
+        })
+        .then(resp => {
+          resolve(resp.text());
+        });
+      });
+    } else if (this.mode === 'cockpit') {
+      return this.http.request({
+        body: body,
+        method: 'PUT',
+        path: url,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+      });
+    }
+  }
 }
