@@ -17,23 +17,23 @@
   "license": "SEE LICENSE IN hilscherlicense.lic",
   "dependencies": {
     "@types/cors": "^2.8.6",
-    "ajv": "^6.10.2",
+    "ajv": "^6.11.0",
     "async-mqtt": "^2.4.2",
     "chalk": "^2.4.2",
     "cors": "^2.8.5",
-    "dotenv": "^8.1.0",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "sequential-task-queue": "^1.2.1",
-    "uuid": "^3.3.3"
+    "uuid": "^3.4.0"
   },
   "devDependencies": {
-    "@types/uuid": "^3.4.5",
     "@types/dotenv": "^6.1.1",
-    "@types/express": "^4.17.1",
-    "@types/node": "^12.7.4",
-    "tslint": "^5.19.0",
-    "tslint-config-airbnb": "^5.11.1",
-    "typescript": "^3.6.2",
-    "typescript-tslint-plugin": "^0.5.4"
+    "@types/express": "^4.17.2",
+    "@types/node": "^12.12.25",
+    "@types/uuid": "^3.4.6",
+    "tslint": "^5.20.1",
+    "tslint-config-airbnb": "^5.11.2",
+    "typescript": "^3.7.5",
+    "typescript-tslint-plugin": "^0.5.5"
   }
 }
