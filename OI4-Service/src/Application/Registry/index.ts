@@ -21,12 +21,12 @@ export class Registry extends EventEmitter {
   private queue: SequentialTaskQueue;
   private config: any;
   private static auditList: EAuditLevel[] = [
-    EAuditLevel.trace,
-    EAuditLevel.debug,
-    EAuditLevel.info,
-    EAuditLevel.warn,
-    EAuditLevel.error,
     EAuditLevel.fatal,
+    EAuditLevel.error,
+    EAuditLevel.warn,
+    EAuditLevel.info,
+    EAuditLevel.debug,
+    EAuditLevel.trace,
   ];
 
   // Timeout container
@@ -64,7 +64,10 @@ export class Registry extends EventEmitter {
     // Take registryClient from parameter Registry-MQTT-Client
     this.registryClient = registryClient;
     this.registryClient.on('message', this.processMqttMessage);
-    this.registryClient.subscribe('oi4/+/+/+/+/+/pub/event/+/#');
+    for (const levels of Registry.auditList) {
+      console.log(`subbed initially to ${levels}`);
+      this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+    }
 
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
@@ -313,7 +316,14 @@ export class Registry extends EventEmitter {
       console.log(err);
     }
     // Subscribe to events
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/event/+/${assetId}`);
+    for (const levels of Registry.auditList) {
+      console.log(`subbed local asset ${assetId} to ${levels}`);
+      this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/event/${levels}/${assetId}`);
+      if (levels === this.config.auditLevel) {
+        return;
+      }
+    }
+
   }
 
   /**
@@ -510,15 +520,61 @@ export class Registry extends EventEmitter {
       this.applicationLookup[apps].eventList = [];
     }
     for (const devices of Object.keys(this.deviceLookup)) {
-      this.applicationLookup[devices].eventList = [];
+      this.deviceLookup[devices].eventList = [];
     }
+
+    // Then, unsubscribe from old Audit Trail
     for (const levels of Registry.auditList) {
-      this.registryClient.unsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      console.log(`unsubscribed ${levels}`);
+      await this.registryClient.unsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
     }
+    for (const devices of Object.keys(this.deviceLookup)) {
+      this.unsubscribeAssetFromAudit(devices);
+    }
+    for (const apps of Object.keys(this.applicationLookup)) {
+      this.unsubscribeAssetFromAudit(apps);
+    }
+
+    // Then, resubscribe to new Audit Trail
     for (const levels of Registry.auditList) {
-      this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      console.log(`subscribed ${levels}`);
+      await this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
       if (levels === this.config.auditLevel) {
         return; // We matched our configured auditLevel, returning to not sub to redundant info...
+      }
+    }
+  }
+
+  async unsubscribeAssetFromAudit(oi4Id: string) {
+    console.log(`unsubbing all audits from ${oi4Id}`);
+    if (oi4Id in this.applicationLookup) {
+      for (const levels of Registry.auditList) {
+        await this.registryClient.unsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+      }
+    }
+    if (oi4Id in this.deviceLookup) {
+      for (const levels of Registry.auditList) {
+        await this.registryClient.unsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+      }
+    }
+  }
+
+  async resubscribeAssetFromAudit(oi4Id: string) {
+    console.log(`resubbing all audits from ${oi4Id}`);
+    if (oi4Id in this.applicationLookup) {
+      for (const levels of Registry.auditList) {
+        await this.registryClient.unsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        if (levels === this.config.auditLevel) {
+          break;
+        }
+      }
+    }
+    if (oi4Id in this.deviceLookup) {
+      for (const levels of Registry.auditList) {
+        await this.registryClient.unsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        if (levels === this.config.auditLevel) {
+          break;
+        }
       }
     }
   }
@@ -528,10 +584,12 @@ export class Registry extends EventEmitter {
    * @param newConfig the new config object
    */
   async updateConfig(newConfig: any) {
-    if (this.config.auditLevel !== newConfig.auditLevel) {
+    const oldConf = JSON.parse(JSON.stringify(this.config));
+    this.config = newConfig;
+    if (oldConf.auditLevel !== newConfig.auditLevel) {
+      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`);
       this.updateAuditLevel();
     }
-    this.config = newConfig;
   }
 
   /**
