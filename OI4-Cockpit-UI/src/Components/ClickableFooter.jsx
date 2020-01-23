@@ -19,7 +19,7 @@ import {
   Button
 } from '@material-ui/core';
 
-import { DeleteForever, GetApp } from '@material-ui/icons';
+import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -63,7 +63,7 @@ export class ClickableFooter extends React.Component {
         <DialogTitle><img src={this.props.bigLogo} alt="OI4Logo2" style={{ textAlign: 'center', maxWidth: '550px', height: 'auto' }} /></DialogTitle>
         <DialogContent>
           <Divider variant='middle' />
-          <Tabs value={this.state.selectedTab} onChange={this.handleChange} aria-label="simple tabs example">
+          <Tabs value={this.state.selectedTab} onChange={this.handleChange} centered>
             <Tab label="Information" />
             <Tab label="Expert Configuration" />
           </Tabs>
@@ -112,12 +112,32 @@ export class ClickableFooter extends React.Component {
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
+              <div style={{ margin:'10px' }}>
               {this.props.config.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
                 <GetApp />
               </IconButton></> : null}
+              </div>
+              <div style={{ margin:'10px' }}>
+              {this.props.config.developmentMode ? <>Load config from file:
+                <input
+                  accept=".json"
+                  id="contained-button-file"
+                  type="file"
+                  onChange={(e) => { this.props.handleLoadFromFile(e) }}
+                />
+                {/*
+                  <label htmlFor="contained-button-file">
+                    <IconButton size='small' color='default'>
+                      <Publish />
+                    </IconButton>
+                  </label>
+                */}</> : null}
+                </div>
+                <div style={{ margin:'10px' }}>
               {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
                 <DeleteForever />
               </IconButton></> : null}
+              </div>
               {/* <div>Local (Frontend)</div>
               <div>
                 <TextField
@@ -154,7 +174,7 @@ export class ClickableFooter extends React.Component {
                     id="outlined-number"
                     label="Asset"
                     type="number"
-                    value={this.props.config.assetEventListLength}
+                    value={this.props.config.assetEventListLength || ''}
                     onChange={this.props.handleLocalTrailLength}
                     InputLabelProps={{
                       shrink: true,
@@ -166,7 +186,7 @@ export class ClickableFooter extends React.Component {
                     id="outlined-number"
                     label="Global"
                     type="number"
-                    value={this.props.config.globalEventListLength}
+                    value={this.props.config.globalEventListLength || ''}
                     onChange={this.props.handleGlobalTrailLength}
                     InputLabelProps={{
                       shrink: true,

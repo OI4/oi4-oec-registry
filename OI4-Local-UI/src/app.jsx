@@ -243,6 +243,7 @@ class OI4Base extends React.Component {
               handleSetTrailLength={this.setTrailLength.bind(this)}
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
+              handleLoadFromFile={this.loadFromFile.bind(this)}
               license='BSD License'
               version={pjson.version}
               bigLogo={this.state.bigLogo}
@@ -580,10 +581,23 @@ class OI4Base extends React.Component {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state.config));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", 'configDmp' + ".json");
+    downloadAnchorNode.setAttribute("download", `configDmp.json`);
     document.body.appendChild(downloadAnchorNode); // required for firefox
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+  }
+
+  loadFromFile(e) {
+    const fileReader = new FileReader();
+    fileReader.readAsText(e.target.files[0]);
+    fileReader.onload = (evt) => {
+      const confObj = JSON.parse(evt.target.result);
+      console.log('Old config');
+      console.log(JSON.parse(JSON.stringify(this.state.config)));
+      console.log('New config');
+      console.log(confObj);
+      this.setState({ config: confObj });
+    };
   }
 }
 
