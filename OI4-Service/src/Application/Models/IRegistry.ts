@@ -50,6 +50,13 @@ interface IDeviceConfig {
   updateInterval: number;
 }
 
+export interface IRegistryConfig {
+  developmentMode: boolean;
+  assetEventListLength: number;
+  globalEventListLength: number;
+  auditLevel: string;
+}
+
 export enum EAuditLevel {
   trace = 'trace',
   debug = 'debug',

@@ -1,5 +1,5 @@
 import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage, EAuditLevel } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage, EAuditLevel, IRegistryConfig } from '../Models/IRegistry';
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -19,7 +19,7 @@ export class Registry extends EventEmitter {
   private oi4DeviceWildCard: string;
   private appId: string;
   private queue: SequentialTaskQueue;
-  private config: any;
+  private config: IRegistryConfig;
   private static auditList: EAuditLevel[] = [
     EAuditLevel.fatal,
     EAuditLevel.error,
@@ -52,6 +52,7 @@ export class Registry extends EventEmitter {
     this.deviceLookup = {};
     this.appId = appId;
     this.config = {
+      developmentMode: false,
       globalEventListLength: 20,
       assetEventListLength: 3,
       auditLevel: EAuditLevel.trace,
