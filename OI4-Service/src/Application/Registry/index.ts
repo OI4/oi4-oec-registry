@@ -1,5 +1,5 @@
 import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage, EAuditLevel } from '../Models/IRegistry';
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -20,6 +20,14 @@ export class Registry extends EventEmitter {
   private appId: string;
   private queue: SequentialTaskQueue;
   private config: any;
+  private static auditList: EAuditLevel[] = [
+    EAuditLevel.trace,
+    EAuditLevel.debug,
+    EAuditLevel.info,
+    EAuditLevel.warn,
+    EAuditLevel.error,
+    EAuditLevel.fatal,
+  ];
 
   // Timeout container
   private healthTimeout: number;
@@ -46,6 +54,7 @@ export class Registry extends EventEmitter {
     this.config = {
       globalEventListLength: 20,
       assetEventListLength: 3,
+      auditLevel: EAuditLevel.trace,
     }; // TODO: need solid model and good default values for this...
 
     this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
@@ -491,10 +500,37 @@ export class Registry extends EventEmitter {
   }
 
   /**
+   * Updates the subscription of the audit trail to match the config
+   * Attention. This clears all saved lists (global + assets)
+   */
+  async updateAuditLevel() {
+    // First, clear all old eventLists
+    this.globalEventList = [];
+    for (const apps of Object.keys(this.applicationLookup)) {
+      this.applicationLookup[apps].eventList = [];
+    }
+    for (const devices of Object.keys(this.deviceLookup)) {
+      this.applicationLookup[devices].eventList = [];
+    }
+    for (const levels of Registry.auditList) {
+      this.registryClient.unsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+    }
+    for (const levels of Registry.auditList) {
+      this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      if (levels === this.config.auditLevel) {
+        return; // We matched our configured auditLevel, returning to not sub to redundant info...
+      }
+    }
+  }
+
+  /**
    * Updates the config of the Registry
    * @param newConfig the new config object
    */
   async updateConfig(newConfig: any) {
+    if (this.config.auditLevel !== newConfig.auditLevel) {
+      this.updateAuditLevel();
+    }
     this.config = newConfig;
   }
 
