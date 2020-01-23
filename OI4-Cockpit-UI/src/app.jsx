@@ -141,6 +141,7 @@ class OI4Base extends React.Component {
     // Update apps and devices right away
     setTimeout(() => { this.updateApplications() }, 500);
     setTimeout(() => { this.updateDevices() }, 800);
+    setTimeout(() => { this.getConfig() }, 300);
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
      * The resources kept by the registry of all applications are updated individually.
@@ -560,14 +561,7 @@ class OI4Base extends React.Component {
   }
 
   setConfig() {
-    const myConf = {
-      globalEventListLength: this.state.config.globalEventListLength,
-      assetEventListLength: this.state.config.assetEventListLength,
-      auditLevel: this.state.config.auditLevel,
-    };
-    console.log('setting myconf to');
-    console.log(myConf);
-    this.fetch.put(`/registry/config`, JSON.stringify(myConf))
+    this.fetch.put(`/registry/config`, JSON.stringify(this.state.config))
       .then(data => {
         console.log(data);
       });
@@ -577,14 +571,7 @@ class OI4Base extends React.Component {
     this.fetch.get(`/registry/config`)
       .then(data => {
         const regConfData = JSON.parse(data);
-        const globLength = regConfData.globalEventListLength;
-        const assetLength = regConfData.assetEventListLength;
-        const auditLevel = regConfData.auditLevel;
-        const confCopy = JSON.parse(JSON.stringify(this.state.config));
-        confCopy.globalEventListLength = globLength;
-        confCopy.assetEventListLength = assetLength;
-        confCopy.auditLevel = auditLevel;
-        this.setState({ config: confCopy });
+        this.setState({ config: regConfData });
       });
   }
 
