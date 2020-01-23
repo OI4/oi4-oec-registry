@@ -16,10 +16,12 @@ import {
   Checkbox,
   IconButton,
   TextField,
-  Button
+  Button,
+  Select,
+  MenuItem
 } from '@material-ui/core';
 
-import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
+import { DeleteForever, GetApp, /* Publish */ } from '@material-ui/icons';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -112,31 +114,31 @@ export class ClickableFooter extends React.Component {
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
-              <div style={{ margin:'10px' }}>
-              {this.props.config.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
-                <GetApp />
-              </IconButton></> : null}
+              <div style={{ margin: '10px' }}>
+                {this.props.config.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
+                  <GetApp />
+                </IconButton></> : null}
               </div>
-              <div style={{ margin:'10px' }}>
-              {this.props.config.developmentMode ? <>Load config from file:
-                <input
-                  accept=".json"
-                  id="contained-button-file"
-                  type="file"
-                  onChange={(e) => { this.props.handleLoadFromFile(e) }}
-                />
-                {/*
+              <div style={{ margin: '10px' }}>
+                {this.props.config.developmentMode ? <>Load config from file:
+                  <input
+                      accept=".json"
+                      id="contained-button-file"
+                      type="file"
+                      onChange={(e) => { this.props.handleLoadFromFile(e) }}
+                  />
+                  {/*
                   <label htmlFor="contained-button-file">
                     <IconButton size='small' color='default'>
                       <Publish />
                     </IconButton>
                   </label>
                 */}</> : null}
-                </div>
-                <div style={{ margin:'10px' }}>
-              {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
-                <DeleteForever />
-              </IconButton></> : null}
+              </div>
+              <div style={{ margin: '10px' }}>
+                {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
+                  <DeleteForever />
+                </IconButton></> : null}
               </div>
               {/* <div>Local (Frontend)</div>
               <div>
@@ -194,11 +196,26 @@ export class ClickableFooter extends React.Component {
                     size='small'
                     style={{ margin: '10px' }}
                   />
+                  <div style={{ margin: '10px' }}>
+                    {this.props.config.developmentMode ? <>Set Audit Level:
+                     <Select
+                     value={this.props.config.auditLevel || ''}
+                     onChange={this.props.handleAuditLevelChange}
+                     >
+                       <MenuItem value='trace'>Trace</MenuItem>
+                       <MenuItem value='debug'>Debug</MenuItem>
+                       <MenuItem value='info'>Info</MenuItem>
+                       <MenuItem value='warn'>Warn</MenuItem>
+                       <MenuItem value='error'>Error</MenuItem>
+                       <MenuItem value='fatal'>Fatal</MenuItem>
+                      </Select>
+                    </> : null}
+                  </div>
                   <div>
-                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetTrailLength}>
+                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetConfig}>
                       Get
                     </Button>
-                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleSetTrailLength}>
+                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleSetConfig}>
                       Set
                     </Button>
                     <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>

@@ -124,6 +124,7 @@ class OI4Base extends React.Component {
         developmentMode: false,
         globalEventListLength: 10,
         assetEventListLength: 3,
+        auditLevel: 'trace',
       },
       theme: lightTheme,
       darkActivated: false,
@@ -239,8 +240,9 @@ class OI4Base extends React.Component {
               handleExpertChange={this.handleExpertChange.bind(this)}
               handleLocalTrailLength={this.setlocalTrailLength.bind(this)}
               handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
-              handleGetTrailLength={this.getTrailLength.bind(this)}
-              handleSetTrailLength={this.setTrailLength.bind(this)}
+              handleGetConfig={this.getConfig.bind(this)}
+              handleSetConfig={this.setConfig.bind(this)}
+              handleAuditLevelChange={this.setAuditLevel.bind(this)}
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
               handleLoadFromFile={this.loadFromFile.bind(this)}
@@ -551,10 +553,17 @@ class OI4Base extends React.Component {
     this.setState({ config: configObj });
   }
 
-  setTrailLength() {
+  setAuditLevel(ev) {
+    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    configObj.auditLevel = ev.target.value;
+    this.setState({ config: configObj });
+  }
+
+  setConfig() {
     const myConf = {
       globalEventListLength: this.state.config.globalEventListLength,
       assetEventListLength: this.state.config.assetEventListLength,
+      auditLevel: this.state.config.auditLevel,
     };
     console.log('setting myconf to');
     console.log(myConf);
@@ -564,15 +573,17 @@ class OI4Base extends React.Component {
       });
   }
 
-  getTrailLength() {
+  getConfig() {
     this.fetch.get(`/registry/config`)
       .then(data => {
         const regConfData = JSON.parse(data);
         const globLength = regConfData.globalEventListLength;
         const assetLength = regConfData.assetEventListLength;
+        const auditLevel = regConfData.auditLevel;
         const confCopy = JSON.parse(JSON.stringify(this.state.config));
         confCopy.globalEventListLength = globLength;
         confCopy.assetEventListLength = assetLength;
+        confCopy.auditLevel = auditLevel;
         this.setState({ config: confCopy });
       });
   }
