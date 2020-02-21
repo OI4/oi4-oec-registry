@@ -5,14 +5,15 @@ import { IContainerState, IContainerConfig } from '../../Container/index';
 import { OI4Proxy } from '../index.js';
 import { IOPCUAData, IOPCUAMetaData } from '../../Models/IOPCUAPayload';
 import { Logger } from '../../Utilities/Logger';
+import { ESubResource } from '../../Models/IContainer';
 
 class OI4WebProxy extends OI4Proxy {
   private client: express.Application;
   private logger: Logger;
   constructor(container: IContainerState) {
     super(container);
-    this.logger = new Logger(true, 2);
-    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, 'y', 2);
+    this.logger = new Logger(true, 'Registry-WebProxy', ESubResource.info);
+    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, 'y', ESubResource.info);
 
     this.client = express();
     this.client.use((initReq, initRes, initNext) => {

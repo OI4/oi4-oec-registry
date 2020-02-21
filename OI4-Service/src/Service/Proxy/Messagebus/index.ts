@@ -4,7 +4,7 @@ import { IOPCUAData, IMasterAssetModel } from '../../Models/IOPCUAPayload.js';
 import { OI4Proxy } from '../index';
 import { hasKey } from '../../Utilities/index';
 import { Logger } from '../../Utilities/Logger/index';
-import { EDeviceHealth } from '../../Models/IContainer';
+import { EDeviceHealth, ESubResource } from '../../Models/IContainer';
 
 interface TMqttOpts {
   clientId: string;
@@ -51,16 +51,16 @@ class OI4MessageBusProxy extends OI4Proxy {
     };
 
     this.client = mqtt.connect(mqttOpts);
-    this.logger = new Logger(true, 2, this.client, this.appId, this.serviceType);
-    this.logger.log(`BusProxy: Standardroute: ${this.standardRoute}`, 'y', 2);
+    this.logger = new Logger(true, 'Registry-Messagebus', ESubResource.warn, this.client, this.appId, this.serviceType);
+    this.logger.log(`BusProxy: Standardroute: ${this.standardRoute}`, 'y', ESubResource.info);
     // Publish Birth Message and start listening to topics
     this.client.on('connect', async (connack: mqtt.IConnackPacket) => {
-      this.logger.log('BusProxy: Connected successfully', 'w' , 2);
+      this.logger.log('BusProxy: Connected successfully', 'w' , ESubResource.info);
       await this.client.publish(
         `${this.standardRoute}/pub/mam/${this.appId}`,
         JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.mam, new Date(), 'BIRTHMESSAGECLASSID')),
       );
-      this.logger.log(`BusProxy: Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, 'w', 2);
+      this.logger.log(`BusProxy: Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, 'w', ESubResource.info);
 
       // Listen to own routes
       this.client.subscribe(`${this.standardRoute}/get/#`);

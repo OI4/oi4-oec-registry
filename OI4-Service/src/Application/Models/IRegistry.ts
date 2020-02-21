@@ -56,12 +56,3 @@ export interface IRegistryConfig {
   globalEventListLength: number;
   auditLevel: string;
 }
-
-export enum EAuditLevel {
-  trace = 'trace',
-  debug = 'debug',
-  info = 'info',
-  warn = 'warn',
-  error = 'error',
-  fatal = 'fatal',
-}

@@ -22,6 +22,7 @@ import configSchemaJson = require('../../Config/Schemas/config.schema.json');
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
+import { ESubResource } from '../../Service/Models/IContainer';
 
 interface TMqttOpts {
   clientId: string;
@@ -46,10 +47,8 @@ export class ConformityValidator extends EventEmitter {
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
   static completeProfileList: string[] = ['mam', 'health', 'license', 'licenseText', 'profile', 'data', 'rtLicense', 'config', 'event', 'metadata'];
-  constructor(logger: Logger, appId: string) {
+  constructor(appId: string) {
     super();
-    this.logger = logger;
-    this.builder = new OPCUABuilder(appId); // TODO: Set appId to something useful
     const serverObj = {
       host: process.env.OI4_ADDR as string,
       port: parseInt(process.env.OI4_PORT as string, 10),
@@ -60,6 +59,9 @@ export class ConformityValidator extends EventEmitter {
       servers: [serverObj],
     };
     this.conformityClient = mqtt.connect(mqttOpts);
+
+    this.logger = new Logger(true, 'ConformityValidator-App', ESubResource.trace, this.conformityClient, appId, 'Utility');
+    this.builder = new OPCUABuilder(appId); // TODO: Set appId to something useful
 
     this.jsonValidator = new Ajv();
     // Add Validation Schemas
@@ -120,7 +122,7 @@ export class ConformityValidator extends EventEmitter {
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
-      this.logger.log(`ConformityValidator: Error in checkOI4IDConformity: ${err}`, 'w', 2);
+      this.logger.log(`ConformityValidator: Error in checkOI4IDConformity: ${err}`, 'w', ESubResource.debug);
       return conformityObject;
     }
     if (oi4Result) {
@@ -205,7 +207,7 @@ export class ConformityValidator extends EventEmitter {
             };
           }
         } catch (err) {
-          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w', 2);
+          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w', ESubResource.debug);
           conformityObject.resource[resource] = {
             validity: EValidity.nok,
           };

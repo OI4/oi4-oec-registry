@@ -1,6 +1,7 @@
 import { OI4MessageBusProxy } from './Service/Proxy/Messagebus/index';
 import { OI4WebProxy } from './Service/Proxy/Web/index';
 import { ContainerState } from './Service/Container/index';
+import { ESubResource } from './Service/Models/IContainer';
 import { Logger } from './Service/Utilities/Logger/index';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -13,13 +14,21 @@ if (!(process.env.OI4_ADDR) || !(process.env.OI4_PORT) || !(process.env.CONTAINE
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 1, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
+const logger = new Logger(true, 'Registry-Entrypoint', ESubResource.warn, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
+logger.level = ESubResource.fatal;
+logger.log(`Testprint for level ${ESubResource.trace}`, 'w', ESubResource.trace);
+logger.log(`Testprint for level ${ESubResource.debug}`, 'w', ESubResource.debug);
+logger.log(`Testprint for level ${ESubResource.info}`, 'w', ESubResource.info);
+logger.log(`Testprint for level ${ESubResource.warn}`, 'w', ESubResource.warn);
+logger.log(`Testprint for level ${ESubResource.error}`, 'w', ESubResource.error);
+logger.log(`Testprint for level ${ESubResource.fatal}`, 'w', ESubResource.fatal);
+logger.level = ESubResource.info;
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
 import { IConformity } from './Application/Models/IConformityValidator';
 import { ConformityValidator } from './Application/ConformityValidator';
-const registry = new Registry(logger, busProxy.mqttClient, contState.appId);
+const registry = new Registry(busProxy.mqttClient, contState.appId);
 
 /**
  * Deletes a Mam from the registry (TODO: this is not specified yet and only used for debug purposes)

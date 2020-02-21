@@ -1,5 +1,6 @@
-import { IEventObject, EDeviceHealth } from '../../Service/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage, EAuditLevel, IRegistryConfig } from '../Models/IRegistry';
+import { IEventObject, EDeviceHealth, ESubResource } from '../../Service/Models/IContainer';
+import { IDeviceLookup, IDeviceMessage, IRegistryConfig } from '../Models/IRegistry';
+import EAuditLevel = ESubResource;
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -36,13 +37,12 @@ export class Registry extends EventEmitter {
 
   /**
    * The constructor of the Registry
-   * @param logger The global logger allowing the registry to set different loglevels
    * @param registryClient The global mqtt client used to avoid multiple client connections inside the container
    * @param appId The appId used by the registry application for any kind of oi4-communication
    */
-  constructor(logger: Logger, registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
+  constructor(registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
-    this.logger = logger;
+    this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.queue = new SequentialTaskQueue();
 
     this.healthTimeout = 0;
@@ -60,7 +60,7 @@ export class Registry extends EventEmitter {
 
     this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
 
-    this.conformityValidator = new ConformityValidator(this.logger, appId); // TODO: Better system for appId!
+    this.conformityValidator = new ConformityValidator(appId); // TODO: Better system for appId!
 
     // Take registryClient from parameter Registry-MQTT-Client
     this.registryClient = registryClient;
@@ -260,13 +260,13 @@ export class Registry extends EventEmitter {
    * @param device The MasterAssetModel of the device
    */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
-    this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`, 'w', 2);
+    this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`, 'w', ESubResource.debug);
     const topicArr = fullTopic.split('/');
     const originator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${originator}`, assetId);
     if (Object.keys(device).length === 0) {
-      this.logger.log('Registry: Critical Error: MAM of device to be added is empty', 'w', 3);
+      this.logger.log('Registry: Critical Error: MAM of device to be added is empty', 'w', ESubResource.warn);
     }
     const fullDevice: IDeviceMessage = {
       originator,
@@ -362,7 +362,7 @@ export class Registry extends EventEmitter {
       this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/config/${device}`);
       this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.applicationLookup[device];
-      this.logger.log(`Registry: Deleted App: ${device}`, 'w', 2);
+      this.logger.log(`Registry: Deleted App: ${device}`, 'w', ESubResource.info);
     } else if (device in this.deviceLookup) {
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/health/${device}`);
@@ -372,7 +372,7 @@ export class Registry extends EventEmitter {
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/config/${device}`);
       this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.deviceLookup[device];
-      this.logger.log(`Registry: Deleted Device: ${device}`, 'r', 2);
+      this.logger.log(`Registry: Deleted Device: ${device}`, 'r', ESubResource.debug);
     } else {
       this.logger.log('Registry: Nothing to remove here!');
     }
