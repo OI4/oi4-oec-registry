@@ -118,6 +118,8 @@ class OI4Base extends React.Component {
       appId: 'empty',
       applicationLookup: {},
       deviceLookup: {},
+      listOfDevices: [],
+      listOfApps: [],
       conformityLookup: {},
       footerExpanded: false,
       config: {
@@ -210,6 +212,7 @@ class OI4Base extends React.Component {
               <ExpansionTable
                 lookupType='application'
                 assetLookup={this.state.applicationLookup}
+                listOfAssets={this.state.listOfApps}
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
                 fontColor={this.state.theme.palette.text.default}
@@ -220,6 +223,7 @@ class OI4Base extends React.Component {
               <ExpansionTable
                 lookupType='device'
                 assetLookup={this.state.deviceLookup}
+                listOfAssets={this.state.listOfDevices}
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
                 updatingConformity={this.state.updatingConformity}
@@ -377,6 +381,8 @@ class OI4Base extends React.Component {
       .then(data => {
         const jsonData = JSON.parse(data);
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
+        const listOfDevices = JSON.parse(JSON.stringify(this.state.listOfDevices));
+        let wasUpdated = false;
         for (const oi4Id of Object.keys(jsonData)) {
           if (this.state.deviceLookup[oi4Id] === undefined || this.state.deviceLookup[oi4Id] === null) {
             // const fullTopic = jsonData[oi4Id].fullDevicePath;
@@ -387,6 +393,14 @@ class OI4Base extends React.Component {
             delete confLookupLoc[oi4Id];
           }
           confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
+          if (!(listOfDevices.includes(oi4Id))) {
+            // We've got a new item
+            listOfDevices.push(oi4Id);
+            wasUpdated = true;
+          }
+        }
+        if (wasUpdated) {
+          this.setState({ listOfDevices: listOfDevices }); // FIXME: Potentially dangerous
         }
         this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
       });
@@ -412,10 +426,8 @@ class OI4Base extends React.Component {
             delete confLookupLoc[oi4Id];
           }
           confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
-          // console.log(`New Conformity object for ${oi4Id}`);
-          // console.log(confLookupLoc[oi4Id]);
         }
-        this.setState({ applicationLookup: jsonData, conformityLookup: confLookupLoc });
+        this.setState({ applicationLookup: jsonData, listOfApps: Object.keys(jsonData), conformityLookup: confLookupLoc });
       });
   }
 

@@ -74,7 +74,10 @@ class ExpansionTable extends React.Component {
     const { classes } = this.props;
     return (
       <>
-        {/* <MaterialTable
+      {/* <ExpansionPanel>
+        <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
+        <ExpansionPanelDetails className={classes.tableWrap}>
+        <MaterialTable
           title={this.state.tableName}
           columns={[
             { title: 'Manufacturer', field: 'manufacturer' },
@@ -84,26 +87,49 @@ class ExpansionTable extends React.Component {
             { title: 'Health', field: 'health' },
             { title: 'Last Message', field: 'lastmessage' },
             { title: 'Conformity', field: 'conformity' },
-            { title: 'Expand', field: 'expand' },
           ]}
           data={
-            Object.keys(this.props.assetLookup).map((oi4Id) => {
-              return {
-                oi4Id: oi4Id,
-                 manufacturer: this.getResourceObject(oi4Id, 'mam').Manufacturer.Text,
-                 model: this.getResourceObject(oi4Id, 'mam').Model.Text,
-                 deviceclass: this.getResourceObject(oi4Id, 'mam').DeviceClass,
-                 serialnumber: this.getResourceObject(oi4Id, 'mam').SerialNumber,
-                 health: this.displayNamurHealth(this.getHealth(oi4Id, 'application')),
-                 lastmessage: this.props.assetLookup[oi4Id].lastMessage,
-                 conformity: <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>,
-              };
+            this.props.listOfAssets.map((oi4Id) => {
+              // if (typeof this.props.assetLookup[oi4Id] === 'undefined') {
+              //   return {
+              //     oi4Id: oi4Id,
+              //     manufacturer: 'tbd',
+              //     model: 'tbd',
+              //     deviceclass: 'tbd',
+              //     serialnumber: 'tbd',
+              //     health: 'tbd',
+              //     lastmessage: 'tbd',
+              //     conformity: 'tbd',
+              //   };
+              // } else {
+                return {
+                  //  oi4Id: oi4Id,
+                  //  manufacturer: this.getResourceObject(oi4Id, 'mam').Manufacturer.Text,
+                  //  model: this.getResourceObject(oi4Id, 'mam').Model.Text,
+                  //  deviceclass: this.getResourceObject(oi4Id, 'mam').DeviceClass,
+                  //  serialnumber: this.getResourceObject(oi4Id, 'mam').SerialNumber,
+                  //  health: this.displayNamurHealth(this.getHealth(oi4Id, 'application')),
+                  //  lastmessage: this.props.assetLookup[oi4Id].lastMessage,
+                  //  conformity: <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>,
+                  oi4Id: oi4Id,
+                  manufacturer: 'tbd',
+                  model: 'tbd',
+                  deviceclass: 'tbd',
+                  serialnumber: 'tbd',
+                  health: 'tbd',
+                  lastmessage: 'tbd',
+                  conformity: 'tbd',
+                };
+              // }
             })
           }
           detailPanel={rowData => {
+            console.log('RowData update');
+            console.log(rowData);
             return (
               <div>
-                <ExpansionTableDetail
+                <span>Hello, Test </span>
+                {<ExpansionTableDetail
                   asset={this.props.assetLookup[rowData.oi4Id]}
                   conformityLookup={this.props.conformityLookup}
                   oi4Id={rowData.oi4Id}
@@ -116,11 +142,13 @@ class ExpansionTable extends React.Component {
                 <div>
                   <h3>Last 3 Events:</h3>
                   {this.displayEvents(this.props.assetLookup[rowData.oi4Id].eventList, 'local')}
-                </div>
+                </div>}
               </div>
             );
           }}
-        /> */}
+        />
+        </ExpansionPanelDetails>
+        </ExpansionPanel> */}
         <ExpansionPanel>
           <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
           <ExpansionPanelDetails className={classes.tableWrap}>
