@@ -25,6 +25,8 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  IconButton,
+  Snackbar
 } from '@material-ui/core';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -32,6 +34,7 @@ import {
   BrightnessHigh,
   Brightness3,
   ExpandMore,
+  FileCopy,
 } from '@material-ui/icons';
 
 import _ from 'lodash';
@@ -116,6 +119,7 @@ class OI4Base extends React.Component {
 
     this.state = {
       appId: 'empty',
+      copySnackOpen: false,
       applicationLookup: {},
       deviceLookup: {},
       listOfDevices: [],
@@ -288,29 +292,54 @@ class OI4Base extends React.Component {
   displayEvents(eventArray, mode = 'global') {
     if (Array.isArray(eventArray)) {
       if (mode === 'global') {
-        return <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell key='GlobalEventsOrigin'>Origin-ID</TableCell>
-              <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
-              <TableCell key='GlobalEventsDesc'>Description</TableCell>
-              <TableCell key='GlobalEventsPayload'>Payload</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-              eventArray.map((events, idx) => {
-                const [originManu, ...originRest] = events.originId.split('/');
-                return <TableRow key={`GlobalEvents-${idx}`}>
-                  <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-                </TableRow>;
-              })
-            }
-          </TableBody>
-        </Table>;
+        return <>
+        <span>
+          <IconButton
+            size='small'
+            color='default'
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(eventArray)).then(() => {
+                console.log('COPY SUCCESSFUL');
+                this.setState({ copySnackOpen: true });
+              });
+            }}
+          >
+          <FileCopy />
+          </IconButton>
+          <Snackbar
+            open={this.copySnackOpen}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            onClose={() => { this.setState({ copySnackOpen: false }) }}
+            autoHideDuration={5000}
+            message="Saved to clipboard"
+          />
+          </span>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell key='GlobalEventsOrigin'>Origin-ID</TableCell>
+                <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
+                <TableCell key='GlobalEventsDesc'>Description</TableCell>
+                <TableCell key='GlobalEventsPayload'>Payload</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {
+                eventArray.map((events, idx) => {
+                  const [originManu, ...originRest] = events.originId.split('/');
+                  return <TableRow key={`GlobalEvents-${idx}`}>
+                    <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
+                    <TableCell component="th" scope="row">{events.number}</TableCell>
+                    <TableCell component="th" scope="row">{events.description}</TableCell>
+                    <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+                  </TableRow>;
+                })
+              }
+            </TableBody>
+          </Table></>;
       } else if (mode === 'local') {
         return <Table>
           <TableHead>
