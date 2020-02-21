@@ -291,8 +291,8 @@ class OI4Base extends React.Component {
         return <Table>
           <TableHead>
             <TableRow>
-              <TableCell key='GlobalEventsOrigin'>OriginID</TableCell>
-              <TableCell key='GlobalEventsNumber'>Number</TableCell>
+              <TableCell key='GlobalEventsOrigin'>Origin-ID</TableCell>
+              <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
               <TableCell key='GlobalEventsDesc'>Description</TableCell>
               <TableCell key='GlobalEventsPayload'>Payload</TableCell>
             </TableRow>
@@ -300,8 +300,9 @@ class OI4Base extends React.Component {
           <TableBody>
             {
               eventArray.map((events, idx) => {
+                const [originManu, ...originRest] = events.originId.split('/');
                 return <TableRow key={`GlobalEvents-${idx}`}>
-                  <TableCell component="th" scope="row">{events.originId}</TableCell>
+                  <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
                   <TableCell component="th" scope="row">{events.number}</TableCell>
                   <TableCell component="th" scope="row">{events.description}</TableCell>
                   <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>

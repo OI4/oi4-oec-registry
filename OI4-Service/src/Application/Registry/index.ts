@@ -589,7 +589,7 @@ export class Registry extends EventEmitter {
     const oldConf = JSON.parse(JSON.stringify(this.config));
     this.config = newConfig;
     if (oldConf.auditLevel !== newConfig.auditLevel) {
-      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`);
+      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, 'w', ESubResource.debug);
       this.updateAuditLevel();
     }
   }
