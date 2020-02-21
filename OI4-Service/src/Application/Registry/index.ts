@@ -299,6 +299,7 @@ export class Registry extends EventEmitter {
     // Try to get them at least once!
     try {
       await this.updateResourceInDevice(assetId, 'health');
+      await this.updateResourceInDevice(assetId, 'profile'); // Initial profile reading
       assetLookup[assetId]['registeredAt'] = new Date().toISOString();
       assetLookup[assetId]['lastMessage'] = new Date().toISOString();
       // If too many devices onboard at the same time, the bus will get spammed...

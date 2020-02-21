@@ -45,6 +45,7 @@ export class ConformityValidator extends EventEmitter {
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
+  static completeProfileList: string[] = ['mam', 'health', 'license', 'licenseText', 'profile', 'data', 'rtLicense', 'config', 'event', 'metadata'];
   constructor(logger: Logger, appId: string) {
     super();
     this.logger = logger;
@@ -142,13 +143,15 @@ export class ConformityValidator extends EventEmitter {
       }
       // First, all mandatories
       const checkedList: string[] = JSON.parse(JSON.stringify(mandatoryResourceList));
-      // Second, all profile-Resources
+      // Second, all resources actually stored in the profile (Only oi4-conform profile entries will be checked)
       for (const resources of conformityObject.profileResourceList) {
         if (!(checkedList.includes(resources))) {
-          checkedList.push(resources);
+          if (ConformityValidator.completeProfileList.includes(resources)) { // Second condition is for checking if the profile event meets OI4-Standards
+            checkedList.push(resources);
+          }
         }
       }
-      // This, all non-profile-non-mandatory resources
+      // Third, all non-profile-non-mandatory resources
       if (resourceList) {
         console.log(`Got ResourceList from Param: ${resourceList}`);
         for (const resources of resourceList) {
