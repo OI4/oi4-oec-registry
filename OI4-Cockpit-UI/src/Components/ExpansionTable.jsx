@@ -33,6 +33,7 @@ import {
   ExpandLess,
   Delete,
   FileCopy,
+  Close,
 } from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail';
@@ -362,7 +363,6 @@ class ExpansionTable extends React.Component {
                     color='default'
                     onClick={() => {
                       navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                        console.log('COPY SUCCESSFUL');
                         this.setState({ copySnackOpen: true });
                       });
                     }}
@@ -378,7 +378,14 @@ class ExpansionTable extends React.Component {
                   }}
                   onClose={() => { this.setState({ copySnackOpen: false }) }}
                   autoHideDuration={5000}
-                  message='Saved to clipboard'
+                  message='Saved Local Events to clipboard'
+                  action={
+                    <>
+                    <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                      <Close fontSize='small' />
+                    </IconButton>
+                    </>
+                  }
                 />
               </span>
               Number</TableCell>

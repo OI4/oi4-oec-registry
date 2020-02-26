@@ -36,6 +36,7 @@ import {
   Brightness3,
   ExpandMore,
   FileCopy,
+  Close,
 } from '@material-ui/icons';
 
 import _ from 'lodash';
@@ -303,7 +304,6 @@ class OI4Base extends React.Component {
                       color='default'
                       onClick={() => {
                         navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                          console.log('COPY SUCCESSFUL');
                           this.setState({ copySnackOpen: true });
                         });
                       }}
@@ -318,8 +318,15 @@ class OI4Base extends React.Component {
                       horizontal: 'center',
                     }}
                     onClose={() => { this.setState({ copySnackOpen: false }) }}
-                    autoHideDuration={5000}
-                    message='Saved to clipboard'
+                    autoHideDuration={4000}
+                    message='Saved Global Events to clipboard'
+                    action={
+                      <>
+                      <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                        <Close fontSize='small' />
+                      </IconButton>
+                      </>
+                    }
                   />
                 </span>
                 Origin-ID</TableCell>

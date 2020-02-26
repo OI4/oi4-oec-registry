@@ -15,10 +15,14 @@ import {
   IconButton,
   Grid,
   CircularProgress,
+  Tooltip,
+  Snackbar
 } from '@material-ui/core';
 
 import {
   Refresh,
+  FileCopy,
+  Close,
 } from '@material-ui/icons';
 
 const styles = theme => ({
@@ -58,6 +62,7 @@ class ExpansionTableDetail extends React.Component {
         2: '⚠️',
         3: '❌',
       },
+      copySnackOpen: false,
     };
     // A list of mandatory resources so we can decide which ones we display
     this.mandatoryResource = {
@@ -72,7 +77,40 @@ class ExpansionTableDetail extends React.Component {
       <Grid item xs={12}>
         <Grid container justify='space-evenly'>
           <div>
-            <h3>Detailed MasterAssetModel:</h3>
+            <h3>Detailed MasterAssetModel:
+              <span style={{ marginRight: '1%' }}>
+                <Tooltip title="Copy to clipboard">
+                  <IconButton
+                    size='small'
+                    color='default'
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(this.props.asset.resources.mam, null, 2)).then(() => {
+                        this.setState({ copySnackOpen: true });
+                      });
+                    }}
+                  >
+                    <FileCopy />
+                  </IconButton>
+                </Tooltip>
+                <Snackbar
+                  open={this.state.copySnackOpen}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                  }}
+                  onClose={() => { this.setState({ copySnackOpen: false }) }}
+                  autoHideDuration={5000}
+                  message='Saved MAM to clipboard'
+                  action={
+                    <>
+                    <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                      <Close fontSize='small' />
+                    </IconButton>
+                    </>
+                  }
+                />
+              </span>
+            </h3>
             <Paper className={classes.paper}>
               {this.ownJsonViewer(this.props.asset.resources.mam)}
             </Paper>
