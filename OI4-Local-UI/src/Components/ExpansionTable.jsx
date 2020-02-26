@@ -24,12 +24,15 @@ import {
   TableRow,
   Collapse,
   IconButton,
+  Tooltip,
+  Snackbar,
 } from '@material-ui/core';
 
 import {
   ExpandMore,
   ExpandLess,
   Delete,
+  FileCopy,
 } from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail';
@@ -74,7 +77,7 @@ class ExpansionTable extends React.Component {
     const { classes } = this.props;
     return (
       <>
-      {/* <ExpansionPanel>
+        {/* <ExpansionPanel>
         <ExpansionPanelSummary expandIcon={<ExpandMore />}> {this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</ExpansionPanelSummary>
         <ExpansionPanelDetails className={classes.tableWrap}>
         <MaterialTable
@@ -206,7 +209,7 @@ class ExpansionTable extends React.Component {
                           onClick={(evt) => {
                             evt.preventDefault();
                             this.props.clearAsset(oi4Id);
-                           }}
+                          }}
                         >
                           <Delete />
                         </IconButton>
@@ -341,26 +344,53 @@ class ExpansionTable extends React.Component {
    */
   displayLocalEvents(eventArray) {
     if (Array.isArray(eventArray)) {
-        return <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Number</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Payload</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-              eventArray.map((events, idx) => {
-                return <TableRow key={`LocalEvents-${idx}`}>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-                </TableRow>;
-              })
-            }
-          </TableBody>
-        </Table>;
+      return <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>
+              <span style={{ marginRight: '1%' }}>
+                <Tooltip title="Copy to clipboard">
+                  <IconButton
+                    size='small'
+                    color='default'
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+                        console.log('COPY SUCCESSFUL');
+                        this.setState({ copySnackOpen: true });
+                      });
+                    }}
+                  >
+                    <FileCopy />
+                  </IconButton>
+                </Tooltip>
+                <Snackbar
+                  open={this.state.copySnackOpen}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                  }}
+                  onClose={() => { this.setState({ copySnackOpen: false }) }}
+                  autoHideDuration={5000}
+                  message='Saved to clipboard'
+                />
+              </span>
+              Number</TableCell>
+            <TableCell>Description</TableCell>
+            <TableCell>Payload</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {
+            eventArray.map((events, idx) => {
+              return <TableRow key={`LocalEvents-${idx}`}>
+                <TableCell component="th" scope="row">{events.number}</TableCell>
+                <TableCell component="th" scope="row">{events.description}</TableCell>
+                <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+              </TableRow>;
+            })
+          }
+        </TableBody>
+      </Table>;
     }
   }
 
