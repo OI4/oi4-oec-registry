@@ -26,7 +26,8 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Snackbar
+  Snackbar,
+  Tooltip
 } from '@material-ui/core';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -293,34 +294,37 @@ class OI4Base extends React.Component {
     if (Array.isArray(eventArray)) {
       if (mode === 'global') {
         return <>
-        <span>
-          <IconButton
-            size='small'
-            color='default'
-            onClick={() => {
-              navigator.clipboard.writeText(JSON.stringify(eventArray)).then(() => {
-                console.log('COPY SUCCESSFUL');
-                this.setState({ copySnackOpen: true });
-              });
-            }}
-          >
-          <FileCopy />
-          </IconButton>
-          <Snackbar
-            open={this.copySnackOpen}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            onClose={() => { this.setState({ copySnackOpen: false }) }}
-            autoHideDuration={5000}
-            message="Saved to clipboard"
-          />
-          </span>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell key='GlobalEventsOrigin'>Origin-ID</TableCell>
+                <TableCell key='GlobalEventsOrigin'>
+                  <span style={{ marginRight: '1%' }}>
+                    <Tooltip title="Copy to clipboard">
+                      <IconButton
+                        size='small'
+                        color='default'
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+                            console.log('COPY SUCCESSFUL');
+                            this.setState({ copySnackOpen: true });
+                          });
+                        }}
+                      >
+                        <FileCopy />
+                      </IconButton>
+                    </Tooltip>
+                    <Snackbar
+                      open={this.state.copySnackOpen}
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                      }}
+                      onClose={() => { this.setState({ copySnackOpen: false }) }}
+                      autoHideDuration={5000}
+                      message='Saved to clipboard'
+                    />
+                  </span>
+                  Origin-ID</TableCell>
                 <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
                 <TableCell key='GlobalEventsDesc'>Description</TableCell>
                 <TableCell key='GlobalEventsPayload'>Payload</TableCell>
