@@ -19,6 +19,7 @@ export interface IDeviceMessage {
   lastMessage: string;
   registeredAt: string;
   conformityObject: IConformity;
+  available: boolean;
 }
 
 export interface IResourceObject {

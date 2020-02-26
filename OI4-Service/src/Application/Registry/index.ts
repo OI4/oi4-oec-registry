@@ -30,8 +30,8 @@ export class Registry extends EventEmitter {
     EAuditLevel.trace,
   ];
 
-  // Timeout container
-  private healthTimeout: number;
+  // Timeout container TODO: types
+  private timeoutLookup: any;
 
   private conformityValidator: ConformityValidator;
 
@@ -45,7 +45,7 @@ export class Registry extends EventEmitter {
     this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.queue = new SequentialTaskQueue();
 
-    this.healthTimeout = 0;
+    this.timeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
     this.applicationLookup = {};
@@ -119,6 +119,7 @@ export class Registry extends EventEmitter {
 
     if (oi4Id in assetLookup) {
       assetLookup[oi4Id]['lastMessage'] = new Date().toISOString();
+
     }
 
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
@@ -152,10 +153,12 @@ export class Registry extends EventEmitter {
         const health = assetLookup[oi4Id].resources.health;
         if (health) {
           if (health.health === EDeviceHealth.NORMAL_0) {
-            this.logger.log('Registry: Resetting timeout from health');
+            this.logger.log(`Registry: Resetting timeout from health for oi4Id: ${oi4Id}`);
             // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-            clearTimeout(this.healthTimeout);
-            this.healthTimeout = <any>setTimeout(() => this.updateResourceInDevice(oi4Id, 'health'), 60000);
+            clearTimeout(this.timeoutLookup[oi4Id]);
+            assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
+            const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
+            this.timeoutLookup[oi4Id] = timeout;
           }
         }
         this.logger.log(`Registry: Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
@@ -279,6 +282,7 @@ export class Registry extends EventEmitter {
       },
       fullDevicePath: `oi4/${topicArr[1]}/${originator}`,
       conformityObject: conf,
+      available: true,
     };
     let assetLookup: IDeviceLookup;
     if (device.HardwareRevision === '') {
@@ -436,6 +440,25 @@ export class Registry extends EventEmitter {
       await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
+  }
+
+    /**
+   * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
+   * @param oi4Id The oi4Id of the asset that is to be updated
+   * @param resource The resource that is to be updated
+   */
+  async resourceTimeout(oi4Id: string, resource: string) {
+    if (oi4Id in this.applicationLookup) {
+      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
+      this.logger.log(`Registry:Timeout - Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
+      this.applicationLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
+    }
+    if (oi4Id in this.deviceLookup) {
+      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
+      this.logger.log(`Registry:Timeout - Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
+      this.deviceLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
+    }
+    // this.healthTimeout = <any>setTimeout(() => this.updateResourceInDevice(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
   }
 
   /**
