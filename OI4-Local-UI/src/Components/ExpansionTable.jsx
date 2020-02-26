@@ -232,8 +232,8 @@ class ExpansionTable extends React.Component {
                               updatingConformity={this.props.updatingConformity}
                             />
                             <div>
-                              <h3>Last 3 Events:</h3>
-                              {this.displayEvents(this.props.assetLookup[oi4Id].eventList, 'local')}
+                              <h3>{`Last ${this.props.assetLookup[oi4Id].eventList.length} Events:`}</h3>
+                              {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList)}
                             </div>
                           </div>
                         </Collapse>
@@ -338,34 +338,9 @@ class ExpansionTable extends React.Component {
   /**
    * Displays the Events / Events coming from either global or local data sources
    * @param {array} eventArray - an array of the last few events
-   * @param {string} mode - the mode with which the events will be displayed (local: without originId, global: with originId)
    */
-  displayEvents(eventArray, mode = 'global') {
+  displayLocalEvents(eventArray) {
     if (Array.isArray(eventArray)) {
-      if (mode === 'global') {
-        return <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>OriginID</TableCell>
-              <TableCell>Number</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Payload</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-              eventArray.map((events, idx) => {
-                return <TableRow key={`GlobalEvents-${idx}`}>
-                  <TableCell component="th" scope="row">{events.originId}</TableCell>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-                </TableRow>;
-              })
-            }
-          </TableBody>
-        </Table>;
-      } else if (mode === 'local') {
         return <Table>
           <TableHead>
             <TableRow>
@@ -386,7 +361,6 @@ class ExpansionTable extends React.Component {
             }
           </TableBody>
         </Table>;
-      }
     }
   }
 

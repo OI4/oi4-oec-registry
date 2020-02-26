@@ -238,7 +238,7 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMore />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
-                  {this.displayEvents(this.state.globalEventTrail)}
+                  {this.displayGlobalEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
 
@@ -288,75 +288,52 @@ class OI4Base extends React.Component {
   /**
    * Displays the Events / Events coming from either global or local data sources
    * @param {array} eventArray - an array of the last few events
-   * @param {string} mode - the mode with which the events will be displayed (local: without originId, global: with originId)
    */
-  displayEvents(eventArray, mode = 'global') {
+  displayGlobalEvents(eventArray) {
     if (Array.isArray(eventArray)) {
-      if (mode === 'global') {
-        return <>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell key='GlobalEventsOrigin'>
-                  <span style={{ marginRight: '1%' }}>
-                    <Tooltip title="Copy to clipboard">
-                      <IconButton
-                        size='small'
-                        color='default'
-                        onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                            console.log('COPY SUCCESSFUL');
-                            this.setState({ copySnackOpen: true });
-                          });
-                        }}
-                      >
-                        <FileCopy />
-                      </IconButton>
-                    </Tooltip>
-                    <Snackbar
-                      open={this.state.copySnackOpen}
-                      anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center',
-                      }}
-                      onClose={() => { this.setState({ copySnackOpen: false }) }}
-                      autoHideDuration={5000}
-                      message='Saved to clipboard'
-                    />
-                  </span>
-                  Origin-ID</TableCell>
-                <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
-                <TableCell key='GlobalEventsDesc'>Description</TableCell>
-                <TableCell key='GlobalEventsPayload'>Payload</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {
-                eventArray.map((events, idx) => {
-                  const [originManu, ...originRest] = events.originId.split('/');
-                  return <TableRow key={`GlobalEvents-${idx}`}>
-                    <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
-                    <TableCell component="th" scope="row">{events.number}</TableCell>
-                    <TableCell component="th" scope="row">{events.description}</TableCell>
-                    <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-                  </TableRow>;
-                })
-              }
-            </TableBody>
-          </Table></>;
-      } else if (mode === 'local') {
-        return <Table>
+      return <>
+        <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Number</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Payload</TableCell>
+              <TableCell key='GlobalEventsOrigin'>
+                <span style={{ marginRight: '1%' }}>
+                  <Tooltip title="Copy to clipboard">
+                    <IconButton
+                      size='small'
+                      color='default'
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+                          console.log('COPY SUCCESSFUL');
+                          this.setState({ copySnackOpen: true });
+                        });
+                      }}
+                    >
+                      <FileCopy />
+                    </IconButton>
+                  </Tooltip>
+                  <Snackbar
+                    open={this.state.copySnackOpen}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'center',
+                    }}
+                    onClose={() => { this.setState({ copySnackOpen: false }) }}
+                    autoHideDuration={5000}
+                    message='Saved to clipboard'
+                  />
+                </span>
+                Origin-ID</TableCell>
+              <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
+              <TableCell key='GlobalEventsDesc'>Description</TableCell>
+              <TableCell key='GlobalEventsPayload'>Payload</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {
               eventArray.map((events, idx) => {
-                return <TableRow key={`LocalEvents-${idx}`}>
+                const [originManu, ...originRest] = events.originId.split('/');
+                return <TableRow key={`GlobalEvents-${idx}`}>
+                  <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
                   <TableCell component="th" scope="row">{events.number}</TableCell>
                   <TableCell component="th" scope="row">{events.description}</TableCell>
                   <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
@@ -364,8 +341,7 @@ class OI4Base extends React.Component {
               })
             }
           </TableBody>
-        </Table>;
-      }
+        </Table></>;
     }
   }
 
