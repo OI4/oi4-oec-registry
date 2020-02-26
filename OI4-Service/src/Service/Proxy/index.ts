@@ -12,8 +12,8 @@ export class OI4Proxy extends EventEmitter {
     super();
 
     this.appId = containerState.appId;
-    this.builder = new OPCUABuilder(this.appId);
     this.serviceType = containerState.mam.DeviceClass;
+    this.builder = new OPCUABuilder(this.appId, this.serviceType);
 
     this.standardRoute = `oi4/${this.serviceType}/${this.appId}`;
     this.containerState = containerState;

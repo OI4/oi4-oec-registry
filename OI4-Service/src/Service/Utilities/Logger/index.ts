@@ -83,7 +83,7 @@ class Logger {
     }
     if (appId) {
       this._appId = appId;
-      this._builder = new OPCUABuilder(appId);
+      this._builder = new OPCUABuilder(appId, 'Registry');
     }
     if (serviceType) {
       this._serviceType = serviceType;

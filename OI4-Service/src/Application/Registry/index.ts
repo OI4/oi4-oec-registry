@@ -58,7 +58,7 @@ export class Registry extends EventEmitter {
       auditLevel: EAuditLevel.trace,
     }; // TODO: need solid model and good default values for this...
 
-    this.builder = new OPCUABuilder(appId); // TODO: Better system for appId!
+    this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Better system for appId!
 
     this.conformityValidator = new ConformityValidator(appId); // TODO: Better system for appId!
 

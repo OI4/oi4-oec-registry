@@ -44,9 +44,13 @@ interface IOPCUABuilderProps {
 
 export class OPCUABuilder {
   appId: string;
+  serviceType: string;
+  publisherId: string;
   jsonValidator: Ajv.Ajv;
-  constructor(appId: string) {
+  constructor(appId: string, serviceType: string) {
     this.appId = appId;
+    this.serviceType = serviceType;
+    this.publisherId = `${serviceType}/${appId}`;
     this.jsonValidator = new Ajv();
     // Add Validation Schemas
     // First common Schemas
@@ -84,10 +88,10 @@ export class OPCUABuilder {
     // }
     opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
     const opcUaDataMessage: IOPCUAData = {
-      MessageId: `${Date.now().toString()}-${this.appId}`,
+      MessageId: `${Date.now().toString()}-${this.publisherId}`,
       MessageType: EOPCUAMessageType.uadata,
       DataSetClassId: classId, // TODO: Generate UUID, but not here, make a lookup,
-      PublisherId: this.appId,
+      PublisherId: this.publisherId,
       Messages: opcUaDataPayload,
       CorrelationId: correlationId,
     };
@@ -106,9 +110,9 @@ export class OPCUABuilder {
   buildOPCUAMetaDataMessage(metaDataName: string, metaDataDescription: string, fieldProperties: any, timestamp: Date, classId: string, correlationId: string = ''): IOPCUAMetaData {
     const opcUaMetaDataPayload: IOPCUAMetaDataMessage = this.buildOPCUAMetaData(metaDataName, metaDataDescription, classId, fieldProperties);
     const opcUaMetaDataMessage: IOPCUAMetaData = {
-      MessageId: `${Date.now().toString()}-${this.appId}`,
+      MessageId: `${Date.now().toString()}-${this.publisherId}`,
       MessageType: EOPCUAMessageType.uametadata,
-      PublisherId: this.appId,
+      PublisherId: this.publisherId,
       DataSetWriterId: 'somecompany.com/sensor/someid/someserial', // Currently hardcoded, originID
       MetaData: opcUaMetaDataPayload,
       CorrelationId: correlationId,
@@ -235,10 +239,12 @@ export class OPCUABuilder {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
     } catch (validateErr) {
       console.log(`OPCUABuilder-AJV:${validateErr}`);
+      console.log(payload);
       networkMessageValidationResult = false;
     }
     if (!networkMessageValidationResult) {
       console.log(`OPCUABuilder-AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
+      console.log(payload);
     }
     return networkMessageValidationResult;
   }
