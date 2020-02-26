@@ -150,17 +150,12 @@ export class Registry extends EventEmitter {
     } else if (topic.includes('/pub/health')) {
       this.logger.log(`Registry: Got Health from ${oi4Id} in processMqttMessage`);
       if (oi4Id in assetLookup) {
-        const health = assetLookup[oi4Id].resources.health;
-        if (health) {
-          if (health.health === EDeviceHealth.NORMAL_0) {
-            this.logger.log(`Registry: Resetting timeout from health for oi4Id: ${oi4Id}`);
-            // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-            clearTimeout(this.timeoutLookup[oi4Id]);
-            assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
-            const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
-            this.timeoutLookup[oi4Id] = timeout;
-          }
-        }
+        this.logger.log(`Registry: Resetting timeout from health for oi4Id: ${oi4Id}`);
+        // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
+        clearTimeout(this.timeoutLookup[oi4Id]);
+        assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
+        const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
+        this.timeoutLookup[oi4Id] = timeout;
         this.logger.log(`Registry: Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
         parsedPayload.lastMessage = new Date().toISOString();
         assetLookup[oi4Id].resources.health = parsedPayload;
@@ -442,11 +437,11 @@ export class Registry extends EventEmitter {
     }
   }
 
-    /**
-   * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
-   * @param oi4Id The oi4Id of the asset that is to be updated
-   * @param resource The resource that is to be updated
-   */
+  /**
+ * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
+ * @param oi4Id The oi4Id of the asset that is to be updated
+ * @param resource The resource that is to be updated
+ */
   async resourceTimeout(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage('{}', new Date, `${resource}Conformity`)));
