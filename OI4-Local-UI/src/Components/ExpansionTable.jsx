@@ -63,6 +63,7 @@ class ExpansionTable extends React.Component {
         OFF_SPEC_3: namur3,
         MAINTENANCE_REQUIRED_4: namur4,
       },
+      rowOpacity: '1.0',
       tableName: `${this.props.lookupType.substring(0, 1).toUpperCase()}${this.props.lookupType.substring(1)} Table`, // First character to UpperCase, concatenate the rest
       validityLookup: {
         0: '❔',
@@ -172,9 +173,15 @@ class ExpansionTable extends React.Component {
               <TableBody>
                 {Object.keys(this.props.assetLookup).map((oi4Id, idx) => (
                   <React.Fragment key={`AssetTable-${oi4Id}-${idx}`}>
+                    {/* {console.log((parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString())}
+                    {console.log(oi4Id)} */}
                     <TableRow
                       key={`AssetTable-${oi4Id}-${idx}`}
                       hoverstyle={{ cursor: "pointer" }}
+                      style={{ opacity: (parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString() }}
+                      // FIXME: A bit hacky: we get a bool from availability. Opacity over 1.0 does not hurt, so we add 0.5 to it. false(0) will result in 0.5
+                      // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
+                      // (nodejs type inference) then parse it to float, add it together and convert it to a string
                     >
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.Text}</TableCell>
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.Text}</TableCell>
