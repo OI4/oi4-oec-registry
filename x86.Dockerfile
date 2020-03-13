@@ -1,5 +1,8 @@
 FROM node:10-alpine
 
+# -------INSTALL OPENSSL
+RUN apk add --update openssl && rm -rf /var/cache/apk/*
+
 # -------FIX NPM ERRORS ON LOW MEM MACHINE
 RUN npm config set unsafe-perm true
 
@@ -9,8 +12,8 @@ ENV COCKPIT_UI_SRC_PATH=/usr/OI4-Service/uiplugin
 
 # -------NOW LOCALUI
 WORKDIR /usr/OI4-Local-UI
-# --- Install serve to host local build
-RUN npm install serve
+# --- Install serve & http-server to host local build
+RUN npm install serve && npm install http-server
 COPY ./OI4-Local-UI/package.json ./
 COPY ./OI4-Local-UI/build ./build/
 
