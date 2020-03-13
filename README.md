@@ -95,6 +95,26 @@ If you don't want to use the Cockpit-Plugin, just remove the mount path in your 
 A run command can be found here(without cockpit mount): ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest```\
 (with cockpit mount) ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer registrycheckout:latest```
 
+## Using TLS / HTTPS:
+Using TLS / HTTPS is currently experimental and writing issues is encouraged.
+
+In order to use HTTP, the environment variable ```CERT_PATH``` has to be provided, which contains the full path to your certificate and corresponding key. (example: ```usr/local/share/cert```)
+
+***Don't forget to add the path to the container create options (mount) and make sure that the path actually exists on the file system of the host.***
+
+The directory must be filled with a ```cert.pem``` and ```key.pem```
+
+- If the ```CERT_PATH``` variable is present, but there are no files in the directory, the container will create a self-signed test certificate and place it in the path.
+- If the ```CERT_PATH``` variable is not present, neither the frontend nor the backend will be using secure communication
+- If the ```CERT_PATH``` variable is present and there is a certificate in the directory, this certificate will be used to establish a secure connection.
+
+### Peculiarities in the browser:
+If the automatically generated self-signed certificate is used, an exception for the certificate needs to be added for *both* the frontend *and* the backend.
+- Frontend sample address for exception: "https://*ipOfRegistry*:5000"
+- Backend sample address for exception: "https://*ipOfRegistry*:4567/health"
+
+This step is not necessary if a certificate is used that is signed by a well-known CA authority.
+
 ## Dockerfiles:
 some people might remove the Cockpit-UI as they don't support cockpit on their device.\
 Just comment out the 3 lines below **# -------COCKPIT UI**. This will stop the Cockpit UI from being copied.
