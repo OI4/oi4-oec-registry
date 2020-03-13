@@ -176,7 +176,7 @@ class OI4Base extends React.Component {
     //   }
     // },
     //   2000);
-    this.updateAppID(); // This will retrieve the AppID of the registry itself.
+    setTimeout(() => { this.updateAppID() }, 300); // This will retrieve the AppID of the registry itself.
     setTimeout(() => {
       this.toggleTheme();
     },
