@@ -20,4 +20,4 @@ echo "copying UI to host fs"
 mkdir -p /usr/local/share/cockpit/OI4-Registry
 cp -r $COCKPIT_UI_SRC_PATH/* /usr/local/share/cockpit/OI4-Registry/
  
-echo "... done copyint UI to host fs"
+echo "... done copying UI to host fs"

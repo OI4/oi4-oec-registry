@@ -21,7 +21,7 @@ term_handler() {
 
 # setup handlers
 # on callback, kill the last background process, which is `tail -f /dev/null` and execute the specified handler
-#      SIGINT SIGKILL SIGTERM SIGQUIT SIGTSTP SIGSTOP SIGHUP 2 9 15 3 20 19 1 
+# SIGINT SIGKILL SIGTERM SIGQUIT SIGTSTP SIGSTOP SIGHUP 2 9 15 3 20 19 1 
 trap 'kill ${!}; term_handler' 2 9 15 3 20 19 1 
 
 # run bootstrapper 
@@ -30,10 +30,27 @@ echo "run bootstrapper"
 
 # run applications as services in the background now
 echo "Starting OI4-Service and LocalUI"
-node ./src/app.js & cd ../OI4-Local-UI && npx serve -s build
+node ./src/app.js & cd ../OI4-Local-UI
 
+# conditional entry: Unsecure Frontend / Secure frontend
+# TODO: Remove "serve" as a server, it does not matter much for now...
+if [ "$CERT_PATH" = "" ];
+then
+   echo "No CERT_PATH environment variable set"
+   npx serve -s build
+else
+   	FILE=$CERT_PATH/cert.pem
+	if [ -f "$FILE" ];
+    then
+		echo "$FILE exists, serving https without creating own certificate"
+	else
+		echo "$FILE does not exist! creating own certificate..."
+		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/cert/key.pem -out /usr/local/share/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
+	fi
+	npx http-server -S -C /usr/local/share/cert/cert.pem -K /usr/local/share/cert/key.pem --cors -p 5000 build
+fi
 
-#get process ID of most recently executed background
+# get process ID of most recently executed background
 pid_oi4service="$!"
 echo pid_oi4service: $pid_oi4service
 
