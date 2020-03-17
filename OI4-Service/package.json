@@ -14,7 +14,7 @@
     "industry4.0"
   ],
   "author": "BM",
-  "license": "SEE LICENSE IN hilscherlicense.lic",
+  "license": "BSD-3-Clause",
   "dependencies": {
     "@types/cors": "^2.8.6",
     "ajv": "^6.11.0",

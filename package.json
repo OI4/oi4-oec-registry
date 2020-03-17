@@ -16,5 +16,5 @@
     "installAll": "cd ./OI4-Local-UI && npm install && cd ../OI4-Cockpit-UI && npm install && cd ../OI4-Service && npm install && cd .."
   },
   "author": "Hilscher",
-  "license": "ISC"
+  "license": "BSD-3-Clause"
 }
