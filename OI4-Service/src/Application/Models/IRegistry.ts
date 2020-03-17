@@ -56,4 +56,5 @@ export interface IRegistryConfig {
   assetEventListLength: number;
   globalEventListLength: number;
   auditLevel: string;
+  showRegistry: boolean;
 }

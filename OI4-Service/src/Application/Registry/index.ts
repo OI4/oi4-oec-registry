@@ -56,6 +56,7 @@ export class Registry extends EventEmitter {
       globalEventListLength: 20,
       assetEventListLength: 3,
       auditLevel: EAuditLevel.trace,
+      showRegistry: true,
     }; // TODO: need solid model and good default values for this...
 
     this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Better system for appId!
@@ -288,6 +289,7 @@ export class Registry extends EventEmitter {
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${originator}`, assetId);
     if (Object.keys(device).length === 0) {
       this.logger.log('Registry: Critical Error: MAM of device to be added is empty', 'w', ESubResource.warn);
+      return;
     }
     const fullDevice: IDeviceMessage = {
       originator,
@@ -642,7 +644,7 @@ export class Registry extends EventEmitter {
    * Retrieves the config of the Registry
    * @returns The config of the registry
    */
-  getConfig(): any {
+  getConfig(): IRegistryConfig {
     console.log(this.config);
     return this.config;
   }
@@ -679,6 +681,10 @@ export class Registry extends EventEmitter {
     if (oi4Id in this.applicationLookup) {
       return this.applicationLookup[oi4Id];
     }
+  }
+
+  getAppId() {
+    return this.appId;
   }
 
   /**

@@ -45,7 +45,11 @@ busProxy.on('deleteMam', async (deleteId) => {
 const webClient = webProxy.webClient;
 
 webClient.get('/registry/application', (deviceReq, deviceResp) => {
-  deviceResp.send(JSON.stringify(registry.applications));
+  const filteredApps = JSON.parse(JSON.stringify(registry.applications));
+  if (!registry.getConfig().showRegistry) {
+    delete filteredApps[registry.getAppId()];
+  }
+  deviceResp.send(JSON.stringify(filteredApps));
 });
 
 webClient.get('/registry/device', (deviceReq, deviceResp) => {
