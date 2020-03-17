@@ -28,12 +28,12 @@ class OI4WebProxy extends OI4Proxy {
     this.client.use(bodyParser.json());
     this.client.options('*', cors());
     if ((process.env.CERT_PATH)) { // Environment variable found, so we should use HTTPS, check for key/cert
-      if (fs.existsSync('/usr/local/share/cert/cert.pem') && fs.existsSync('/usr/local/share/cert/key.pem')) {
+      if (fs.existsSync(`${process.env.CERT_PATH}/cert.pem`) && fs.existsSync(`${process.env.CERT_PATH}/key.pem`)) {
         this.logger.log('Key and Cert exist, using HTTPS for Express...', 'w', ESubResource.info);
         https.createServer(
           {
-            key: fs.readFileSync('/usr/local/share/cert/key.pem'),
-            cert: fs.readFileSync('/usr/local/share/cert/cert.pem'),
+            key: fs.readFileSync(`${process.env.CERT_PATH}/key.pem`),
+            cert: fs.readFileSync(`${process.env.CERT_PATH}/cert.pem`),
           },
           this.client)
           .listen(4567, () => {
