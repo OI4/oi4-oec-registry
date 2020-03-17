@@ -9,7 +9,6 @@ import { IOPCUAData, IOPCUAMetaData } from '../../Models/IOPCUAPayload';
 import { Logger } from '../../Utilities/Logger';
 import { ESubResource } from '../../Models/IContainer';
 
-
 class OI4WebProxy extends OI4Proxy {
   private client: express.Application;
   private logger: Logger;
@@ -28,16 +27,18 @@ class OI4WebProxy extends OI4Proxy {
     this.client.use(cors());
     this.client.use(bodyParser.json());
     this.client.options('*', cors());
-    if((process.env.CERT_PATH)) { // Environment variable found, so we should use HTTPS, check for key/cert
+    if ((process.env.CERT_PATH)) { // Environment variable found, so we should use HTTPS, check for key/cert
       if (fs.existsSync('/usr/local/share/cert/cert.pem') && fs.existsSync('/usr/local/share/cert/key.pem')) {
         this.logger.log('Key and Cert exist, using HTTPS for Express...', 'w', ESubResource.info);
-        https.createServer({
-          key: fs.readFileSync('/usr/local/share/cert/key.pem'),
-          cert: fs.readFileSync('/usr/local/share/cert/cert.pem')
-        }, this.client)
-        .listen(4567, () => {
-          this.logger.log('WebProxy of Registry listening on 4567 over HTTPS', 'w', ESubResource.info);
-        });
+        https.createServer(
+          {
+            key: fs.readFileSync('/usr/local/share/cert/key.pem'),
+            cert: fs.readFileSync('/usr/local/share/cert/cert.pem'),
+          },
+          this.client)
+          .listen(4567, () => {
+            this.logger.log('WebProxy of Registry listening on 4567 over HTTPS', 'w', ESubResource.info);
+          });
       } else {
         this.logger.log('Key and / or Cert dont exist..fallback to HTTP', 'w', ESubResource.info);
         this.client.listen(4567, () => {
@@ -50,7 +51,6 @@ class OI4WebProxy extends OI4Proxy {
         this.logger.log('WebProxy of Registry listening on 4567 over HTTP', 'w', ESubResource.info);
       });
     }
-
 
     // Handle Get Requests
     this.client.get('/', (indexReq, indexResp) => {

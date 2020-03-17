@@ -305,7 +305,7 @@ class OI4MessageBusProxy extends OI4Proxy {
       await this.client.publish(
         `${this.standardRoute}/pub/${resource}/${this.appId}`,
         JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState[resource], new Date(), `${resource}-${this.serviceType}-ClassId`, messageId)));
-      this.logger.log(`BusProxy: Published ${resource} on ${this.standardRoute}/pub/${resource}`);
+      this.logger.log(`BusProxy: Published ${resource} on ${this.standardRoute}/pub/${resource}/${this.appId}`);
     }
   }
 
