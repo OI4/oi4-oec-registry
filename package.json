@@ -8,12 +8,12 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve OI4-Local-UI/build -s",
     "buildLocalUI": "cd ./OI4-Local-UI && npm run build",
     "serveLocalUI": "cd ./OI4-Local-UI && serve build/",
-    "buildAllWindows": "cd ./OI4-Local-UI & npm run build & cd ../OI4-Cockpit-UI & mingw32-make.exe & cd ../OI4-Service & npm run tsc",
-    "buildAllLinux": "cd ./OI4-Local-UI & npm run build & cd ../OI4-Cockpit-UI & make & cd ../OI4-Service & npm run tsc",
-    "installAll": "cd ./OI4-Local-UI & npm install & cd ../OI4-Cockpit-UI & npm install & cd ../OI4-Service & npm install"
+    "buildAllWindows": "cd ./OI4-Local-UI && npm run build && cd ../OI4-Cockpit-UI && mingw32-make.exe && cd ../OI4-Service && npm run tsc && cd ..",
+    "buildAllLinux": "cd ./OI4-Local-UI && npm run build && cd ../OI4-Cockpit-UI && make && cd ../OI4-Service && npm run tsc && cd ..",
+    "installAll": "cd ./OI4-Local-UI && npm install && cd ../OI4-Cockpit-UI && npm install && cd ../OI4-Service && npm install && cd .."
   },
   "author": "Hilscher",
   "license": "ISC"
