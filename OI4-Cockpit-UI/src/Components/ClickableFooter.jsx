@@ -122,10 +122,10 @@ export class ClickableFooter extends React.Component {
               <div style={{ margin: '10px' }}>
                 {this.props.config.developmentMode ? <>Load config from file:
                   <input
-                      accept=".json"
-                      id="contained-button-file"
-                      type="file"
-                      onChange={(e) => { this.props.handleLoadFromFile(e) }}
+                    accept=".json"
+                    id="contained-button-file"
+                    type="file"
+                    onChange={(e) => { this.props.handleLoadFromFile(e) }}
                   />
                   {/*
                   <label htmlFor="contained-button-file">
@@ -140,6 +140,17 @@ export class ClickableFooter extends React.Component {
                   <DeleteForever />
                 </IconButton></> : null}
               </div>
+              <div style={{ margin: '10px' }}>
+                {this.props.config.developmentMode ? <>
+                  <p>Show / Add Registry to Database:
+                <Checkbox
+                      checked={this.props.config.showRegistry || false} // Default value needed to stay in controlled mode
+                      onChange={this.props.handleShowRegistryChange} // lifting state up
+                      value='primary'
+                />
+                  </p></> : null}
+              </div>
+
               {/* <div>Local (Frontend)</div>
               <div>
                 <TextField
@@ -199,15 +210,15 @@ export class ClickableFooter extends React.Component {
                   <div style={{ margin: '10px' }}>
                     {this.props.config.developmentMode ? <>Set Audit Level:
                      <Select
-                     value={this.props.config.auditLevel || ''}
-                     onChange={this.props.handleAuditLevelChange}
-                     >
-                       <MenuItem value='trace'>Trace</MenuItem>
-                       <MenuItem value='debug'>Debug</MenuItem>
-                       <MenuItem value='info'>Info</MenuItem>
-                       <MenuItem value='warn'>Warn</MenuItem>
-                       <MenuItem value='error'>Error</MenuItem>
-                       <MenuItem value='fatal'>Fatal</MenuItem>
+                        value={this.props.config.auditLevel || ''}
+                        onChange={this.props.handleAuditLevelChange}
+                      >
+                        <MenuItem value='trace'>Trace</MenuItem>
+                        <MenuItem value='debug'>Debug</MenuItem>
+                        <MenuItem value='info'>Info</MenuItem>
+                        <MenuItem value='warn'>Warn</MenuItem>
+                        <MenuItem value='error'>Error</MenuItem>
+                        <MenuItem value='fatal'>Fatal</MenuItem>
                       </Select>
                     </> : null}
                   </div>

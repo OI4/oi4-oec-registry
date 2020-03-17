@@ -133,6 +133,7 @@ class OI4Base extends React.Component {
         globalEventListLength: 10,
         assetEventListLength: 3,
         auditLevel: 'trace',
+        showRegistry: true,
       },
       theme: lightTheme,
       darkActivated: false,
@@ -249,6 +250,7 @@ class OI4Base extends React.Component {
               clearAllAssets={this.clearAllAssets.bind(this)}
               config={this.state.config}
               handleExpertChange={this.handleExpertChange.bind(this)}
+              handleShowRegistryChange={this.handleShowRegistryChange.bind(this)}
               handleLocalTrailLength={this.setlocalTrailLength.bind(this)}
               handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
               handleGetConfig={this.getConfig.bind(this)}
@@ -270,6 +272,12 @@ class OI4Base extends React.Component {
   handleExpertChange = (event, newValue) => {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
     oldConfigObj.developmentMode = !oldConfigObj.developmentMode;
+    this.setState({ config: oldConfigObj });
+  }
+
+  handleShowRegistryChange = (event, newValue) => {
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    oldConfigObj.showRegistry = !oldConfigObj.showRegistry;
     this.setState({ config: oldConfigObj });
   }
 
