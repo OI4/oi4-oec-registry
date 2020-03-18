@@ -4,7 +4,11 @@ import { IOPCUAData, IMasterAssetModel } from '../../Models/IOPCUAPayload.js';
 import { OI4Proxy } from '../index';
 import { hasKey } from '../../Utilities/index';
 import { Logger } from '../../Utilities/Logger/index';
-import { EDeviceHealth, ESubResource } from '../../Models/IContainer';
+import { EDeviceHealth, ESubResource, IDataSetClassIds } from '../../Models/IContainer';
+
+// DSCIds
+import dataSetClassIds = require ('../../../Config/dataSetClassIds.json');
+let dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 interface TMqttOpts {
   clientId: string;
@@ -45,7 +49,7 @@ class OI4MessageBusProxy extends OI4Proxy {
         payload: JSON.stringify(this.builder.buildOPCUADataMessage({
           health: EDeviceHealth.FAILURE_1,
           healthState: 0,
-        }, new Date(), 'healthClass')), /*tslint:disable-line*/
+        }, new Date(), dscids.health)), /*tslint:disable-line*/
         qos: 0,
       },
     };
@@ -58,7 +62,7 @@ class OI4MessageBusProxy extends OI4Proxy {
       this.logger.log('BusProxy: Connected successfully', 'w' , ESubResource.info);
       await this.client.publish(
         `${this.standardRoute}/pub/mam/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.mam, new Date(), 'BIRTHMESSAGECLASSID')),
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.mam, new Date(), dscids.mam)),
       );
       this.logger.log(`BusProxy: Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, 'w', ESubResource.info);
 
@@ -304,7 +308,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     if (hasKey(this.containerState, resource)) {
       await this.client.publish(
         `${this.standardRoute}/pub/${resource}/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState[resource], new Date(), `${resource}-${this.serviceType}-ClassId`, messageId)));
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState[resource], new Date(), dscids[resource], messageId)));
       this.logger.log(`BusProxy: Published ${resource} on ${this.standardRoute}/pub/${resource}/${this.appId}`);
     }
   }
@@ -319,7 +323,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     if (typeof this.containerState.licenseText[license] === 'undefined') { // FIXME: REMOVE THE HOTFIX AND BUILD A CHECKER INTO OPCUABUILDER
       return;
     }
-    await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({ licText: this.containerState.licenseText[license] }, new Date(), 'licenseTextClass', messageId)));
+    await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({ licText: this.containerState.licenseText[license] }, new Date(), dscids.licenseText, messageId)));
     this.logger.log(`BusProxy: Published LicenseText on ${this.standardRoute}/pub/licenseText/${this.appId}`);
   }
 
@@ -336,7 +340,7 @@ class OI4MessageBusProxy extends OI4Proxy {
         logLevel: level,
         logString: eventStr,
       },
-    }, new Date(), 'eventID'); /*tslint:disable-line*/
+    }, new Date(), dscids.event); /*tslint:disable-line*/
     await this.client.publish(`${this.standardRoute}/pub/event/${level}/${this.appId}`, JSON.stringify(opcUAEvent));
     this.logger.log(`BusProxy: Published event on ${this.standardRoute}/event/${level}/${this.appId}`);
   }

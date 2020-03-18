@@ -1,4 +1,4 @@
-import { IEventObject, EDeviceHealth, ESubResource } from '../../Service/Models/IContainer';
+import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds } from '../../Service/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig } from '../Models/IRegistry';
 import EAuditLevel = ESubResource;
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
@@ -9,6 +9,10 @@ import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/Utilities/Logger';
 import { IConformity } from '../Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
+
+// DSCIds
+import dataSetClassIds = require ('../../Config/dataSetClassIds.json');
+let dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;
@@ -161,7 +165,7 @@ export class Registry extends EventEmitter {
         parsedPayload.lastMessage = new Date().toISOString();
         assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
-        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, 'MamRegistry')));
+        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids.mam)));
         this.logger.log(`Registry: Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`);
       }
     } else if (topic.includes('/pub/license')) {
@@ -367,7 +371,7 @@ export class Registry extends EventEmitter {
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
       for (const device of Object.keys(assets)) {
         // TODO: URL ENCODING???
-        await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), 'registryClassID')));
+        await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), dscids.mam)));
         this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
       }
     } else {
@@ -456,11 +460,11 @@ export class Registry extends EventEmitter {
    */
   async updateResourceInDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
-      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
     if (oi4Id in this.deviceLookup) {
-      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
   }
@@ -472,12 +476,12 @@ export class Registry extends EventEmitter {
  */
   async resourceTimeout(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
-      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry:Timeout - Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
       this.applicationLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
     }
     if (oi4Id in this.deviceLookup) {
-      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry:Timeout - Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
       this.deviceLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
     }
@@ -493,11 +497,11 @@ export class Registry extends EventEmitter {
    */
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.applicationLookup) {
-      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
     if (oi4Id in this.deviceLookup) {
-      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`)));
+      await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
       this.logger.log(`Registry: Sent Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
   }
@@ -645,7 +649,6 @@ export class Registry extends EventEmitter {
    * @returns The config of the registry
    */
   getConfig(): IRegistryConfig {
-    console.log(this.config);
     return this.config;
   }
 
