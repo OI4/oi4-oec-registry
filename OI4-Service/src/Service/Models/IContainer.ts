@@ -94,3 +94,15 @@ export enum EDeviceHealth {
   OFF_SPEC_3 = 'OFF_SPEC_3',
   MAINTENANCE_REQUIRED_4 = 'MAINTENANCE_REQUIRED_4',
 }
+
+export interface IDataSetClassIds {
+  [key: string]: string;
+  mam: string;
+  health: string;
+  license: string;
+  licenseText: string;
+  rtLicense: string;
+  event: string;
+  profile: string;
+  config: string;
+}
