@@ -20,9 +20,15 @@ import eventSchemaJson = require('../../Config/Schemas/event.schema.json');
 import rtLicenseSchemaJson = require('../../Config/Schemas/rtLicense.schema.json');
 import configSchemaJson = require('../../Config/Schemas/config.schema.json');
 
+// DSCIds
+import { IDataSetClassIds } from '../../Service/Models/IContainer';
+import dataSetClassIds = require ('../../Config/dataSetClassIds.json');
+let dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
+
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
 import { ESubResource } from '../../Service/Models/IContainer';
+import { IOPCUAData, IOPCUADataMessage } from '../../Service/Models/IOPCUAPayload';
 
 interface TMqttOpts {
   clientId: string;
@@ -244,14 +250,14 @@ export class ConformityValidator extends EventEmitter {
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
   async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
-    const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, `${resource}Conformity`);
+    const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, dscids[resource]);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
       this.logger.log(`ConformityValidator:Received conformity message on ${resource} from ${tag}`);
       // this.logger.log('Payload:');
       // this.logger.log(rawMsg.toString());
       if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
-        const parsedMessage = JSON.parse(rawMsg.toString());
+        const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
@@ -290,6 +296,10 @@ export class ConformityValidator extends EventEmitter {
             this.logger.log(`ConformityValidator: CorrelationID did not pass for ${tag} with resource ${resource}`);
           }
         } else {
+          eRes = EValidity.partial;
+        }
+        if (!(parsedMessage.DataSetClassId === dscids[resource])) {
+          this.logger.log(`ConformityValidator: DataSetClassID did not pass for ${tag} with resource ${resource}`);
           eRes = EValidity.partial;
         }
         let resPayload;
