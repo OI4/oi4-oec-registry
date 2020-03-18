@@ -132,10 +132,10 @@ class Logger {
           if (this._builder) {
             logPayload = this._builder.buildOPCUADataMessage({
               number: 0,
-              description: this._name,
+              description: logstring,
               payload: {
                 logLevel: level,
-                logString: logstring,
+                logOrigin: this._name,
               },
             }, new Date(), 'eventID'); /*tslint:disable-line*/
           }
