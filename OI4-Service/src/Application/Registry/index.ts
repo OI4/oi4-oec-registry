@@ -11,16 +11,22 @@ import { IConformity } from '../Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
-import dataSetClassIds = require ('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
+import dataSetClassIds = require('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
+import { fstatSync, writeFileSync, appendFileSync, openSync, closeSync, unlinkSync } from 'fs';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
+
+const rootdir = './';
+let globIndex = 0;
 
 export class Registry extends EventEmitter {
   private applicationLookup: IDeviceLookup;
   private deviceLookup: IDeviceLookup;
   private registryClient: mqtt.AsyncClient;
   private globalEventList: IEventObject[];
+  private newEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
+  private testLogger: Logger;
   private oi4DeviceWildCard: string;
   private appId: string;
   private queue: SequentialTaskQueue;
@@ -33,6 +39,10 @@ export class Registry extends EventEmitter {
     EAuditLevel.debug,
     EAuditLevel.trace,
   ];
+  private currentlyUsedFiles: string[];
+  private currentlyUsedIndex: number;
+  private currentFd: number;
+  private logToFile: boolean;
 
   // Timeout container TODO: types
   private timeoutLookup: any;
@@ -46,22 +56,37 @@ export class Registry extends EventEmitter {
    */
   constructor(registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
-    this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
+    this.logger = new Logger(false, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
+    this.testLogger = new Logger(true, 'Registry-TestApp', ESubResource.warn, registryClient, appId, 'Registry');
+    setInterval(
+    () => {
+      globIndex = globIndex + 1;
+      this.testLogger.log(globIndex.toString());
+    },
+    500);
     this.queue = new SequentialTaskQueue();
 
     this.timeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
+    this.newEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
+    this.logToFile = false;
     this.appId = appId;
     this.config = {
       developmentMode: false,
       globalEventListLength: 20,
       assetEventListLength: 3, // Not used in backend, only frontend
+      globalEventListSize: 150000, // In byte
       auditLevel: EAuditLevel.trace,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
+
+    this.currentlyUsedFiles = [];
+    this.currentlyUsedIndex = 0;
+    this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`;
+    this.currentFd = 0;
 
     this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Better system for appId!
 
@@ -80,6 +105,32 @@ export class Registry extends EventEmitter {
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
     this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
     this.registryClient.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
+
+    // setInterval(() => { this.flushToLogfile; }, 60000);
+  }
+
+  private flushToLogfile() {
+    if (this.logToFile) {
+      console.log('_____-------_______------FLUSH CALLED------______-----_____');
+      console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
+      this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
+      const fsObj = fstatSync(this.currentFd);
+      console.log(fsObj);
+      console.log(fsObj.isFile());
+      if (fsObj.size >= (this.config.globalEventListSize / 4)) { // Switch to next file
+        if (this.currentlyUsedIndex < 4) {
+          this.currentlyUsedIndex = this.currentlyUsedIndex + 1;
+        } else {
+          this.currentlyUsedIndex = 0;
+        }
+        if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') {
+          unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]);
+        }
+        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`;
+      }
+      appendFileSync(this.currentFd, JSON.stringify(this.globalEventList, null, 2));
+      closeSync(this.currentFd);
+    }
   }
 
   /**
@@ -130,13 +181,24 @@ export class Registry extends EventEmitter {
 
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
       // console.log('Got Event!');
+      console.log(`Length globEventList: ${this.globalEventList.length}`);
       if (this.globalEventList.length >= this.config.globalEventListLength) {
         // If we have too many elements in the list, we purge them
-        for (let it = 0; it <= (this.globalEventList.length - this.config.globalEventListLength) + 1; it = it + 1) {
-          this.globalEventList.shift();
-        }
+        this.flushToLogfile();
+        this.globalEventList = [];
       }
       this.globalEventList.push({
+        ...parsedPayload,
+        Tag: oi4Id,
+        Timestamp: networkMessage.Messages[0].Timestamp,
+      });
+      if (this.newEventList.length >= this.config.globalEventListLength) {
+        // If we have too many elements in the list, we purge them
+        for (let it = 0; it <= (this.globalEventList.length - this.config.globalEventListLength) + 1; it = it + 1) {
+          this.newEventList.shift();
+        }
+      }
+      this.newEventList.push({
         ...parsedPayload,
         Tag: oi4Id,
         Timestamp: networkMessage.Messages[0].Timestamp,

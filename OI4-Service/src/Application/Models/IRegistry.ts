@@ -54,6 +54,7 @@ interface IDeviceConfig {
 export interface IRegistryConfig {
   developmentMode: boolean;
   assetEventListLength: number;
+  globalEventListSize: number;
   globalEventListLength: number;
   auditLevel: string;
   showRegistry: boolean;
