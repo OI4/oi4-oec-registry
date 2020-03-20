@@ -15,7 +15,7 @@ class OI4WebProxy extends OI4Proxy {
   constructor(container: IContainerState) {
     super(container);
     this.logger = new Logger(true, 'Registry-WebProxy', ESubResource.info);
-    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, 'y', ESubResource.info);
+    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, ESubResource.info);
 
     this.client = express();
     this.client.use((initReq, initRes, initNext) => {
@@ -29,7 +29,7 @@ class OI4WebProxy extends OI4Proxy {
     this.client.options('*', cors());
     if ((process.env.CERT_PATH)) { // Environment variable found, so we should use HTTPS, check for key/cert
       if (fs.existsSync(`${process.env.CERT_PATH}/cert.pem`) && fs.existsSync(`${process.env.CERT_PATH}/key.pem`)) {
-        this.logger.log('Key and Cert exist, using HTTPS for Express...', 'w', ESubResource.info);
+        this.logger.log('Key and Cert exist, using HTTPS for Express...', ESubResource.info);
         https.createServer(
           {
             key: fs.readFileSync(`${process.env.CERT_PATH}/key.pem`),
@@ -37,18 +37,18 @@ class OI4WebProxy extends OI4Proxy {
           },
           this.client)
           .listen(4567, () => {
-            this.logger.log('WebProxy of Registry listening on 4567 over HTTPS', 'w', ESubResource.info);
+            this.logger.log('WebProxy of Registry listening on 4567 over HTTPS', ESubResource.info);
           });
       } else {
-        this.logger.log('Key and / or Cert dont exist..fallback to HTTP', 'w', ESubResource.info);
+        this.logger.log('Key and / or Cert dont exist..fallback to HTTP', ESubResource.info);
         this.client.listen(4567, () => {
-          this.logger.log('WebProxy of Registry listening on 4567 over HTTP', 'w', ESubResource.info);
+          this.logger.log('WebProxy of Registry listening on 4567 over HTTP', ESubResource.info);
         });
       }
     } else { // No environment variable found, use HTTP
-      this.logger.log('No CERT_PATH environment variable found..fallback to HTTP', 'w', ESubResource.info);
+      this.logger.log('No CERT_PATH environment variable found..fallback to HTTP', ESubResource.info);
       this.client.listen(4567, () => {
-        this.logger.log('WebProxy of Registry listening on 4567 over HTTP', 'w', ESubResource.info);
+        this.logger.log('WebProxy of Registry listening on 4567 over HTTP', ESubResource.info);
       });
     }
 

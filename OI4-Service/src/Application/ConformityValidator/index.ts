@@ -21,13 +21,12 @@ import rtLicenseSchemaJson = require('../../Config/Schemas/rtLicense.schema.json
 import configSchemaJson = require('../../Config/Schemas/config.schema.json');
 
 // DSCIds
-import { IDataSetClassIds } from '../../Service/Models/IContainer';
-import dataSetClassIds = require ('../../Config/dataSetClassIds.json');
-let dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
+import { IDataSetClassIds, ESubResource } from '../../Service/Models/IContainer';
+import dataSetClassIds = require ('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
+const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
-import { ESubResource } from '../../Service/Models/IContainer';
 import { IOPCUAData, IOPCUADataMessage } from '../../Service/Models/IOPCUAPayload';
 
 interface TMqttOpts {
@@ -128,7 +127,7 @@ export class ConformityValidator extends EventEmitter {
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
-      this.logger.log(`ConformityValidator: Error in checkOI4IDConformity: ${err}`, 'w', ESubResource.debug);
+      this.logger.log(`Error in checkOI4IDConformity: ${err}`, ESubResource.debug);
       return conformityObject;
     }
     if (oi4Result) {
@@ -213,7 +212,7 @@ export class ConformityValidator extends EventEmitter {
             };
           }
         } catch (err) {
-          this.logger.log(`ConformityValidator: ${resource} did not pass with ${err}`, 'w', ESubResource.debug);
+          this.logger.log(`${resource} did not pass with ${err}`, ESubResource.debug);
           conformityObject.resource[resource] = {
             validity: EValidity.nok,
           };
@@ -253,7 +252,7 @@ export class ConformityValidator extends EventEmitter {
     const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, dscids[resource]);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
-      this.logger.log(`ConformityValidator:Received conformity message on ${resource} from ${tag}`);
+      this.logger.log(`Received conformity message on ${resource} from ${tag}`);
       // this.logger.log('Payload:');
       // this.logger.log(rawMsg.toString());
       if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
@@ -293,13 +292,13 @@ export class ConformityValidator extends EventEmitter {
             eRes = EValidity.ok;
           } else {
             eRes = EValidity.partial;
-            this.logger.log(`ConformityValidator: CorrelationID did not pass for ${tag} with resource ${resource}`);
+            this.logger.log(`CorrelationID did not pass for ${tag} with resource ${resource}`);
           }
         } else {
           eRes = EValidity.partial;
         }
         if (!(parsedMessage.DataSetClassId === dscids[resource])) {
-          this.logger.log(`ConformityValidator: DataSetClassID did not pass for ${tag} with resource ${resource}`);
+          this.logger.log(`DataSetClassID did not pass for ${tag} with resource ${resource}`);
           eRes = EValidity.partial;
         }
         let resPayload;
@@ -318,7 +317,7 @@ export class ConformityValidator extends EventEmitter {
     });
     await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${tag}`);
     await this.conformityClient.publish(`${fullTopic}/get/${resource}/${tag}`, JSON.stringify(conformityPayload));
-    this.logger.log(`ConformityValidator: Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`);
+    this.logger.log(`Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`);
     return await promiseTimeout(new Promise((resolve, reject) => {
       this.once(`${resource}${fullTopic}Success`, (res) => {
         resolve(res);
