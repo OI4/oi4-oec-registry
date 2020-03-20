@@ -16,12 +16,12 @@ const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
 const logger = new Logger(true, 'Registry-Entrypoint', ESubResource.warn, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
 logger.level = ESubResource.fatal;
-logger.log(`Testprint for level ${ESubResource.trace}`, 'w', ESubResource.trace);
-logger.log(`Testprint for level ${ESubResource.debug}`, 'w', ESubResource.debug);
-logger.log(`Testprint for level ${ESubResource.info}`, 'w', ESubResource.info);
-logger.log(`Testprint for level ${ESubResource.warn}`, 'w', ESubResource.warn);
-logger.log(`Testprint for level ${ESubResource.error}`, 'w', ESubResource.error);
-logger.log(`Testprint for level ${ESubResource.fatal}`, 'w', ESubResource.fatal);
+logger.log(`Testprint for level ${ESubResource.trace}`, ESubResource.trace);
+logger.log(`Testprint for level ${ESubResource.debug}`, ESubResource.debug);
+logger.log(`Testprint for level ${ESubResource.info}`, ESubResource.info);
+logger.log(`Testprint for level ${ESubResource.warn}`, ESubResource.warn);
+logger.log(`Testprint for level ${ESubResource.error}`, ESubResource.error);
+logger.log(`Testprint for level ${ESubResource.fatal}`, ESubResource.fatal);
 logger.level = ESubResource.info;
 
 // -------- Registry Application
