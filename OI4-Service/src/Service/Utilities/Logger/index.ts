@@ -2,8 +2,6 @@ import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { OPCUABuilder } from '../OPCUABuilder/index';
 import { ESubResource } from '../../Models/IContainer';
 
-const chalk = require('chalk');
-
 /**
  * Logger implementation.<br>
  * Adds several logging options, including levels and colors of the logs
@@ -15,7 +13,6 @@ class Logger {
    * @param {number} level  - sets the minimum logging level
    */
 
-  private colorLookUp: any;
   private _enabled: boolean; /*tslint:disable-line*/
   private _level: ESubResource; /*tslint:disable-line*/
   private _name: string; /*tslint:disable-line*/
@@ -38,34 +35,6 @@ class Logger {
      * @type {boolean}
      */
     this._enabled = enabled;
-    /**
-     * A lookup used to shorten the commands that coordinate the colors.
-     * @type {Object}
-     * @property {w} - abbr. for chalk.white
-     * @property {r} - abbr. for chalk.red
-     * @property {b} - abbr. for chalk.blue
-     * @property {g} - abbr. for chalk.green
-     * @property {y} - abbr. for chalk.yellow
-     * @property {m} - abbr. for chalk.magenta
-     * @property {error} - abbr. for chalk.redBright
-     * @property {warn} - abbr. for chalk.yellowBright
-     */
-    this.colorLookUp = {
-      w: chalk.white,
-      r: chalk.red,
-      b: chalk.blue,
-      g: chalk.green,
-      y: chalk.yellow,
-      m: chalk.magenta,
-      error: chalk.bold.redBright,
-      warn: chalk.bold.yellowBright,
-      white: chalk.white,
-      red: chalk.red,
-      blue: chalk.blue,
-      green: chalk.green,
-      yellow: chalk.yellow,
-      magenta: chalk.magenta,
-    };
     /**
      * The minimum level needed for the log to appear on the console.
      * @type {number}
@@ -123,10 +92,10 @@ class Logger {
    * @param {string} color - either the chalk-color or the abbreviated version (e.g 'r' = chalk.red)
    * @param {number} level - the level that the log is to be logged to
    */
-  log(logstring: string, color: string = 'white', level = ESubResource.trace) {
+  log(logstring: string, level = ESubResource.trace) {
     if (this.enabled) {
       if (this.topicToEnum[level] <= this.topicToEnum[this.level]) {
-        console.log(this.colorLookUp[color](logstring)); // eslint-disable-line no-console
+        console.log(`${this._name}: ${logstring}`); // eslint-disable-line no-console
         if (this._mqttClient) {
           let logPayload;
           if (this._builder) {
