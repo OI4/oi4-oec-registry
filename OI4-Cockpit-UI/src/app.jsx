@@ -330,14 +330,14 @@ class OI4Base extends React.Component {
                     message='Saved Global Events to clipboard'
                     action={
                       <>
-                      <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                        <Close fontSize='small' />
-                      </IconButton>
+                        <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                          <Close fontSize='small' />
+                        </IconButton>
                       </>
                     }
                   />
                 </span>
-                Origin-ID</TableCell>
+                Tag-OI4Id</TableCell>
               <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
               <TableCell key='GlobalEventsDesc'>Description</TableCell>
               <TableCell key='GlobalEventsPayload'>Payload</TableCell>
@@ -346,7 +346,7 @@ class OI4Base extends React.Component {
           <TableBody>
             {
               eventArray.map((events, idx) => {
-                const [originManu, ...originRest] = events.originId.split('/');
+                const [originManu, ...originRest] = events.Tag.split('/');
                 return <TableRow key={`GlobalEvents-${idx}`}>
                   <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
                   <TableCell component="th" scope="row">{events.number}</TableCell>
@@ -414,6 +414,21 @@ class OI4Base extends React.Component {
             // const appId = jsonData[oi4Id].appId;
             // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
           }
+          // Update auditTrail
+          jsonData[oi4Id].eventList = [];
+          let i = 0;
+          for (const audits of this.reverse(this.state.globalEventTrail)) {
+            if (audits.Tag === oi4Id) {
+              jsonData[oi4Id].eventList.push(audits);
+              i++;
+              if (i >= this.state.config.assetEventListLength) {
+                break;
+              }
+            }
+          }
+          jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
+
+          // Update conformity
           if (oi4Id in confLookupLoc) {
             delete confLookupLoc[oi4Id];
           }
@@ -429,6 +444,12 @@ class OI4Base extends React.Component {
         }
         this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
       });
+  }
+
+  * reverse(arr) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      yield arr[i];
+    }
   }
 
   /**
@@ -447,6 +468,20 @@ class OI4Base extends React.Component {
             // const appId = jsonData[oi4Id].appId;
             // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
           }
+          // Update auditTrail
+          jsonData[oi4Id].eventList = [];
+          let i = 0;
+          for (const audits of this.reverse(this.state.globalEventTrail)) {
+            if (audits.Tag === oi4Id) {
+              jsonData[oi4Id].eventList.push(audits);
+              i++;
+              if (i >= this.state.config.assetEventListLength) {
+                break;
+              }
+            }
+          }
+          jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
+
           if (oi4Id in confLookupLoc) {
             delete confLookupLoc[oi4Id];
           }
