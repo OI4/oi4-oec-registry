@@ -1,7 +1,7 @@
 import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds } from '../../Service/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig } from '../Models/IRegistry';
 import EAuditLevel = ESubResource;
-import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
+import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
@@ -58,7 +58,7 @@ export class Registry extends EventEmitter {
     this.config = {
       developmentMode: false,
       globalEventListLength: 20,
-      assetEventListLength: 3,
+      assetEventListLength: 3, // Not used in backend, only frontend
       auditLevel: EAuditLevel.trace,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
@@ -104,7 +104,8 @@ export class Registry extends EventEmitter {
       this.logger.log('Messages Array empty');
       return;
     }
-    const parsedPayload = JSON.parse(message.toString()).Messages[0].Payload;
+    const networkMessage: IOPCUAData = JSON.parse(message.toString());
+    const parsedPayload = networkMessage.Messages[0].Payload;
     const baseIdOffset = topicArr.length - 4;
     const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
 
@@ -128,20 +129,7 @@ export class Registry extends EventEmitter {
     }
 
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
-      // const logLevel = topicArr[8]; // If we don't save the logLevel in the payload, we can discard it
-      if (oi4Id in assetLookup) {
-        const eventList: any = assetLookup[oi4Id].eventList;
-        if (eventList.length >= this.config.assetEventListLength) {
-          // If we have too many elements in the list, we purge them
-          for (let it = 0; it <= (eventList.length - this.config.assetEventListLength) + 1; it = it + 1) {
-            assetLookup[oi4Id].eventList.shift();
-          }
-        }
-        // console.log('Registry-ConsoleLog: GOT EVENT FROM DEVICE!');
-        assetLookup[oi4Id].eventList.push({
-          ...parsedPayload,
-        });
-      }
+      // console.log('Got Event!');
       if (this.globalEventList.length >= this.config.globalEventListLength) {
         // If we have too many elements in the list, we purge them
         for (let it = 0; it <= (this.globalEventList.length - this.config.globalEventListLength) + 1; it = it + 1) {
@@ -150,7 +138,8 @@ export class Registry extends EventEmitter {
       }
       this.globalEventList.push({
         ...parsedPayload,
-        originId: oi4Id,
+        Tag: oi4Id,
+        Timestamp: networkMessage.Messages[0].Timestamp,
       });
     } else if (topic.includes('/pub/health')) {
       this.logger.log(`Got Health from ${oi4Id} in processMqttMessage`);
