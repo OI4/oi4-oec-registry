@@ -74,6 +74,7 @@ class Logger {
 
   set level(lvl) {
     if (typeof lvl !== 'string') throw new Error('level must be of type string/ESubResource String');
+    console.log(`Set logger level of ${this._name} level to: ${lvl}`);
     this._level = lvl;
   }
 
@@ -94,7 +95,7 @@ class Logger {
    */
   log(logstring: string, level = ESubResource.trace) {
     if (this.enabled) {
-      if (this.topicToEnum[level] <= this.topicToEnum[this.level]) {
+      if (this.topicToEnum[level] >= this.topicToEnum[this.level]) {
         console.log(`${this._name}: ${logstring}`); // eslint-disable-line no-console
         if (this._mqttClient) {
           let logPayload;

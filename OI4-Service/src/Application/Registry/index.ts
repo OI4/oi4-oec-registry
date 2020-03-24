@@ -57,13 +57,13 @@ export class Registry extends EventEmitter {
   constructor(registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
     this.logger = new Logger(false, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
-    this.testLogger = new Logger(true, 'Registry-TestApp', ESubResource.warn, registryClient, appId, 'Registry');
+    this.testLogger = new Logger(true, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
     setInterval(
     () => {
       globIndex = globIndex + 1;
       this.testLogger.log(globIndex.toString());
     },
-    500);
+    100);
     this.queue = new SequentialTaskQueue();
 
     this.timeoutLookup = {};
@@ -77,10 +77,10 @@ export class Registry extends EventEmitter {
     this.config = {
       logToFile: false,
       developmentMode: false,
-      globalEventListLength: 20,
+      globalEventListLength: 100,
       assetEventListLength: 3, // Not used in backend, only frontend
-      globalEventListSize: 150000, // In byte
-      auditLevel: EAuditLevel.trace,
+      globalEventListSize: 200000, // In byte
+      auditLevel: EAuditLevel.warn,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
 
@@ -113,14 +113,23 @@ export class Registry extends EventEmitter {
   private deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
     for (let i = 0; i < this.fileCount; i++) {
       if (typeof this.currentlyUsedFiles[i] !== 'undefined') { // Old file exists
-        unlinkSync(this.currentlyUsedFiles[i]); // Delete old file
+        try {
+          unlinkSync(this.currentlyUsedFiles[i]); // Delete old file
+        } catch(e) {
+          if(e.code === 'ENOENT') {
+            // That's ok, no need to delete a non-existing file
+          } else {
+            console.log(e);
+          }
+        }
       }
     }
   }
 
   private flushToLogfile() { // TODO: Change fileOperations to Async
+    console.log('_____-------_______------FLUSH CALLED------______-----_____');
     if (this.config.logToFile) {
-      console.log('_____-------_______------FLUSH CALLED------______-----_____');
+      console.log('log to file enabled');
       console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
       this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
       let fsObj = fstatSync(this.currentFd);
@@ -164,7 +173,6 @@ export class Registry extends EventEmitter {
 
         }
       }
-
       closeSync(this.currentFd);
     }
   }
@@ -682,6 +690,8 @@ export class Registry extends EventEmitter {
         return; // We matched our configured auditLevel, returning to not sub to redundant info...
       }
     }
+
+    this.logger.level = this.config.auditLevel as ESubResource;
   }
 
   async unsubscribeAssetFromAudit(oi4Id: string) {
@@ -724,14 +734,14 @@ export class Registry extends EventEmitter {
    */
   async updateConfig(newConfig: IRegistryConfig) {
     const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
-    this.config = newConfig;
+    this.config = JSON.parse(JSON.stringify(newConfig));
     if (oldConf.auditLevel !== newConfig.auditLevel) {
       this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, ESubResource.debug);
       this.updateAuditLevel();
     }
     if (oldConf.globalEventListSize !== newConfig.globalEventListSize) { // fileSize changed!
       this.config.logToFile = false; // Temporarily disable logging
-      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.globalEventListSize}, new: ${newConfig.globalEventListSize}) Deleting all old files and adjusting file`, ESubResource.warn);
+      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.globalEventListSize}, new: ${newConfig.globalEventListSize}) Deleting all old files and adjusting file`);
       this.deleteFiles();
       this.config.logToFile = newConfig.logToFile;
     }
