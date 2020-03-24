@@ -42,7 +42,6 @@ export class Registry extends EventEmitter {
   private currentlyUsedFiles: string[];
   private currentlyUsedIndex: number;
   private currentFd: number;
-  private logToFile: boolean;
   private fileCount: number;
 
   // Timeout container TODO: types
@@ -73,10 +72,10 @@ export class Registry extends EventEmitter {
     this.newEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
-    this.logToFile = true;
     this.fileCount = 4;
     this.appId = appId;
     this.config = {
+      logToFile: false,
       developmentMode: false,
       globalEventListLength: 20,
       assetEventListLength: 3, // Not used in backend, only frontend
@@ -111,8 +110,16 @@ export class Registry extends EventEmitter {
     // setInterval(() => { this.flushToLogfile; }, 60000);
   }
 
-  private flushToLogfile() {
-    if (this.logToFile) {
+  private deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
+    for (let i = 0; i < this.fileCount; i++) {
+      if (typeof this.currentlyUsedFiles[i] !== 'undefined') { // Old file exists
+        unlinkSync(this.currentlyUsedFiles[i]); // Delete old file
+      }
+    }
+  }
+
+  private flushToLogfile() { // TODO: Change fileOperations to Async
+    if (this.config.logToFile) {
       console.log('_____-------_______------FLUSH CALLED------______-----_____');
       console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
       this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
@@ -715,12 +722,18 @@ export class Registry extends EventEmitter {
    * Updates the config of the Registry
    * @param newConfig the new config object
    */
-  async updateConfig(newConfig: any) {
-    const oldConf = JSON.parse(JSON.stringify(this.config));
+  async updateConfig(newConfig: IRegistryConfig) {
+    const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
     this.config = newConfig;
     if (oldConf.auditLevel !== newConfig.auditLevel) {
       this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, ESubResource.debug);
       this.updateAuditLevel();
+    }
+    if (oldConf.globalEventListSize !== newConfig.globalEventListSize) { // fileSize changed!
+      this.config.logToFile = false; // Temporarily disable logging
+      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.globalEventListSize}, new: ${newConfig.globalEventListSize}) Deleting all old files and adjusting file`, ESubResource.warn);
+      this.deleteFiles();
+      this.config.logToFile = newConfig.logToFile;
     }
   }
 

@@ -58,4 +58,5 @@ export interface IRegistryConfig {
   globalEventListLength: number;
   auditLevel: string;
   showRegistry: boolean;
+  logToFile: boolean;
 }
