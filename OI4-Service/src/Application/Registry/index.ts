@@ -43,6 +43,7 @@ export class Registry extends EventEmitter {
   private currentlyUsedIndex: number;
   private currentFd: number;
   private logToFile: boolean;
+  private fileCount: number;
 
   // Timeout container TODO: types
   private timeoutLookup: any;
@@ -72,7 +73,8 @@ export class Registry extends EventEmitter {
     this.newEventList = [];
     this.applicationLookup = {};
     this.deviceLookup = {};
-    this.logToFile = false;
+    this.logToFile = true;
+    this.fileCount = 4;
     this.appId = appId;
     this.config = {
       developmentMode: false,
@@ -114,21 +116,48 @@ export class Registry extends EventEmitter {
       console.log('_____-------_______------FLUSH CALLED------______-----_____');
       console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
       this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
-      const fsObj = fstatSync(this.currentFd);
-      console.log(fsObj);
-      console.log(fsObj.isFile());
-      if (fsObj.size >= (this.config.globalEventListSize / 4)) { // Switch to next file
-        if (this.currentlyUsedIndex < 4) {
+      let fsObj = fstatSync(this.currentFd);
+      // console.log(fsObj);
+      // console.log(fsObj.isFile());
+      if (fsObj.size === 0) {
+        appendFileSync(this.currentFd, '['); // Start of the file, open Array
+        fsObj = fstatSync(this.currentFd);
+      }
+      if (fsObj.size >= (this.config.globalEventListSize / this.fileCount)) { // Size is bigger than an individual file may be
+        for (const entries of this.globalEventList) { // Flush last entries... TODO: need to find a better way to do this instead of doubling the code
+          if (fsObj.size !== 1) { // Only '[' in the file
+            appendFileSync(this.currentFd, ','); // Separator between Objects
+            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
+          } else {
+            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
+            fsObj = fstatSync(this.currentFd);
+          }
+
+        }
+        if (this.currentlyUsedIndex < this.fileCount) { // Increment current file counter
           this.currentlyUsedIndex = this.currentlyUsedIndex + 1;
         } else {
-          this.currentlyUsedIndex = 0;
+          this.currentlyUsedIndex = 0; // Round trip
         }
-        if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') {
-          unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]);
+        if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') { // Old file exists
+          unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]); // Delete old file
         }
-        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`;
+        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`; // Set new filename, will be created with next openSync
+        appendFileSync(this.currentFd, ']'); // Close Array
+      } 
+      else {
+        for (const entries of this.globalEventList) {
+          if (fsObj.size !== 1) { // Only '[' in the file
+            appendFileSync(this.currentFd, ','); // Separator between Objects
+            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
+          } else {
+            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
+            fsObj = fstatSync(this.currentFd);
+          }
+
+        }
       }
-      appendFileSync(this.currentFd, JSON.stringify(this.globalEventList, null, 2));
+
       closeSync(this.currentFd);
     }
   }
