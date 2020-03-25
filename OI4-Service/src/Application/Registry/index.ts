@@ -12,7 +12,7 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
 import dataSetClassIds = require('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
-import { fstatSync, writeFileSync, appendFileSync, openSync, closeSync, unlinkSync } from 'fs';
+import { fstatSync, writeFileSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 const rootdir = './';
@@ -59,11 +59,11 @@ export class Registry extends EventEmitter {
     this.logger = new Logger(false, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.testLogger = new Logger(true, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
     setInterval(
-    () => {
-      globIndex = globIndex + 1;
-      this.testLogger.log(globIndex.toString());
-    },
-    100);
+      () => {
+        globIndex = globIndex + 1;
+        this.testLogger.log(globIndex.toString());
+      },
+      100);
     this.queue = new SequentialTaskQueue();
 
     this.timeoutLookup = {};
@@ -110,20 +110,26 @@ export class Registry extends EventEmitter {
     // setInterval(() => { this.flushToLogfile; }, 60000);
   }
 
-  private deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
-    for (let i = 0; i < this.fileCount; i++) {
-      if (typeof this.currentlyUsedFiles[i] !== 'undefined') { // Old file exists
-        try {
-          unlinkSync(this.currentlyUsedFiles[i]); // Delete old file
-        } catch(e) {
-          if(e.code === 'ENOENT') {
-            // That's ok, no need to delete a non-existing file
-          } else {
-            console.log(e);
-          }
+  private getFilesFromPath(path: string, extension: string) {
+    let dir = readdirSync(path);
+    return dir.filter(elm => elm.match(new RegExp(`.*\.(${extension})$`, 'ig')));
+  }
+
+  deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
+    const reglogArr = this.getFilesFromPath(rootdir, 'reglog');
+    for (const reglogs of reglogArr) {
+      try {
+        console.log(`Deleting ${reglogs}`);
+        unlinkSync(reglogs); // Delete old file
+      } catch (e) {
+        if (e.code === 'ENOENT') {
+          // That's ok, no need to delete a non-existing file
+        } else {
+          console.log(e);
         }
       }
     }
+    return reglogArr;
   }
 
   private flushToLogfile() { // TODO: Change fileOperations to Async
@@ -150,17 +156,26 @@ export class Registry extends EventEmitter {
           }
 
         }
-        if (this.currentlyUsedIndex < this.fileCount) { // Increment current file counter
+        if (this.currentlyUsedIndex < this.fileCount - 1) { // Increment current file counter
           this.currentlyUsedIndex = this.currentlyUsedIndex + 1;
         } else {
           this.currentlyUsedIndex = 0; // Round trip
         }
         if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') { // Old file exists
-          unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]); // Delete old file
+          try {
+            unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]); // Delete old file
+          } catch (e) {
+            if (e.code === 'ENOENT') {
+              // That's ok, no need to delete a non-existing file
+              this.logger.log('Trying to delete an already deleted files in flushToFile');
+            } else {
+              console.log(e);
+            }
+          }
         }
         this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`; // Set new filename, will be created with next openSync
         appendFileSync(this.currentFd, ']'); // Close Array
-      } 
+      }
       else {
         for (const entries of this.globalEventList) {
           if (fsObj.size !== 1) { // Only '[' in the file

@@ -77,6 +77,16 @@ webClient.delete('/registry/assets', async (deviceReq, deviceResp) => {
   deviceResp.send('OK, cleared Registry');
 });
 
+webClient.delete('/registry/logs', async (deviceReq, deviceResp) => {
+  let deletedFiles;
+  try {
+    deletedFiles = await registry.deleteFiles();
+  } catch (e) {
+    console.log(e);
+  }
+  deviceResp.send(`OK, deleted files: ${deletedFiles}`);
+});
+
 webClient.get('/registry/config', async (confReq, confResp) => {
   confResp.send(JSON.stringify(registry.getConfig()));
 });
