@@ -131,9 +131,11 @@ class OI4Base extends React.Component {
       config: {
         developmentMode: false,
         globalEventListLength: 10,
+        globalEventListSize: 200000, // In byte
         assetEventListLength: 3,
         auditLevel: 'trace',
         showRegistry: true,
+        logToFile: false,
       },
       theme: lightTheme,
       darkActivated: false,
@@ -246,13 +248,17 @@ class OI4Base extends React.Component {
 
             </div>{/* Padding for dialog */}
             <div style={{ flexGrow: 1 }} />
+            {/* TODO: This is getting a little out of hands with all the state-lifting and props... */}
             <ClickableFooter
               clearAllAssets={this.clearAllAssets.bind(this)}
+              clearAllLogs={this.clearAllLogs.bind(this)}
               config={this.state.config}
               handleExpertChange={this.handleExpertChange.bind(this)}
+              handleLogToFileChange={this.handleLogToFileChange.bind(this)}
               handleShowRegistryChange={this.handleShowRegistryChange.bind(this)}
               handleLocalTrailLength={this.setlocalTrailLength.bind(this)}
               handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
+              handleGlobalTrailSize={this.setGlobalTrailSize.bind(this)}
               handleGetConfig={this.getConfig.bind(this)}
               handleSetConfig={this.setConfig.bind(this)}
               handleAuditLevelChange={this.setAuditLevel.bind(this)}
@@ -267,6 +273,19 @@ class OI4Base extends React.Component {
         </MuiThemeProvider>
       </React.Fragment>
     );
+  }
+
+  clearAllLogs() {
+    this.fetch.delete(`/registry/logs`)
+    .then(data => {
+      console.log(data);
+    });
+  }
+
+  handleLogToFileChange = (event, newValue) => {
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    oldConfigObj.logToFile = !oldConfigObj.logToFile;
+    this.setState({ config: oldConfigObj });
   }
 
   handleExpertChange = (event, newValue) => {
@@ -546,7 +565,7 @@ class OI4Base extends React.Component {
   }
 
   clearAllAssets() {
-    console.log('caa clicked');
+    console.log('Clear all Assets clicked');
     this.fetch.delete(`/registry/assets`)
       .then(data => {
         console.log(data);
@@ -554,7 +573,7 @@ class OI4Base extends React.Component {
   }
 
   clearAssetById(oi4Id) {
-    console.log('cabid clicked');
+    console.log('Clear Asset by Id clicked');
     this.fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
       .then(data => {
         console.log(data);
@@ -623,6 +642,12 @@ class OI4Base extends React.Component {
   setGlobalTrailLength(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.config));
     configObj.globalEventListLength = ev.target.value;
+    this.setState({ config: configObj });
+  }
+
+  setGlobalTrailSize(ev, newValue) {
+    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    configObj.globalEventListSize = newValue;
     this.setState({ config: configObj });
   }
 

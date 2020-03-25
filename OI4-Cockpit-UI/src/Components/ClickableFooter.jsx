@@ -18,7 +18,8 @@ import {
   TextField,
   Button,
   Select,
-  MenuItem
+  MenuItem,
+  Slider
 } from '@material-ui/core';
 
 import { DeleteForever, GetApp, /* Publish */ } from '@material-ui/icons';
@@ -141,51 +142,25 @@ export class ClickableFooter extends React.Component {
                 </IconButton></> : null}
               </div>
               <div style={{ margin: '10px' }}>
+                {this.props.config.developmentMode ? <>Delete all Logs(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllLogs() }}>
+                  <DeleteForever />
+                </IconButton></> : null}
+              </div>
+              <div>
                 {this.props.config.developmentMode ? <>
+                  <p style={{ fontSize: '24px' }}>
+                    Registry (Backend) - Configuration:
+                  </p>
                   <p>Show / Add Registry to Database:
-                <Checkbox
-                      checked={this.props.config.showRegistry || false} // Default value needed to stay in controlled mode
-                      onChange={this.props.handleShowRegistryChange} // lifting state up
-                      value='primary'
-                />
-                  </p></> : null}
-              </div>
-
-              {/* <div>Local (Frontend)</div>
-              <div>
-                <TextField
-                  id="outlined-number"
-                  label="Asset"
-                  type="number"
-                  value={this.props.config.assetEventListLength}
-                  onChange={this.props.handleLocalTrailLength}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  size='small'
-                  style={{ margin: '10px' }}
-                />
-                <TextField
-                  id="outlined-number"
-                  label="Global"
-                  type="number"
-                  value={this.props.config.globalEventListLength}
-                  onChange={this.props.handleGlobalTrailLength}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  size='small'
-                  style={{ margin: '10px' }}
-                />
-              </div> */}
-              <div>
-                {this.props.config.developmentMode ? <>
-                  <div>
-                    Registry (Backend)
-              </div>
+                  <Checkbox
+                        checked={this.props.config.showRegistry || false} // Default value needed to stay in controlled mode
+                        onChange={this.props.handleShowRegistryChange} // lifting state up
+                        value='primary'
+                  />
+                  </p>
                   <TextField
                     id="outlined-number"
-                    label="Asset"
+                    label="Asset Log Elements"
                     type="number"
                     value={this.props.config.assetEventListLength || ''}
                     onChange={this.props.handleLocalTrailLength}
@@ -197,7 +172,7 @@ export class ClickableFooter extends React.Component {
                   />
                   <TextField
                     id="outlined-number"
-                    label="Global"
+                    label="Global Log Elements"
                     type="number"
                     value={this.props.config.globalEventListLength || ''}
                     onChange={this.props.handleGlobalTrailLength}
@@ -208,20 +183,38 @@ export class ClickableFooter extends React.Component {
                     style={{ margin: '10px' }}
                   />
                   <div style={{ margin: '10px' }}>
-                    {this.props.config.developmentMode ? <>Set Audit Level:
-                     <Select
-                        value={this.props.config.auditLevel || ''}
-                        onChange={this.props.handleAuditLevelChange}
-                      >
-                        <MenuItem value='trace'>Trace</MenuItem>
-                        <MenuItem value='debug'>Debug</MenuItem>
-                        <MenuItem value='info'>Info</MenuItem>
-                        <MenuItem value='warn'>Warn</MenuItem>
-                        <MenuItem value='error'>Error</MenuItem>
-                        <MenuItem value='fatal'>Fatal</MenuItem>
-                      </Select>
-                    </> : null}
+                    <>Set Audit Level:</>
+                    <Select
+                      value={this.props.config.auditLevel || ''}
+                      onChange={this.props.handleAuditLevelChange}
+                    >
+                      <MenuItem value='trace'>Trace</MenuItem>
+                      <MenuItem value='debug'>Debug</MenuItem>
+                      <MenuItem value='info'>Info</MenuItem>
+                      <MenuItem value='warn'>Warn</MenuItem>
+                      <MenuItem value='error'>Error</MenuItem>
+                      <MenuItem value='fatal'>Fatal</MenuItem>
+                    </Select>
                   </div>
+                  <p>Enable Logging to file:
+                  <Checkbox
+                      checked={this.props.config.logToFile || false} // Default value needed to stay in controlled mode
+                      onChange={this.props.handleLogToFileChange} // lifting state up
+                      value='primary'
+                  />
+                  </p>
+                  <p>File Log Size</p>
+                  <Slider
+                    color='secondary'
+                    defaultValue={200000}
+                    step={50000}
+                    onChange={this.props.handleGlobalTrailSize}
+                    value={this.props.config.globalEventListSize}
+                    valueLabelDisplay='auto'
+                    min={40000}
+                    valueLabelFormat={function (value) { return `${value / 1000}K` }}
+                    max={1000000}
+                  />
                   <div>
                     <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetConfig}>
                       Get
