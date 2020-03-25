@@ -30,6 +30,9 @@ RUN npm install --production
 # COPY Source files
 COPY ./OI4-Service/out ./
 
+# COPY logs directory
+RUN mkdir -p logs
+
 # COPY Bootstrapper
 COPY ./OI4-Service/bootstrapper ./bootstrapper/
 COPY ./OI4-Service/scripts ./scripts/
