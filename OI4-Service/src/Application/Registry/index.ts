@@ -12,10 +12,10 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
 import dataSetClassIds = require('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
-import { fstatSync, writeFileSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
+import { fstatSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
-const rootdir = './';
+const rootdir = './logs';
 let globIndex = 0;
 
 export class Registry extends EventEmitter {
@@ -56,8 +56,8 @@ export class Registry extends EventEmitter {
    */
   constructor(registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
     super();
-    this.logger = new Logger(false, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
-    this.testLogger = new Logger(true, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
+    this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
+    this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
     setInterval(
       () => {
         globIndex = globIndex + 1;
@@ -120,7 +120,7 @@ export class Registry extends EventEmitter {
     for (const reglogs of reglogArr) {
       try {
         console.log(`Deleting ${reglogs}`);
-        unlinkSync(reglogs); // Delete old file
+        unlinkSync(`${rootdir}/${reglogs}`); // Delete old file
       } catch (e) {
         if (e.code === 'ENOENT') {
           // That's ok, no need to delete a non-existing file
@@ -163,8 +163,9 @@ export class Registry extends EventEmitter {
         }
         if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') { // Old file exists
           try {
-            unlinkSync(this.currentlyUsedFiles[this.currentlyUsedIndex]); // Delete old file
+            unlinkSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`); // Delete old file
           } catch (e) {
+            console.log('something went wrong with file deletion');
             if (e.code === 'ENOENT') {
               // That's ok, no need to delete a non-existing file
               this.logger.log('Trying to delete an already deleted files in flushToFile');
