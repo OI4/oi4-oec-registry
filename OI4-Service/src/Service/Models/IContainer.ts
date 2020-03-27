@@ -62,6 +62,28 @@ export interface IContainerLicenseText {
   [key: string]: string;
 }
 
+export interface IContainerPublicationList {
+  publicationList: IPublicationListObject[];
+}
+
+export interface IContainerSubscriptionList {
+  subscriptionList: ISubscriptionListObject[];
+}
+
+interface ISubscriptionListObject {
+  topicPath: string;
+  interval: number;
+  config: ESubscriptionListConfig;
+}
+
+interface IPublicationListObject {
+  tag: string;
+  DataSetWriterId: string; // Actually OI4-Identifier: TODO: Validator
+  status: boolean;
+  interval: number;
+  config: EPublicationListConfig;
+}
+
 export interface IContainerState {
   appId: string;
   health: IContainerHealth;
@@ -72,6 +94,8 @@ export interface IContainerState {
   dataLookup: IContainerData;
   profile: IContainerProfile;
   metaDataLookup: IContainerMetaData;
+  publicationList: IContainerPublicationList;
+  subscriptionList: IContainerSubscriptionList;
   mam: IMasterAssetModel;
 
   // Methods
@@ -95,6 +119,20 @@ export enum EDeviceHealth {
   MAINTENANCE_REQUIRED_4 = 'MAINTENANCE_REQUIRED_4',
 }
 
+export enum EPublicationListConfig {
+  NONE_0 = 'NONE_0',
+  STATUS_1 = 'STATUS_1',
+  INTERVAL_2 = 'INTERVAL_2',
+  STATUS_AND_INTERVAL_3 = 'STATUS_AND_INTERVAL_3',
+}
+
+export enum ESubscriptionListConfig {
+  NONE_0 = 'NONE_0',
+  CONF_1 = 'CONF_1',
+  CREATE_2 = 'CREATE_2',
+  DELETE_4 = 'DELETE_4',
+}
+
 export interface IDataSetClassIds {
   [key: string]: string;
   mam: string;
@@ -105,4 +143,6 @@ export interface IDataSetClassIds {
   event: string;
   profile: string;
   config: string;
+  publicationList: string;
+  subscriptionList: string;
 }

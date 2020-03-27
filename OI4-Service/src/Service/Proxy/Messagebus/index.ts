@@ -158,6 +158,18 @@ class OI4MessageBusProxy extends OI4Proxy {
               }
               break;
             }
+            case 'publicationList': {
+              if (topicTag !== '') {
+                await this.sendResource('publicationList', parsedMessage.MessageId);
+              }
+              break;
+            }
+            case 'subscriptionList': {
+              if (topicTag !== '') {
+                await this.sendResource('subscriptionList', parsedMessage.MessageId);
+              }
+              break;
+            }
             default: {
               await this.sendError(`Internal GetError with resource ${topicResource}`);
               break;

@@ -27,6 +27,8 @@ import profileSchemaJson = require('../../../Config/Schemas/profile.schema.json'
 import eventSchemaJson = require('../../../Config/Schemas/event.schema.json');
 import rtLicenseSchemaJson = require('../../../Config/Schemas/rtLicense.schema.json');
 import configSchemaJson = require('../../../Config/Schemas/config.schema.json');
+import publicationListSchemaJson = require('../../../Config/Schemas/publicationList.schema.json');
+import subscriptionListSchemaJson = require('../../../Config/Schemas/subscriptionList.schema.json');
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
 
@@ -69,6 +71,8 @@ export class OPCUABuilder {
     this.jsonValidator.addSchema(eventSchemaJson, 'event.schema.json');
     this.jsonValidator.addSchema(rtLicenseSchemaJson, 'rtLicense.schema.json');
     this.jsonValidator.addSchema(configSchemaJson, 'config.schema.json');
+    this.jsonValidator.addSchema(publicationListSchemaJson, 'publicationList.schema.json');
+    this.jsonValidator.addSchema(subscriptionListSchemaJson, 'subscriptionList.schema.json');
   }
 
   /**

@@ -19,6 +19,8 @@ import profileSchemaJson = require('../../Config/Schemas/profile.schema.json');
 import eventSchemaJson = require('../../Config/Schemas/event.schema.json');
 import rtLicenseSchemaJson = require('../../Config/Schemas/rtLicense.schema.json');
 import configSchemaJson = require('../../Config/Schemas/config.schema.json');
+import publicationListSchemaJson = require('../../Config/Schemas/publicationList.schema.json');
+import subscriptionListSchemaJson = require('../../Config/Schemas/subscriptionList.schema.json');
 
 // DSCIds
 import { IDataSetClassIds, ESubResource } from '../../Service/Models/IContainer';
@@ -51,7 +53,20 @@ export class ConformityValidator extends EventEmitter {
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
-  static completeProfileList: string[] = ['mam', 'health', 'license', 'licenseText', 'profile', 'data', 'rtLicense', 'config', 'event', 'metadata'];
+  static completeProfileList: string[] = [ // TODO: There has to be a better place for this
+    'mam',
+    'health',
+    'license',
+    'licenseText',
+    'profile',
+    'data',
+    'rtLicense',
+    'config',
+    'event',
+    'metadata',
+    'publicationList',
+    'subscriptionList',
+  ];
   constructor(appId: string) {
     super();
     const serverObj = {
@@ -86,6 +101,8 @@ export class ConformityValidator extends EventEmitter {
     this.jsonValidator.addSchema(eventSchemaJson, 'event.schema.json');
     this.jsonValidator.addSchema(rtLicenseSchemaJson, 'rtLicense.schema.json');
     this.jsonValidator.addSchema(configSchemaJson, 'config.schema.json');
+    this.jsonValidator.addSchema(publicationListSchemaJson, 'publicationList.schema.json');
+    this.jsonValidator.addSchema(subscriptionListSchemaJson, 'subscriptionList.schema.json');
   }
 
   /**
@@ -270,6 +287,7 @@ export class ConformityValidator extends EventEmitter {
           networkMessageValidationResult = false;
         }
         if (!networkMessageValidationResult) {
+          console.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
           this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
         }
         if (networkMessageValidationResult) {

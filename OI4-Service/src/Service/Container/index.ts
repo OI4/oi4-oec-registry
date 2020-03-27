@@ -10,6 +10,10 @@ import {
   IContainerMetaData,
   EDeviceHealth,
   IContainerProfile,
+  IContainerPublicationList,
+  IContainerSubscriptionList,
+  EPublicationListConfig,
+  ESubscriptionListConfig,
 } from '../Models/IContainer';
 
 import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel, EOPCUALocale } from '../Models/IOPCUAPayload';
@@ -26,6 +30,8 @@ class ContainerState extends ConfigParser implements IContainerState {
   public metaDataLookup: IContainerMetaData;
   public mam: IMasterAssetModel;
   public profile: IContainerProfile;
+  public publicationList: IContainerPublicationList;
+  public subscriptionList: IContainerSubscriptionList;
 
   constructor() {
     super();
@@ -232,8 +238,46 @@ class ContainerState extends ConfigParser implements IContainerState {
         'mam',
         'profile',
         'licenseText',
+        'publicationList',
+        'subscriptionList',
       ],
     };
+
+    this.publicationList = {
+      publicationList: [
+
+      ],
+    };
+
+    this.subscriptionList = {
+      subscriptionList: [
+
+      ],
+    };
+
+    // Fill both pubList and subList
+    for (const resources of this.profile.resource) {
+      let resInterval = 0;
+      if (resources === 'health') {
+        resInterval = 60000;
+      } else {
+        resInterval = 0;
+      }
+      this.publicationList.publicationList.push({
+        tag: `${resources}/${this.mam.ProductInstanceUri}`,
+        DataSetWriterId: this.mam.ProductInstanceUri,
+        status: true,
+        interval: resInterval,
+        config: EPublicationListConfig.NONE_0,
+      });
+
+      this.subscriptionList.subscriptionList.push({
+        topicPath: `oi4/${this.mam.DeviceClass}/${this.appId}/get/${resources}/${this.appId}`,
+        interval: 0,
+        config: ESubscriptionListConfig.NONE_0,
+      });
+    }
+
   }
 
   /**
