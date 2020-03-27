@@ -111,7 +111,7 @@ export class Registry extends EventEmitter {
   }
 
   private getFilesFromPath(path: string, extension: string) {
-    let dir = readdirSync(path);
+    const dir = readdirSync(path);
     return dir.filter(elm => elm.match(new RegExp(`.*\.(${extension})$`, 'ig')));
   }
 
@@ -176,8 +176,7 @@ export class Registry extends EventEmitter {
         }
         this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`; // Set new filename, will be created with next openSync
         appendFileSync(this.currentFd, ']'); // Close Array
-      }
-      else {
+      } else {
         for (const entries of this.globalEventList) {
           if (fsObj.size !== 1) { // Only '[' in the file
             appendFileSync(this.currentFd, ','); // Separator between Objects
