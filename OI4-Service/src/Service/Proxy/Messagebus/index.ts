@@ -4,7 +4,7 @@ import { IOPCUAData, IMasterAssetModel } from '../../Models/IOPCUAPayload.js';
 import { OI4Proxy } from '../index';
 import { hasKey } from '../../Utilities/index';
 import { Logger } from '../../Utilities/Logger/index';
-import { EDeviceHealth, ESubResource, IDataSetClassIds } from '../../Models/IContainer';
+import { EDeviceHealth, ESubResource, IDataSetClassIds, ESubscriptionListConfig } from '../../Models/IContainer';
 
 // DSCIds
 import dataSetClassIds = require ('../../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
@@ -67,13 +67,28 @@ class OI4MessageBusProxy extends OI4Proxy {
       this.logger.log(`Published Birthmessage on ${this.standardRoute}/pub/mam/${this.appId}`, ESubResource.info);
 
       // Listen to own routes
-      this.client.subscribe(`${this.standardRoute}/get/#`);
-      this.client.subscribe(`${this.standardRoute}/set/#`);
-      this.client.subscribe(`${this.standardRoute}/del/#`);
+      this.ownSubscribe(`${this.standardRoute}/get/#`);
+      this.ownSubscribe(`${this.standardRoute}/set/#`);
+      this.ownSubscribe(`${this.standardRoute}/del/#`);
 
       this.client.on('message', this.processMqttMessage);
       setInterval(() => { this.sendResource('health'); }, 60000); // send our own health every 30 seconds!
     });
+  }
+
+  private async ownSubscribe(topic: string) {
+    this.containerState.subscriptionList.subscriptionList.push({
+      topicPath: topic,
+      config: ESubscriptionListConfig.NONE_0,
+      interval: 0,
+    });
+    return await this.client.subscribe(topic);
+  }
+
+  private async ownUnsubscribe(topic: string) {
+    // Remove from subscriptionList
+    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    return await this.client.unsubscribe(topic);
   }
 
   /**

@@ -1,4 +1,4 @@
-import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds } from '../../Service/Models/IContainer';
+import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig } from '../../Service/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig } from '../Models/IRegistry';
 import EAuditLevel = ESubResource;
 import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayload';
@@ -43,6 +43,7 @@ export class Registry extends EventEmitter {
   private currentlyUsedIndex: number;
   private currentFd: number;
   private fileCount: number;
+  private containerState: IContainerState;
 
   // Timeout container TODO: types
   private timeoutLookup: any;
@@ -54,8 +55,10 @@ export class Registry extends EventEmitter {
    * @param registryClient The global mqtt client used to avoid multiple client connections inside the container
    * @param appId The appId used by the registry application for any kind of oi4-communication
    */
-  constructor(registryClient: mqtt.AsyncClient, appId: string = 'appIdRegistry') {
+  constructor(registryClient: mqtt.AsyncClient, contState: IContainerState) {
     super();
+    const appId = contState.appId;
+    this.appId = appId;
     this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
     setInterval(
@@ -65,7 +68,14 @@ export class Registry extends EventEmitter {
       },
       100);
     this.queue = new SequentialTaskQueue();
-
+    this.containerState = contState;
+    this.containerState.publicationList.publicationList.push({
+      tag: 'mam/',
+      DataSetWriterId: this.appId,
+      config: EPublicationListConfig.NONE_0,
+      interval: 0,
+      status: true,
+    });
     this.timeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
@@ -73,7 +83,6 @@ export class Registry extends EventEmitter {
     this.applicationLookup = {};
     this.deviceLookup = {};
     this.fileCount = 4;
-    this.appId = appId;
     this.config = {
       logToFile: false,
       developmentMode: false,
@@ -98,16 +107,31 @@ export class Registry extends EventEmitter {
     this.registryClient.on('message', this.processMqttMessage);
     for (const levels of Registry.auditList) {
       console.log(`subbed initially to ${levels}`);
-      this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
     }
 
-    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
-    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
-    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
-    this.registryClient.subscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
-    this.registryClient.subscribe('oi4/Registry/+/+/+/+/get/mam/#');
+    this.ownSubscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
+    this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
+    this.ownSubscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
+    this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
+    this.ownSubscribe('oi4/Registry/+/+/+/+/get/mam/#');
 
     // setInterval(() => { this.flushToLogfile; }, 60000);
+  }
+
+  private async ownSubscribe(topic: string) {
+    this.containerState.subscriptionList.subscriptionList.push({
+      topicPath: topic,
+      config: ESubscriptionListConfig.NONE_0,
+      interval: 0,
+    });
+    return await this.registryClient.subscribe(topic);
+  }
+
+  private async ownUnsubscribe(topic: string) {
+    // Remove from subscriptionList
+    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    return await this.registryClient.unsubscribe(topic);
   }
 
   private getFilesFromPath(path: string, extension: string) {
@@ -431,16 +455,17 @@ export class Registry extends EventEmitter {
     assetLookup[assetId] = fullDevice;
 
     // Subscribe to all changes regarding this application
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/health/${assetId}`);
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/license/${assetId}`);
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/rtLicense/${assetId}`);
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/licenseText/#`);
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/config/${assetId}`);
-    this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/profile/${assetId}`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/health/${assetId}`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/license/${assetId}`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/rtLicense/${assetId}`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/licenseText/#`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/config/${assetId}`);
+    this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/profile/${assetId}`);
     // Try to get them at least once!
     try {
       await this.updateResourceInDevice(assetId, 'health');
       await this.updateResourceInDevice(assetId, 'profile'); // Initial profile reading
+      await this.updateResourceInDevice(assetId, 'subscriptionList');
       assetLookup[assetId]['registeredAt'] = new Date().toISOString();
       assetLookup[assetId]['lastMessage'] = new Date().toISOString();
       // If too many devices onboard at the same time, the bus will get spammed...
@@ -461,11 +486,19 @@ export class Registry extends EventEmitter {
     // Subscribe to events
     for (const levels of Registry.auditList) {
       console.log(`subbed local asset ${assetId} to ${levels}`);
-      this.registryClient.subscribe(`${assetLookup[assetId].fullDevicePath}/pub/event/${levels}/${assetId}`);
+      this.ownSubscribe(`${assetLookup[assetId].fullDevicePath}/pub/event/${levels}/${assetId}`);
       if (levels === this.config.auditLevel) {
-        return;
+        break;
       }
     }
+    // Update own publicationList with new Asset
+    this.containerState.publicationList.publicationList.push({
+      tag: `mam/${assetId}`,
+      DataSetWriterId: this.appId,
+      config: EPublicationListConfig.NONE_0,
+      interval: 0,
+      status: true,
+    });
 
   }
 
@@ -481,7 +514,7 @@ export class Registry extends EventEmitter {
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
       for (const device of Object.keys(assets)) {
         // TODO: URL ENCODING???
-        await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), dscids.mam)));
+        await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].appId, new Date(), dscids.mam)));
         this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
       }
     } else {
@@ -495,24 +528,28 @@ export class Registry extends EventEmitter {
    */
   removeDevice(device: string) {
     if (device in this.applicationLookup) {
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/event/+/${device}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/health/${device}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/license/${device}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/licenseText/#`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/config/${device}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/profile/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/event/+/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/health/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/license/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/licenseText/#`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/config/${device}`);
+      this.ownUnsubscribe(`${this.applicationLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.applicationLookup[device];
+      // Remove from publicationList
+      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
       this.logger.log(`Deleted App: ${device}`, ESubResource.info);
     } else if (device in this.deviceLookup) {
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/health/${device}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/license/${device}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/licenseText/#`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/config/${device}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/profile/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/health/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/license/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/licenseText/#`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/config/${device}`);
+      this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.deviceLookup[device];
+      // Remove from publicationList
+      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
       this.logger.log(`Deleted Device: ${device}`, ESubResource.debug);
     } else {
       this.logger.log('Nothing to remove here!');
@@ -524,22 +561,26 @@ export class Registry extends EventEmitter {
    */
   clearRegistry() {
     for (const assets of Object.keys(this.applicationLookup)) { // Unsubscribe topics of every asset
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/health/${assets}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/license/${assets}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/licenseText/#`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/config/${assets}`);
-      this.registryClient.unsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/health/${assets}`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/license/${assets}`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/licenseText/#`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/config/${assets}`);
+      this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+      // Remove from publicationList
+      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
     }
     this.applicationLookup = {}; // Clear application lookup
 
     for (const assets of Object.keys(this.deviceLookup)) { // Unsubscribe topics of every asset
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/health/${assets}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/license/${assets}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/licenseText/#`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/config/${assets}`);
-      this.registryClient.unsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/health/${assets}`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/license/${assets}`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/licenseText/#`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/config/${assets}`);
+      this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+      // Remove from publicationList
+      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
     }
     this.deviceLookup = {}; // Clear device lookup
   }
@@ -688,7 +729,7 @@ export class Registry extends EventEmitter {
     // Then, unsubscribe from old Audit Trail
     for (const levels of Registry.auditList) {
       console.log(`unsubscribed ${levels}`);
-      await this.registryClient.unsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      await this.ownUnsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
     }
     for (const devices of Object.keys(this.deviceLookup)) {
       this.unsubscribeAssetFromAudit(devices);
@@ -700,7 +741,7 @@ export class Registry extends EventEmitter {
     // Then, resubscribe to new Audit Trail
     for (const levels of Registry.auditList) {
       console.log(`subscribed ${levels}`);
-      await this.registryClient.subscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+      await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
       if (levels === this.config.auditLevel) {
         return; // We matched our configured auditLevel, returning to not sub to redundant info...
       }
@@ -713,12 +754,12 @@ export class Registry extends EventEmitter {
     console.log(`unsubbing all audits from ${oi4Id}`);
     if (oi4Id in this.applicationLookup) {
       for (const levels of Registry.auditList) {
-        await this.registryClient.unsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        await this.ownUnsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
       }
     }
     if (oi4Id in this.deviceLookup) {
       for (const levels of Registry.auditList) {
-        await this.registryClient.unsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        await this.ownUnsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
       }
     }
   }
@@ -727,7 +768,7 @@ export class Registry extends EventEmitter {
     console.log(`resubbing all audits from ${oi4Id}`);
     if (oi4Id in this.applicationLookup) {
       for (const levels of Registry.auditList) {
-        await this.registryClient.unsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        await this.ownUnsubscribe(`${this.applicationLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
         if (levels === this.config.auditLevel) {
           break;
         }
@@ -735,7 +776,7 @@ export class Registry extends EventEmitter {
     }
     if (oi4Id in this.deviceLookup) {
       for (const levels of Registry.auditList) {
-        await this.registryClient.unsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
+        await this.ownUnsubscribe(`${this.deviceLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
         if (levels === this.config.auditLevel) {
           break;
         }

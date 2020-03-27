@@ -28,7 +28,7 @@ logger.level = ESubResource.info;
 import { Registry } from './Application/Registry';
 import { IConformity } from './Application/Models/IConformityValidator';
 import { ConformityValidator } from './Application/ConformityValidator';
-const registry = new Registry(busProxy.mqttClient, contState.appId);
+const registry = new Registry(busProxy.mqttClient, contState);
 
 /**
  * Deletes a Mam from the registry (TODO: this is not specified yet and only used for debug purposes)
