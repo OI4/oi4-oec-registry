@@ -224,6 +224,7 @@ export class Registry extends EventEmitter {
       this.logHappened = false; // Reset LogHappened
       this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
       closeSync(this.currentFd);
+      this.globalEventList = [];
     }
   }
 
@@ -281,7 +282,6 @@ export class Registry extends EventEmitter {
         // If we have too many elements in the list, we purge them
         clearTimeout(this.flushTimeout);
         this.flushToLogfile();
-        this.globalEventList = [];
       }
       this.globalEventList.push({
         ...parsedPayload,
