@@ -19,7 +19,7 @@ import {
   Button,
   Select,
   MenuItem,
-  Slider
+  InputAdornment
 } from '@material-ui/core';
 
 import { DeleteForever, GetApp, /* Publish */ } from '@material-ui/icons';
@@ -76,11 +76,11 @@ export class ClickableFooter extends React.Component {
               <p>
                 Be aware to start the Open Industry 4.0 Alliance's Registry as the very first application in the runtime.
                 Otherwise, you might miss information from other applications and devices.
-                        </p>
+              </p>
               <p>
                 The Registry will list all applications and devices, which are communicating in a conform way to Open Industry 4.0 Alliance.
                 It also displays the event trail of all Open Industry 4.0 Alliance events on the message bus.
-                        </p>
+              </p>
               <p>
                 Every recognized asset gets tested for a basic set of compatibility to Open Industry 4.0 Alliance specification. The result will be displayed as one of:
               </p>
@@ -92,10 +92,10 @@ export class ClickableFooter extends React.Component {
               </ul>
               <p>
                 The conformity icon in the header bar is an indication of overall conformity.
-                        </p>
+              </p>
               <p>
                 The refresh button will initiate a new conformity check.
-                        </p>
+              </p>
             </DialogContent>
           </TabPanel>
           <TabPanel value={this.state.selectedTab} index={1}>
@@ -158,18 +158,6 @@ export class ClickableFooter extends React.Component {
                         value='primary'
                   />
                   </p>
-                  {/* <TextField
-                    id="outlined-number"
-                    label="Global Log Elements"
-                    type="number"
-                    value={this.props.config.globalEventListLength || ''}
-                    onChange={this.props.handleGlobalTrailLength}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    size='small'
-                    style={{ margin: '10px' }}
-                  /> */}
                   <>Count of shown Audit Elements:</>
                   <Select
                       value={this.props.config.globalEventListLength || ''}
@@ -195,25 +183,37 @@ export class ClickableFooter extends React.Component {
                       <MenuItem value='fatal'>Fatal</MenuItem>
                     </Select>
                   </div>
-                  <p>Enable Logging to file:
+                  <>Enable Logging to file:
                   <Checkbox
                       checked={this.props.backendConfig.logToFile || false} // Default value needed to stay in controlled mode
                       onChange={this.props.handleLogToFileChange} // lifting state up
                       value='primary'
                   />
-                  </p>
-                  <p>File Log Size</p>
-                  <Slider
-                    color='secondary'
-                    defaultValue={200000}
-                    step={50000}
+                  </>
+                  <p>Logfile Size:
+                  <TextField
+                    error={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000}
+                    id="outlined-number"
+                    type="number"
+                    min='20'
+                    value={this.props.backendConfig.logFileSize || ''}
                     onChange={this.props.handleGlobalTrailSize}
-                    value={this.props.backendConfig.logFileSize}
-                    valueLabelDisplay='auto'
-                    min={40000}
-                    valueLabelFormat={function (value) { return `${value / 1000}K` }}
-                    max={1000000}
+                    helperText={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000 ? 'Value out of bounds!': ''}
+                    InputProps={{
+                      inputProps: {
+                        min: '500',
+                        max: '10000',
+                        step: '250',
+                      },
+                      endAdornment: (
+                        <InputAdornment position="end">kB</InputAdornment>
+                      ),
+                    }}
+                    layout='dense'
+                    size='small'
+                    style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
                   />
+                  </p>
                   <div>
                     <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetConfig}>
                       Get

@@ -627,9 +627,9 @@ class OI4Base extends React.Component {
     this.setState({ config: configObj });
   }
 
-  setGlobalTrailSize(ev, newValue) {
+  setGlobalTrailSize(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    configObj.logFileSize = newValue;
+    configObj.logFileSize = ev.target.value;
     this.setState({ backendConfig: configObj });
   }
 
