@@ -851,6 +851,14 @@ export class Registry extends EventEmitter {
     return this.globalEventList;
   }
 
+  public getEventTrail(noOfElements: number) {
+    if(this.globalEventList.length <= noOfElements) {
+      return this.globalEventList;
+    } else {
+      return this.globalEventList.slice(this.globalEventList.length-noOfElements, this.globalEventList.length);
+    }
+  }
+
   /**
    * Retrieves a single application-asset by its appId
    * @param oi4Id The oi4Id of the asset that is to be retrieved
