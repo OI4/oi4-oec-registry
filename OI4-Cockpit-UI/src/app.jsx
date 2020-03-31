@@ -129,13 +129,15 @@ class OI4Base extends React.Component {
       conformityLookup: {},
       footerExpanded: false,
       config: {
-        developmentMode: false,
         globalEventListLength: 10,
-        logFileSize: 200000, // In byte
-        assetEventListLength: 3,
+        assetEventListLength: 10,
+      },
+      backendConfig: {
         auditLevel: 'trace',
         showRegistry: true,
         logToFile: false,
+        logFileSize: 200000, // In byte
+        developmentMode: false,
       },
       theme: lightTheme,
       darkActivated: false,
@@ -152,7 +154,7 @@ class OI4Base extends React.Component {
     // Update apps and devices right away
     setTimeout(() => { this.updateApplications() }, 500);
     setTimeout(() => { this.updateDevices() }, 800);
-    setTimeout(() => { this.getConfig() }, 300);
+    setTimeout(() => { this.getBackendConfig() }, 300);
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
      * The resources kept by the registry of all applications are updated individually.
@@ -226,7 +228,7 @@ class OI4Base extends React.Component {
                 updateConformity={this.updateConformity.bind(this)}
                 fontColor={this.state.theme.palette.text.default}
                 updatingConformity={this.state.updatingConformity}
-                expertMode={this.state.config.developmentMode}
+                expertMode={this.state.backendConfig.developmentMode}
                 clearAsset={this.clearAssetById.bind(this)}
               />
               <ExpansionTable
@@ -236,7 +238,7 @@ class OI4Base extends React.Component {
                 conformityLookup={this.state.conformityLookup}
                 updateConformity={this.updateConformity.bind(this)}
                 updatingConformity={this.state.updatingConformity}
-                expertMode={this.state.config.developmentMode}
+                expertMode={this.state.backendConfig.developmentMode}
                 clearAsset={this.clearAssetById.bind(this)}
               />
               <ExpansionPanel>
@@ -253,14 +255,14 @@ class OI4Base extends React.Component {
               clearAllAssets={this.clearAllAssets.bind(this)}
               clearAllLogs={this.clearAllLogs.bind(this)}
               config={this.state.config}
+              backendConfig={this.state.backendConfig}
               handleExpertChange={this.handleExpertChange.bind(this)}
               handleLogToFileChange={this.handleLogToFileChange.bind(this)}
               handleShowRegistryChange={this.handleShowRegistryChange.bind(this)}
-              handleLocalTrailLength={this.setlocalTrailLength.bind(this)}
               handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
               handleGlobalTrailSize={this.setGlobalTrailSize.bind(this)}
-              handleGetConfig={this.getConfig.bind(this)}
-              handleSetConfig={this.setConfig.bind(this)}
+              handleGetConfig={this.getBackendConfig.bind(this)}
+              handleSetConfig={this.setBackendConfig.bind(this)}
               handleAuditLevelChange={this.setAuditLevel.bind(this)}
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
@@ -283,21 +285,21 @@ class OI4Base extends React.Component {
   }
 
   handleLogToFileChange = (event, newValue) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj.logToFile = !oldConfigObj.logToFile;
-    this.setState({ config: oldConfigObj });
+    this.setState({ backendConfig: oldConfigObj });
   }
 
   handleExpertChange = (event, newValue) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj.developmentMode = !oldConfigObj.developmentMode;
-    this.setState({ config: oldConfigObj });
+    this.setState({ backendConfig: oldConfigObj });
   }
 
   handleShowRegistryChange = (event, newValue) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj.showRegistry = !oldConfigObj.showRegistry;
-    this.setState({ config: oldConfigObj });
+    this.setState({ backendConfig: oldConfigObj });
   }
 
   /**
@@ -391,7 +393,7 @@ class OI4Base extends React.Component {
     this.setState({ updatingConformity: true });
     console.log(`Updating Conformity for ${fullTopic} with appId: ${appId}`);
     const oi4Id = appId;
-    if (this.state.config.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
+    if (this.state.backendConfig.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
       this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
         .then(data => {
           this.setState({ updatingConformity: false });
@@ -593,18 +595,6 @@ class OI4Base extends React.Component {
   }
 
   /**
-   * Fetch the most recent config of the Registry
-   *
-   * @memberof OI4Base
-   */
-  updateConfig() {
-    this.fetch.get(`/config`)
-      .then(data => {
-        this.setState({ config: JSON.parse(data) });
-      });
-  }
-
-  /**
    * Fetch the AppID of the Registry
    *
    * @memberof OI4Base
@@ -630,15 +620,6 @@ class OI4Base extends React.Component {
   }
 
   // SETTERS
-  // setConfig(newConfig) { // eslint-disable-line no-unused-vars
-  //   // TODO!
-  // }
-  setlocalTrailLength(ev) {
-    const configObj = JSON.parse(JSON.stringify(this.state.config));
-    configObj.assetEventListLength = ev.target.value;
-    this.setState({ config: configObj });
-  }
-
   setGlobalTrailLength(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.config));
     configObj.globalEventListLength = ev.target.value;
@@ -646,34 +627,38 @@ class OI4Base extends React.Component {
   }
 
   setGlobalTrailSize(ev, newValue) {
-    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     configObj.logFileSize = newValue;
-    this.setState({ config: configObj });
+    this.setState({ backendConfig: configObj });
   }
 
   setAuditLevel(ev) {
-    const configObj = JSON.parse(JSON.stringify(this.state.config));
+    const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     configObj.auditLevel = ev.target.value;
-    this.setState({ config: configObj });
+    this.setState({ backendConfig: configObj });
   }
 
-  setConfig() {
-    this.fetch.put(`/registry/config`, JSON.stringify(this.state.config))
+  setBackendConfig() {
+    this.fetch.put(`/registry/config`, JSON.stringify(this.state.backendConfig))
       .then(data => {
         console.log(data);
       });
   }
 
-  getConfig() {
+  getBackendConfig() {
     this.fetch.get(`/registry/config`)
       .then(data => {
         const regConfData = JSON.parse(data);
-        this.setState({ config: regConfData });
+        this.setState({ backendConfig: regConfData });
       });
   }
 
   saveToFile() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state.config));
+    const fullConfigObj = {
+      config: this.state.config,
+      backendConfig: this.state.backendConfig,
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullConfigObj));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", `configDmp.json`);
@@ -687,11 +672,13 @@ class OI4Base extends React.Component {
     fileReader.readAsText(e.target.files[0]);
     fileReader.onload = (evt) => {
       const confObj = JSON.parse(evt.target.result);
-      console.log('Old config');
+      console.log('Old config: Frontend');
       console.log(JSON.parse(JSON.stringify(this.state.config)));
+      console.log('Old config: Backend');
+      console.log(JSON.parse(JSON.stringify(this.state.backendConfig)));
       console.log('New config');
       console.log(confObj);
-      this.setState({ config: confObj });
+      this.setState({ config: confObj.config, backendConfig: confObj.backendConfig });
     };
   }
 }

@@ -103,7 +103,7 @@ export class ClickableFooter extends React.Component {
               <p>In this section, expert configurations can be set by the maintainer.</p>
               <p>First, enable the expert checkbox to the right:
                 <Checkbox
-                  checked={this.props.config.developmentMode || false} // Default value needed to stay in controlled mode
+                  checked={this.props.backendConfig.developmentMode || false} // Default value needed to stay in controlled mode
                   onChange={this.props.handleExpertChange} // lifting state up
                   value='primary'
                 />
@@ -116,12 +116,12 @@ export class ClickableFooter extends React.Component {
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
               <div style={{ margin: '10px' }}>
-                {this.props.config.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
+                {this.props.backendConfig.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
                   <GetApp />
                 </IconButton></> : null}
               </div>
               <div style={{ margin: '10px' }}>
-                {this.props.config.developmentMode ? <>Load config from file:
+                {this.props.backendConfig.developmentMode ? <>Load config from file:
                   <input
                     accept=".json"
                     id="contained-button-file"
@@ -137,39 +137,27 @@ export class ClickableFooter extends React.Component {
                 */}</> : null}
               </div>
               <div style={{ margin: '10px' }}>
-                {this.props.config.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
+                {this.props.backendConfig.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
                   <DeleteForever />
                 </IconButton></> : null}
               </div>
               <div style={{ margin: '10px' }}>
-                {this.props.config.developmentMode ? <>Delete all Logs(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllLogs() }}>
+                {this.props.backendConfig.developmentMode ? <>Delete all Logs(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllLogs() }}>
                   <DeleteForever />
                 </IconButton></> : null}
               </div>
               <div>
-                {this.props.config.developmentMode ? <>
+                {this.props.backendConfig.developmentMode ? <>
                   <p style={{ fontSize: '24px' }}>
                     Registry (Backend) - Configuration:
                   </p>
                   <p>Show / Add Registry to Database:
                   <Checkbox
-                        checked={this.props.config.showRegistry || false} // Default value needed to stay in controlled mode
+                        checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
                         onChange={this.props.handleShowRegistryChange} // lifting state up
                         value='primary'
                   />
                   </p>
-                  <TextField
-                    id="outlined-number"
-                    label="Asset Log Elements"
-                    type="number"
-                    value={this.props.config.assetEventListLength || ''}
-                    onChange={this.props.handleLocalTrailLength}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    size='small'
-                    style={{ margin: '10px' }}
-                  />
                   <TextField
                     id="outlined-number"
                     label="Global Log Elements"
@@ -185,7 +173,7 @@ export class ClickableFooter extends React.Component {
                   <div style={{ margin: '10px' }}>
                     <>Set Audit Level:</>
                     <Select
-                      value={this.props.config.auditLevel || ''}
+                      value={this.props.backendConfig.auditLevel || ''}
                       onChange={this.props.handleAuditLevelChange}
                     >
                       <MenuItem value='trace'>Trace</MenuItem>
@@ -198,7 +186,7 @@ export class ClickableFooter extends React.Component {
                   </div>
                   <p>Enable Logging to file:
                   <Checkbox
-                      checked={this.props.config.logToFile || false} // Default value needed to stay in controlled mode
+                      checked={this.props.backendConfig.logToFile || false} // Default value needed to stay in controlled mode
                       onChange={this.props.handleLogToFileChange} // lifting state up
                       value='primary'
                   />
@@ -209,7 +197,7 @@ export class ClickableFooter extends React.Component {
                     defaultValue={200000}
                     step={50000}
                     onChange={this.props.handleGlobalTrailSize}
-                    value={this.props.config.logFileSize}
+                    value={this.props.backendConfig.logFileSize}
                     valueLabelDisplay='auto'
                     min={40000}
                     valueLabelFormat={function (value) { return `${value / 1000}K` }}
