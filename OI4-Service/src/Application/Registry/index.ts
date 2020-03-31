@@ -43,7 +43,11 @@ export class Registry extends EventEmitter {
   private currentlyUsedIndex: number;
   private currentFd: number;
   private fileCount: number;
+  private logHappened: boolean;
   private containerState: IContainerState;
+  private maxAuditTrailElements: number;
+
+  private flushTimeout: any;
 
   // Timeout container TODO: types
   private timeoutLookup: any;
@@ -83,12 +87,12 @@ export class Registry extends EventEmitter {
     this.applicationLookup = {};
     this.deviceLookup = {};
     this.fileCount = 4;
+    this.maxAuditTrailElements = 1000;
+    this.logHappened = false;
     this.config = {
       logToFile: false,
       developmentMode: false,
-      globalEventListLength: 100,
-      assetEventListLength: 3, // Not used in backend, only frontend
-      globalEventListSize: 200000, // In byte
+      logFileSize: 200000,
       auditLevel: EAuditLevel.warn,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
@@ -159,6 +163,11 @@ export class Registry extends EventEmitter {
   private flushToLogfile() { // TODO: Change fileOperations to Async
     console.log('_____-------_______------FLUSH CALLED------______-----_____');
     if (this.config.logToFile) {
+      if(this.logHappened === false) {
+        console.log('no logs happened in the past minute... returning...');
+        this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
+        return;
+      }
       console.log('log to file enabled');
       console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
       this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
@@ -169,7 +178,7 @@ export class Registry extends EventEmitter {
         appendFileSync(this.currentFd, '['); // Start of the file, open Array
         fsObj = fstatSync(this.currentFd);
       }
-      if (fsObj.size >= (this.config.globalEventListSize / this.fileCount)) { // Size is bigger than an individual file may be
+      if (fsObj.size >= (this.config.logFileSize / this.fileCount)) { // Size is bigger than an individual file may be
         for (const entries of this.globalEventList) { // Flush last entries... TODO: need to find a better way to do this instead of doubling the code
           if (fsObj.size !== 1) { // Only '[' in the file
             appendFileSync(this.currentFd, ','); // Separator between Objects
@@ -212,6 +221,8 @@ export class Registry extends EventEmitter {
 
         }
       }
+      this.logHappened = false; // Reset LogHappened
+      this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
       closeSync(this.currentFd);
     }
   }
@@ -264,9 +275,11 @@ export class Registry extends EventEmitter {
 
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
       // console.log('Got Event!');
+      this.logHappened = true; // We got some form of logs
       console.log(`Length globEventList: ${this.globalEventList.length}`);
-      if (this.globalEventList.length >= this.config.globalEventListLength) {
+      if (this.globalEventList.length >= this.maxAuditTrailElements) {
         // If we have too many elements in the list, we purge them
+        clearTimeout(this.flushTimeout);
         this.flushToLogfile();
         this.globalEventList = [];
       }
@@ -275,9 +288,9 @@ export class Registry extends EventEmitter {
         Tag: oi4Id,
         Timestamp: networkMessage.Messages[0].Timestamp,
       });
-      if (this.newEventList.length >= this.config.globalEventListLength) {
+      if (this.newEventList.length >= this.maxAuditTrailElements) {
         // If we have too many elements in the list, we purge them
-        for (let it = 0; it <= (this.globalEventList.length - this.config.globalEventListLength) + 1; it = it + 1) {
+        for (let it = 0; it <= (this.globalEventList.length - this.maxAuditTrailElements) + 1; it = it + 1) {
           this.newEventList.shift();
         }
       }
@@ -791,13 +804,16 @@ export class Registry extends EventEmitter {
   async updateConfig(newConfig: IRegistryConfig) {
     const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
     this.config = JSON.parse(JSON.stringify(newConfig));
+    if(newConfig.logToFile === true) {
+      this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
+    }
     if (oldConf.auditLevel !== newConfig.auditLevel) {
       this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, ESubResource.debug);
       this.updateAuditLevel();
     }
-    if (oldConf.globalEventListSize !== newConfig.globalEventListSize) { // fileSize changed!
+    if (oldConf.logFileSize !== newConfig.logFileSize) { // fileSize changed!
       this.config.logToFile = false; // Temporarily disable logging
-      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.globalEventListSize}, new: ${newConfig.globalEventListSize}) Deleting all old files and adjusting file`);
+      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.logFileSize}, new: ${newConfig.logFileSize}) Deleting all old files and adjusting file`);
       this.deleteFiles();
       this.config.logToFile = newConfig.logToFile;
     }
