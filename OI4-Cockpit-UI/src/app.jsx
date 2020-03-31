@@ -136,7 +136,7 @@ class OI4Base extends React.Component {
         auditLevel: 'trace',
         showRegistry: true,
         logToFile: false,
-        logFileSize: 200000, // In byte
+        logFileSize: 2000, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
         developmentMode: false,
       },
       theme: lightTheme,
@@ -640,7 +640,9 @@ class OI4Base extends React.Component {
   }
 
   setBackendConfig() {
-    this.fetch.put(`/registry/config`, JSON.stringify(this.state.backendConfig))
+    const resizedConfig = JSON.parse(JSON.stringify(this.state.backendConfig));
+    resizedConfig.logFileSize = this.state.backendConfig.logFileSize * 1000;
+    this.fetch.put(`/registry/config`, JSON.stringify(resizedConfig))
       .then(data => {
         console.log(data);
       });
@@ -650,6 +652,7 @@ class OI4Base extends React.Component {
     this.fetch.get(`/registry/config`)
       .then(data => {
         const regConfData = JSON.parse(data);
+        regConfData.logFileSize = (regConfData.logFileSize) / 1000;
         this.setState({ backendConfig: regConfData });
       });
   }

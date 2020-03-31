@@ -14,15 +14,14 @@ import {
   Tab,
   Box,
   Checkbox,
-  IconButton,
   TextField,
   Button,
   Select,
   MenuItem,
-  InputAdornment
+  InputAdornment,
 } from '@material-ui/core';
 
-import { DeleteForever, GetApp, /* Publish */ } from '@material-ui/icons';
+import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -101,96 +100,118 @@ export class ClickableFooter extends React.Component {
           <TabPanel value={this.state.selectedTab} index={1}>
             <DialogContent style={{ paddingLeft: '13px', paddingRight: '13px' }}>
               <p>In this section, expert configurations can be set by the maintainer.</p>
-              <p>First, enable the expert checkbox to the right:
-                <Checkbox
-                  checked={this.props.backendConfig.developmentMode || false} // Default value needed to stay in controlled mode
-                  onChange={this.props.handleExpertChange} // lifting state up
-                  value='primary'
-                />
-              </p>
+
               <p>The expert mode will allow the following options:</p>
+
               <ul>
                 <li>Delete single assets by clicking on the trash icon next to the asset</li>
                 <li>Delete all assets from the registry as a cleanup measure (Warning!)</li>
                 <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
                 <li>Set a server-sided filter for assets - TODO</li>
               </ul>
-              <div style={{ margin: '10px' }}>
-                {this.props.backendConfig.developmentMode ? <>Dump config data to file: <IconButton size='small' color='default' onClick={() => { this.props.saveToFile() }}>
-                  <GetApp />
-                </IconButton></> : null}
-              </div>
-              <div style={{ margin: '10px' }}>
-                {this.props.backendConfig.developmentMode ? <>Load config from file:
+
+              <p>Enable / Disable the expert mode:
+                <Checkbox
+                  checked={this.props.backendConfig.developmentMode || false} // Default value needed to stay in controlled mode
+                  onChange={this.props.handleExpertChange} // lifting state up
+                  value='primary'
+                />
+              </p>
+
+              {/* ENTRYPOINT OF DEVELOPMENT MODE */}
+              {this.props.backendConfig.developmentMode ? <>
+
+                <p><Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.saveToFile() }}>
+                  Save config
+                    </Button>
                   <input
                     accept=".json"
                     id="contained-button-file"
                     type="file"
                     onChange={(e) => { this.props.handleLoadFromFile(e) }}
+                    style={{ display: 'none' }}
                   />
-                  {/*
-                  <label htmlFor="contained-button-file">
-                    <IconButton size='small' color='default'>
-                      <Publish />
-                    </IconButton>
+                  <label htmlFor='container-button-file'>
+                    <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained">
+                      Load config
+                    </Button>
                   </label>
-                */}</> : null}
-              </div>
-              <div style={{ margin: '10px' }}>
-                {this.props.backendConfig.developmentMode ? <>Delete all Assets(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllAssets() }}>
-                  <DeleteForever />
-                </IconButton></> : null}
-              </div>
-              <div style={{ margin: '10px' }}>
-                {this.props.backendConfig.developmentMode ? <>Delete all Logs(!): <IconButton size='small' color='default' onClick={() => { this.props.clearAllLogs() }}>
-                  <DeleteForever />
-                </IconButton></> : null}
-              </div>
-              <div>
-                {this.props.backendConfig.developmentMode ? <>
-                  <p style={{ fontSize: '24px' }}>
-                    Registry (Backend) - Configuration:
-                  </p>
-                  <p>Show / Add Registry to Database:
-                  <Checkbox
-                        checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
-                        onChange={this.props.handleShowRegistryChange} // lifting state up
-                        value='primary'
-                  />
-                  </p>
-                  <>Count of shown Audit Elements:</>
+                </p>
+
+                <span style={{ fontSize: '18px' }}>Maintainer Actions</span>
+                <Divider />
+                <p><Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllAssets() }}>
+                  Delete all Assets ⚠️
+                    </Button></p>
+                <p><Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllLogs() }}>
+                  Delete all Logfiles ⚠️
+                    </Button></p>
+
+                <span style={{ fontSize: '18px' }}>Frontend Configuration
+                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
+                    Get
+                    </Button>
+                  <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleSetConfig}>
+                    Set
+                    </Button>
+                </span>
+                <Divider />
+                <p>Count of shown Audit Elements:
                   <Select
-                      value={this.props.config.globalEventListLength || ''}
-                      onChange={this.props.handleGlobalTrailLength}
+                    value={this.props.config.globalEventListLength || ''}
+                    onChange={this.props.handleGlobalTrailLength}
+                    style={{ marginLeft: '10px', marginRight: '10px' }}
                   >
-                      <MenuItem value={25}>25</MenuItem>
-                      <MenuItem value={50}>50</MenuItem>
-                      <MenuItem value={100}>100</MenuItem>
-                      <MenuItem value={200}>200</MenuItem>
-                      <MenuItem value={400}>400</MenuItem>
-                    </Select>
-                  <div style={{ margin: '10px' }}>
-                    <>Set Audit Level:</>
-                    <Select
-                      value={this.props.backendConfig.auditLevel || ''}
-                      onChange={this.props.handleAuditLevelChange}
-                    >
-                      <MenuItem value='trace'>Trace</MenuItem>
-                      <MenuItem value='debug'>Debug</MenuItem>
-                      <MenuItem value='info'>Info</MenuItem>
-                      <MenuItem value='warn'>Warn</MenuItem>
-                      <MenuItem value='error'>Error</MenuItem>
-                      <MenuItem value='fatal'>Fatal</MenuItem>
-                    </Select>
-                  </div>
-                  <>Enable Logging to file:
+                    <MenuItem value={25}>25</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                    <MenuItem value={100}>100</MenuItem>
+                    <MenuItem value={200}>200</MenuItem>
+                    <MenuItem value={400}>400</MenuItem>
+                  </Select>
+                </p>
+
+                <span style={{ fontSize: '18px' }}>Backend Configuration
+                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
+                    Get
+                    </Button>
+                  <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleSetConfig}>
+                    Set
+                    </Button>
+                </span>
+                <Divider />
+                <p>Show / Add Registry to Database:
                   <Checkbox
-                      checked={this.props.backendConfig.logToFile || false} // Default value needed to stay in controlled mode
-                      onChange={this.props.handleLogToFileChange} // lifting state up
-                      value='primary'
+                    checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
+                    onChange={this.props.handleShowRegistryChange} // lifting state up
+                    value='primary'
                   />
-                  </>
-                  <p>Logfile Size:
+                </p>
+
+                <p>Set Audit Level:
+                  <Select
+                    value={this.props.backendConfig.auditLevel || ''}
+                    onChange={this.props.handleAuditLevelChange}
+                    color='primary'
+                    style={{ marginLeft: '10px' }}
+                  >
+                    <MenuItem value='trace'>Trace</MenuItem>
+                    <MenuItem value='debug'>Debug</MenuItem>
+                    <MenuItem value='info'>Info</MenuItem>
+                    <MenuItem value='warn'>Warn</MenuItem>
+                    <MenuItem value='error'>Error</MenuItem>
+                    <MenuItem value='fatal'>Fatal</MenuItem>
+                  </Select>
+                </p>
+
+                <p>Enable Logging to file:
+                  <Checkbox
+                    checked={this.props.backendConfig.logToFile || false} // Default value needed to stay in controlled mode
+                    onChange={this.props.handleLogToFileChange} // lifting state up
+                    value='primary'
+                  />
+                </p>
+
+                <p>Logfile Size:
                   <TextField
                     error={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000}
                     id="outlined-number"
@@ -198,7 +219,7 @@ export class ClickableFooter extends React.Component {
                     min='20'
                     value={this.props.backendConfig.logFileSize || ''}
                     onChange={this.props.handleGlobalTrailSize}
-                    helperText={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000 ? 'Value out of bounds!': ''}
+                    helperText={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000 ? 'Value out of bounds!' : ''}
                     InputProps={{
                       inputProps: {
                         min: '500',
@@ -213,20 +234,12 @@ export class ClickableFooter extends React.Component {
                     size='small'
                     style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
                   />
-                  </p>
-                  <div>
-                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleGetConfig}>
-                      Get
+                </p>
+
+                <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>
+                  Force Update Global Trail
                     </Button>
-                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleSetConfig}>
-                      Set
-                    </Button>
-                    <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>
-                      Force Update Global Trail
-                    </Button>
-                  </div>
-                </> : null}
-              </div>
+              </> : null}
             </DialogContent>
           </TabPanel>
           <Divider variant='middle' />
@@ -241,6 +254,7 @@ export class ClickableFooter extends React.Component {
               e.preventDefault();
               this.setState({ dialogOpen: true });
             }}
+            style={{ marginLeft: '4px' }}
           >
             Click for more Information
             </Link>
