@@ -129,8 +129,8 @@ class OI4Base extends React.Component {
       conformityLookup: {},
       footerExpanded: false,
       config: {
-        globalEventListLength: 10,
-        assetEventListLength: 10,
+        globalEventListLength: 25,
+        assetEventListLength: 25,
       },
       backendConfig: {
         auditLevel: 'trace',
@@ -613,7 +613,7 @@ class OI4Base extends React.Component {
    * @memberof OI4Base
    */
   updateGlobalEventTrail() {
-    this.fetch.get(`/registry/event`)
+    this.fetch.get(`/registry/event/${this.state.config.globalEventListLength}`)
       .then(data => {
         this.setState({ globalEventTrail: JSON.parse(data) });
       });
@@ -623,6 +623,7 @@ class OI4Base extends React.Component {
   setGlobalTrailLength(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.config));
     configObj.globalEventListLength = ev.target.value;
+    configObj.assetEventListLength = ev.target.value; // FIXME: This really should be only one variable, it's a hotfix
     this.setState({ config: configObj });
   }
 

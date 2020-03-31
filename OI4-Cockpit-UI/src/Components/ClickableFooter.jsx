@@ -158,7 +158,7 @@ export class ClickableFooter extends React.Component {
                         value='primary'
                   />
                   </p>
-                  <TextField
+                  {/* <TextField
                     id="outlined-number"
                     label="Global Log Elements"
                     type="number"
@@ -169,7 +169,18 @@ export class ClickableFooter extends React.Component {
                     }}
                     size='small'
                     style={{ margin: '10px' }}
-                  />
+                  /> */}
+                  <>Count of shown Audit Elements:</>
+                  <Select
+                      value={this.props.config.globalEventListLength || ''}
+                      onChange={this.props.handleGlobalTrailLength}
+                  >
+                      <MenuItem value={25}>25</MenuItem>
+                      <MenuItem value={50}>50</MenuItem>
+                      <MenuItem value={100}>100</MenuItem>
+                      <MenuItem value={200}>200</MenuItem>
+                      <MenuItem value={400}>400</MenuItem>
+                    </Select>
                   <div style={{ margin: '10px' }}>
                     <>Set Audit Level:</>
                     <Select
