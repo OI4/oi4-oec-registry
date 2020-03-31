@@ -209,7 +209,7 @@ export class ClickableFooter extends React.Component {
                     defaultValue={200000}
                     step={50000}
                     onChange={this.props.handleGlobalTrailSize}
-                    value={this.props.config.globalEventListSize}
+                    value={this.props.config.logFileSize}
                     valueLabelDisplay='auto'
                     min={40000}
                     valueLabelFormat={function (value) { return `${value / 1000}K` }}

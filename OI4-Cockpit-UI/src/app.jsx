@@ -131,7 +131,7 @@ class OI4Base extends React.Component {
       config: {
         developmentMode: false,
         globalEventListLength: 10,
-        globalEventListSize: 200000, // In byte
+        logFileSize: 200000, // In byte
         assetEventListLength: 3,
         auditLevel: 'trace',
         showRegistry: true,
@@ -647,7 +647,7 @@ class OI4Base extends React.Component {
 
   setGlobalTrailSize(ev, newValue) {
     const configObj = JSON.parse(JSON.stringify(this.state.config));
-    configObj.globalEventListSize = newValue;
+    configObj.logFileSize = newValue;
     this.setState({ config: configObj });
   }
 
