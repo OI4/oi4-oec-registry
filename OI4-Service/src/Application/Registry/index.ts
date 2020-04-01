@@ -90,7 +90,7 @@ export class Registry extends EventEmitter {
     this.maxAuditTrailElements = 1000;
     this.logHappened = false;
     this.config = {
-      logToFile: false,
+      logToFile: 'disabled',
       developmentMode: false,
       logFileSize: 200000,
       auditLevel: EAuditLevel.warn,
@@ -162,7 +162,7 @@ export class Registry extends EventEmitter {
 
   private flushToLogfile() { // TODO: Change fileOperations to Async
     console.log('_____-------_______------FLUSH CALLED------______-----_____');
-    if (this.config.logToFile) {
+    if (this.config.logToFile === 'enabled') {
       if(this.logHappened === false) {
         console.log('no logs happened in the past minute... returning...');
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
@@ -804,7 +804,8 @@ export class Registry extends EventEmitter {
   async updateConfig(newConfig: IRegistryConfig) {
     const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
     this.config = JSON.parse(JSON.stringify(newConfig));
-    if(newConfig.logToFile === true) {
+    console.log(newConfig); // Temporary
+    if(newConfig.logToFile === 'enabled') {
       this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
     }
     if (oldConf.auditLevel !== newConfig.auditLevel) {
@@ -812,7 +813,7 @@ export class Registry extends EventEmitter {
       this.updateAuditLevel();
     }
     if (oldConf.logFileSize !== newConfig.logFileSize) { // fileSize changed!
-      this.config.logToFile = false; // Temporarily disable logging
+      this.config.logToFile = 'disabled'; // Temporarily disable logging
       this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.logFileSize}, new: ${newConfig.logFileSize}) Deleting all old files and adjusting file`);
       this.deleteFiles();
       this.config.logToFile = newConfig.logToFile;
