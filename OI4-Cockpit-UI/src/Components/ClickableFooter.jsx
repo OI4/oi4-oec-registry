@@ -212,12 +212,7 @@ export class ClickableFooter extends React.Component {
                 </p>
 
                 <p>Enable Logging to file:
-                  <Checkbox
-                    checked={this.props.backendConfig.logToFile || false} // Default value needed to stay in controlled mode
-                    onChange={this.props.handleLogToFileChange} // lifting state up
-                    value='primary'
-                  />
-                  {/* <Select
+                  <Select
                     value={this.props.backendConfig.logToFile || 'disabled'}
                     onChange={this.props.handleLogToFileChange}
                     color='primary'
@@ -226,7 +221,7 @@ export class ClickableFooter extends React.Component {
                     <MenuItem value='enabled'>Log to local file</MenuItem>
                     <MenuItem value='disabled'>Disable storage</MenuItem>
                     <MenuItem value='endpoint'>Custom Endpoint</MenuItem>
-                  </Select> */}
+                  </Select>
                 </p>
 
                 <p>Logfile Size:

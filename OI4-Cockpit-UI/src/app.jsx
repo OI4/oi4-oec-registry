@@ -135,7 +135,7 @@ class OI4Base extends React.Component {
       backendConfig: {
         auditLevel: 'trace',
         showRegistry: true,
-        logToFile: false,
+        logToFile: 'disabled',
         logFileSize: 2000, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
         developmentMode: false,
       },
@@ -284,9 +284,9 @@ class OI4Base extends React.Component {
     });
   }
 
-  handleLogToFileChange = (event, newValue) => {
+  handleLogToFileChange = (event) => {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    oldConfigObj.logToFile = !oldConfigObj.logToFile;
+    oldConfigObj.logToFile = event.target.value;
     this.setState({ backendConfig: oldConfigObj });
   }
 
