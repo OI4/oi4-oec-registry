@@ -131,8 +131,16 @@ export class ClickableFooter extends React.Component {
                     onChange={(e) => { this.props.handleLoadFromFile(e) }}
                     style={{ display: 'none' }}
                   />
-                  <label htmlFor='container-button-file'>
-                    <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained">
+                  <label htmlFor='contained-button-file'>
+                    <Button
+                    raised
+                    endIcon={<Publish />}
+                    color='secondary'
+                    size='small'
+                    style={{ marginLeft: '10px' }}
+                    variant="contained"
+                    component='span'
+                    >
                       Load config
                     </Button>
                   </label>
@@ -209,6 +217,16 @@ export class ClickableFooter extends React.Component {
                     onChange={this.props.handleLogToFileChange} // lifting state up
                     value='primary'
                   />
+                  {/* <Select
+                    value={this.props.backendConfig.logToFile || 'disabled'}
+                    onChange={this.props.handleLogToFileChange}
+                    color='primary'
+                    style={{ marginLeft: '10px' }}
+                  >
+                    <MenuItem value='enabled'>Log to local file</MenuItem>
+                    <MenuItem value='disabled'>Disable storage</MenuItem>
+                    <MenuItem value='endpoint'>Custom Endpoint</MenuItem>
+                  </Select> */}
                 </p>
 
                 <p>Logfile Size:
@@ -235,7 +253,9 @@ export class ClickableFooter extends React.Component {
                     style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
                   />
                 </p>
-
+                <span style={{ fontSize: '18px' }}>Developer Options
+                </span>
+                <Divider />
                 <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>
                   Force Update Global Trail
                     </Button>
