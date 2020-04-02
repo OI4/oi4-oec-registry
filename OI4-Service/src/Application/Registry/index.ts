@@ -99,7 +99,7 @@ export class Registry extends EventEmitter {
 
     this.currentlyUsedFiles = [];
     this.currentlyUsedIndex = 0;
-    this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`;
+    this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${this.getCurrentTimestamp()}.reglog`;
     this.currentFd = 0;
 
     this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Better system for appId!
@@ -141,6 +141,14 @@ export class Registry extends EventEmitter {
   private getFilesFromPath(path: string, extension: string) {
     const dir = readdirSync(path);
     return dir.filter(elm => elm.match(new RegExp(`.*\.(${extension})$`, 'ig')));
+  }
+
+  private getCurrentTimestamp() {
+    let rightNow = new Date().toISOString();
+    rightNow = rightNow.replace(/-/g, "");
+    rightNow = rightNow.replace(/:/g, "");
+    rightNow = rightNow.replace(/\./g, "MS");
+    return rightNow;
   }
 
   deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
@@ -207,7 +215,7 @@ export class Registry extends EventEmitter {
             }
           }
         }
-        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${Date.now().toString()}.reglog`; // Set new filename, will be created with next openSync
+        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${this.getCurrentTimestamp()}.reglog`; // Set new filename, will be created with next openSync
         appendFileSync(this.currentFd, ']'); // Close Array
       } else {
         for (const entries of this.globalEventList) {
