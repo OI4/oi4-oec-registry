@@ -34,12 +34,11 @@ node ./src/app.js & cd ../OI4-Local-UI
 
 # conditional entry: Unsecure Frontend / Secure frontend
 # TODO: Remove "serve" as a server, it does not matter much for now...
-if [ "$CERT_PATH" = "" ];
+
+if [ "$USE_HTTPS" = "true" ];
 then
-   echo "No CERT_PATH environment variable set"
-   npx serve -s build
-else
-   	FILE=$CERT_PATH/cert.pem
+  echo "USE_HTTPS true detected..."
+  FILE=/usr/local/share/cert/cert.pem
 	if [ -f "$FILE" ];
     then
 		echo "$FILE exists, serving https without creating own certificate"
@@ -48,6 +47,9 @@ else
 		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/cert/key.pem -out /usr/local/share/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
 	fi
 	npx http-server -S -C /usr/local/share/cert/cert.pem -K /usr/local/share/cert/key.pem --cors -p 5000 build
+else
+   echo "USE_HTTPS other than true detected...serving without https"
+   npx serve -s build
 fi
 
 # get process ID of most recently executed background

@@ -2,6 +2,7 @@ import express = require('express');
 import bodyParser = require('body-parser');
 import cors = require('cors');
 import fs = require('fs');
+import os = require('os');
 import https = require('https');
 import { IContainerState, IContainerConfig } from '../../Container/index';
 import { OI4Proxy } from '../index.js';
@@ -27,13 +28,19 @@ class OI4WebProxy extends OI4Proxy {
     this.client.use(cors());
     this.client.use(bodyParser.json());
     this.client.options('*', cors());
-    if ((process.env.CERT_PATH)) { // Environment variable found, so we should use HTTPS, check for key/cert
-      if (fs.existsSync(`${process.env.CERT_PATH}/cert.pem`) && fs.existsSync(`${process.env.CERT_PATH}/key.pem`)) {
+    let certpath = '';
+    if (process.platform === 'win32') {
+      certpath = 'C:/certs';
+    } else {
+      certpath = '/usr/local/share/cert';
+    }
+    if ((process.env.USE_HTTPS) && process.env.USE_HTTPS === 'true') { // Environment variable found, so we should use HTTPS, check for key/cert
+      if (fs.existsSync(`${certpath}/cert.pem`) && fs.existsSync(`${certpath}/key.pem`)) {
         this.logger.log('Key and Cert exist, using HTTPS for Express...', ESubResource.info);
         https.createServer(
           {
-            key: fs.readFileSync(`${process.env.CERT_PATH}/key.pem`),
-            cert: fs.readFileSync(`${process.env.CERT_PATH}/cert.pem`),
+            key: fs.readFileSync(`${certpath}/key.pem`),
+            cert: fs.readFileSync(`${certpath}/cert.pem`),
           },
           this.client)
           .listen(4567, () => {
@@ -46,7 +53,7 @@ class OI4WebProxy extends OI4Proxy {
         });
       }
     } else { // No environment variable found, use HTTP
-      this.logger.log('No CERT_PATH environment variable found..fallback to HTTP', ESubResource.info);
+      this.logger.log('USE_HTTPS not set to "true" or not found..fallback to HTTP', ESubResource.info);
       this.client.listen(4567, () => {
         this.logger.log('WebProxy of Registry listening on 4567 over HTTP', ESubResource.info);
       });
