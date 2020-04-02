@@ -277,6 +277,20 @@ class OI4Base extends React.Component {
     );
   }
 
+  checkObjectPropertyType(object, property, type) {
+    if (typeof object[property] !== 'undefined') {
+      if (typeof object[property] === type) { // eslint-disable-line
+        return true;
+      } else {
+        console.log('Object does have property, but its not the correct type');
+        return false;
+      }
+    } else {
+      console.log('Object does not have this property');
+      return false;
+    }
+  }
+
   clearAllLogs() {
     this.fetch.delete(`/registry/logs`)
     .then(data => {
@@ -682,6 +696,13 @@ class OI4Base extends React.Component {
       console.log(JSON.parse(JSON.stringify(this.state.backendConfig)));
       console.log('New config');
       console.log(confObj);
+      if (!(this.checkObjectPropertyType(confObj.config, 'globalEventListLength', 'number'))) return;
+      if (!(this.checkObjectPropertyType(confObj.config, 'assetEventListLength', 'number'))) return;
+      if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
+      if (!(this.checkObjectPropertyType(confObj.backendConfig, 'showRegistry', 'boolean'))) return;
+      if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logToFile', 'string'))) return;
+      if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logFileSize', 'number'))) return;
+      if (!(this.checkObjectPropertyType(confObj.backendConfig, 'developmentMode', 'boolean'))) return;
       this.setState({ config: confObj.config, backendConfig: confObj.backendConfig });
     };
   }

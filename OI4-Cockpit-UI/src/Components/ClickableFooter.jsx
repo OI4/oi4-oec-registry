@@ -104,24 +104,42 @@ export class ClickableFooter extends React.Component {
               <p>The expert mode will allow the following options:</p>
 
               <ul>
-                <li>Delete single assets by clicking on the trash icon next to the asset</li>
-                <li>Delete all assets from the registry as a cleanup measure (Warning!)</li>
-                <li>Adjust the buffer length of the global event trail server-sided (without expert mode, this setting only works client-side) - TODO</li>
-                <li>Set a server-sided filter for assets - TODO</li>
+                <li>Load and store the config to and from a JSON</li>
+                <li>Maintainer Actions
+                  <ul>
+                    <li>Delete a single asset (accessible in the Asset table)</li>
+                    <li>Delete all assets. Warning: This will clear the database of the registry.</li>
+                    <li>Delete all logfiles. If logging to a file is enable, this will delete all files on the disk.</li>
+                  </ul>
+                </li>
+                <li>Frontend Configuration
+                  <ul>
+                    <li>Edit the count of shown Audit elements in the global and local event trail.</li>
+                  </ul>
+                </li>
+                <li>Backend Configuration
+                  <ul>
+                    <li>Enable showing the Registry in the application table</li>
+                    <li>Edit the audit level the Registry will listen to. This will affect what events will be shown in the event table.</li>
+                    <li>Enable logging to file. This can either enable the file-logger or enable it.</li>
+                    <li>Edit the logfile size. The logfile size (if logging is enabled) can be adjusted from 500kB to 10MB.</li>
+                  </ul>
+                </li>
               </ul>
 
-              <p>Enable / Disable the expert mode:
+              <div style={{ marginTop: '1em', marginBottom: '1em' }}>Enable / Disable the expert mode:
                 <Checkbox
                   checked={this.props.backendConfig.developmentMode || false} // Default value needed to stay in controlled mode
                   onChange={this.props.handleExpertChange} // lifting state up
                   value='primary'
                 />
-              </p>
+              </div>
 
               {/* ENTRYPOINT OF DEVELOPMENT MODE */}
               {this.props.backendConfig.developmentMode ? <>
 
-                <p><Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.saveToFile() }}>
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
+                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.saveToFile() }}>
                   Save config
                     </Button>
                   <input
@@ -133,7 +151,6 @@ export class ClickableFooter extends React.Component {
                   />
                   <label htmlFor='contained-button-file'>
                     <Button
-                    raised
                     endIcon={<Publish />}
                     color='secondary'
                     size='small'
@@ -144,16 +161,18 @@ export class ClickableFooter extends React.Component {
                       Load config
                     </Button>
                   </label>
-                </p>
+                </div>
 
                 <span style={{ fontSize: '18px' }}>Maintainer Actions</span>
                 <Divider />
-                <p><Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllAssets() }}>
-                  Delete all Assets ⚠️
-                    </Button></p>
-                <p><Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllLogs() }}>
-                  Delete all Logfiles ⚠️
-                    </Button></p>
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
+                  <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllAssets() }}>
+                  Delete all Assets <span role='img' aria-label='warn'>⚠️</span>
+                    </Button></div>
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
+                  <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllLogs() }}>
+                  Delete all Logfiles <span role='img' aria-label='warn'>⚠️</span>
+                    </Button></div>
 
                 <span style={{ fontSize: '18px' }}>Frontend Configuration
                   <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
@@ -164,7 +183,7 @@ export class ClickableFooter extends React.Component {
                     </Button>
                 </span>
                 <Divider />
-                <p>Count of shown Audit Elements:
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Count of shown Audit Elements:
                   <Select
                     value={this.props.config.globalEventListLength || ''}
                     onChange={this.props.handleGlobalTrailLength}
@@ -176,7 +195,7 @@ export class ClickableFooter extends React.Component {
                     <MenuItem value={200}>200</MenuItem>
                     <MenuItem value={400}>400</MenuItem>
                   </Select>
-                </p>
+                </div>
 
                 <span style={{ fontSize: '18px' }}>Backend Configuration
                   <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
@@ -187,15 +206,15 @@ export class ClickableFooter extends React.Component {
                     </Button>
                 </span>
                 <Divider />
-                <p>Show / Add Registry to Database:
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Show / Add Registry to Database:
                   <Checkbox
                     checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
                     onChange={this.props.handleShowRegistryChange} // lifting state up
                     value='primary'
                   />
-                </p>
+                </div>
 
-                <p>Set Audit Level:
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Set Audit Level:
                   <Select
                     value={this.props.backendConfig.auditLevel || ''}
                     onChange={this.props.handleAuditLevelChange}
@@ -209,9 +228,9 @@ export class ClickableFooter extends React.Component {
                     <MenuItem value='error'>Error</MenuItem>
                     <MenuItem value='fatal'>Fatal</MenuItem>
                   </Select>
-                </p>
+                </div>
 
-                <p>Enable Logging to file:
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Enable Logging to file:
                   <Select
                     value={this.props.backendConfig.logToFile || 'disabled'}
                     onChange={this.props.handleLogToFileChange}
@@ -222,9 +241,9 @@ export class ClickableFooter extends React.Component {
                     <MenuItem value='disabled'>Disable storage</MenuItem>
                     <MenuItem value='endpoint'>Custom Endpoint</MenuItem>
                   </Select>
-                </p>
+                </div>
 
-                <p>Logfile Size:
+                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Logfile Size:
                   <TextField
                     error={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000}
                     id="outlined-number"
@@ -247,7 +266,7 @@ export class ClickableFooter extends React.Component {
                     size='small'
                     style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
                   />
-                </p>
+                </div>
                 <span style={{ fontSize: '18px' }}>Developer Options
                 </span>
                 <Divider />
