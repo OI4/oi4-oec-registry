@@ -78,6 +78,7 @@ export class Registry extends EventEmitter {
       DataSetWriterId: this.appId,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
+      precision: 0,
       status: true,
     });
     this.timeoutLookup = {};
@@ -171,7 +172,7 @@ export class Registry extends EventEmitter {
   private flushToLogfile() { // TODO: Change fileOperations to Async
     console.log('_____-------_______------FLUSH CALLED------______-----_____');
     if (this.config.logToFile === 'enabled') {
-      if(this.logHappened === false) {
+      if (this.logHappened === false) {
         console.log('no logs happened in the past minute... returning...');
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
         return;
@@ -518,9 +519,14 @@ export class Registry extends EventEmitter {
       DataSetWriterId: this.appId,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
+      precision: 0,
       status: true,
     });
-
+    // Publish the new publicationList according to spec
+    await this.registryClient.publish(
+      `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+    );
   }
 
   /**
@@ -559,6 +565,11 @@ export class Registry extends EventEmitter {
       delete this.applicationLookup[device];
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
+      // Publish the new publicationList according to spec
+      this.registryClient.publish(
+        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      );
       this.logger.log(`Deleted App: ${device}`, ESubResource.info);
     } else if (device in this.deviceLookup) {
       this.ownUnsubscribe(`${this.deviceLookup[device].fullDevicePath}/pub/event/+/${device}`);
@@ -571,6 +582,11 @@ export class Registry extends EventEmitter {
       delete this.deviceLookup[device];
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
+      // Publish the new publicationList according to spec
+      this.registryClient.publish(
+        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      );
       this.logger.log(`Deleted Device: ${device}`, ESubResource.debug);
     } else {
       this.logger.log('Nothing to remove here!');
@@ -590,6 +606,11 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/profile/${assets}`);
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
+      // Publish the new publicationList according to spec
+      this.registryClient.publish(
+        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      );
     }
     this.applicationLookup = {}; // Clear application lookup
 
@@ -602,7 +623,13 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/profile/${assets}`);
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
+      // Publish the new publicationList according to spec TODO: Should this really be published on EVERY change? Or simply after the for loop
+      this.registryClient.publish(
+        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      );
     }
+
     this.deviceLookup = {}; // Clear device lookup
   }
 
@@ -813,7 +840,7 @@ export class Registry extends EventEmitter {
     const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
     this.config = JSON.parse(JSON.stringify(newConfig));
     console.log(newConfig); // Temporary
-    if(newConfig.logToFile === 'enabled') {
+    if (newConfig.logToFile === 'enabled') {
       this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
     }
     if (oldConf.auditLevel !== newConfig.auditLevel) {
@@ -861,10 +888,10 @@ export class Registry extends EventEmitter {
   }
 
   public getEventTrail(noOfElements: number) {
-    if(this.globalEventList.length <= noOfElements) {
+    if (this.globalEventList.length <= noOfElements) {
       return this.globalEventList;
     } else {
-      return this.globalEventList.slice(this.globalEventList.length-noOfElements, this.globalEventList.length);
+      return this.globalEventList.slice(this.globalEventList.length - noOfElements, this.globalEventList.length);
     }
   }
 

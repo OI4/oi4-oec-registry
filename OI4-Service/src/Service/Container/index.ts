@@ -268,6 +268,7 @@ class ContainerState extends ConfigParser implements IContainerState {
         DataSetWriterId: this.mam.ProductInstanceUri,
         status: true,
         interval: resInterval,
+        precision: 0,
         config: EPublicationListConfig.NONE_0,
       });
 
