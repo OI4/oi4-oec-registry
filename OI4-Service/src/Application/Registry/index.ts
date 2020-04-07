@@ -93,7 +93,7 @@ export class Registry extends EventEmitter {
     this.config = {
       logToFile: 'disabled',
       developmentMode: false,
-      logFileSize: 200000,
+      logFileSize: 250000,
       auditLevel: EAuditLevel.warn,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
@@ -606,12 +606,12 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.applicationLookup[assets].fullDevicePath}/pub/profile/${assets}`);
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
-      // Publish the new publicationList according to spec
-      this.registryClient.publish(
-        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
-      );
     }
+    // Publish the new publicationList according to spec
+    this.registryClient.publish(
+      `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+    );
     this.applicationLookup = {}; // Clear application lookup
 
     for (const assets of Object.keys(this.deviceLookup)) { // Unsubscribe topics of every asset
@@ -623,12 +623,12 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.deviceLookup[assets].fullDevicePath}/pub/profile/${assets}`);
       // Remove from publicationList
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
-      // Publish the new publicationList according to spec TODO: Should this really be published on EVERY change? Or simply after the for loop
-      this.registryClient.publish(
-        `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
-      );
     }
+    // Publish the new publicationList according to spec
+    this.registryClient.publish(
+      `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+    );
 
     this.deviceLookup = {}; // Clear device lookup
   }

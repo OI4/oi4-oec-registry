@@ -127,7 +127,7 @@ export class ConformityValidator extends EventEmitter {
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
   async checkConformity(fullTopic: string, appId: string, resourceList?: string[]) {
-    let mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile'];
+    let mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile', 'publicationList'];
     const ignoredResources = ['data', 'metadata', 'event'];
     const topicArray = fullTopic.split('/');
     const oi4Id = appId;
