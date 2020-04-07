@@ -66,7 +66,7 @@ class ExpansionTableDetail extends React.Component {
     };
     // A list of mandatory resources so we can decide which ones we display
     this.mandatoryResource = {
-      application: ['health', 'license', 'licenseText', 'mam', 'profile'],
+      application: ['health', 'license', 'licenseText', 'mam', 'profile', 'publicationList'],
       device: ['health', 'mam', 'profile'],
     };
   }

@@ -130,13 +130,12 @@ class OI4Base extends React.Component {
       footerExpanded: false,
       config: {
         globalEventListLength: 25,
-        assetEventListLength: 25,
       },
       backendConfig: {
         auditLevel: 'trace',
         showRegistry: true,
         logToFile: 'disabled',
-        logFileSize: 2000, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
+        logFileSize: 250, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
         developmentMode: false,
       },
       theme: lightTheme,
@@ -451,14 +450,9 @@ class OI4Base extends React.Component {
           }
           // Update auditTrail
           jsonData[oi4Id].eventList = [];
-          let i = 0;
           for (const audits of this.reverse(this.state.globalEventTrail)) {
             if (audits.Tag === oi4Id) {
               jsonData[oi4Id].eventList.push(audits);
-              i++;
-              if (i >= this.state.config.assetEventListLength) {
-                break;
-              }
             }
           }
           jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
@@ -505,14 +499,9 @@ class OI4Base extends React.Component {
           }
           // Update auditTrail
           jsonData[oi4Id].eventList = [];
-          let i = 0;
           for (const audits of this.reverse(this.state.globalEventTrail)) {
             if (audits.Tag === oi4Id) {
               jsonData[oi4Id].eventList.push(audits);
-              i++;
-              if (i >= this.state.config.assetEventListLength) {
-                break;
-              }
             }
           }
           jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
@@ -637,13 +626,13 @@ class OI4Base extends React.Component {
   setGlobalTrailLength(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.config));
     configObj.globalEventListLength = ev.target.value;
-    configObj.assetEventListLength = ev.target.value; // FIXME: This really should be only one variable, it's a hotfix
     this.setState({ config: configObj });
   }
 
   setGlobalTrailSize(ev) {
     const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     configObj.logFileSize = ev.target.value;
+    console.log(ev.target.value);
     this.setState({ backendConfig: configObj });
   }
 
@@ -697,7 +686,6 @@ class OI4Base extends React.Component {
       console.log('New config');
       console.log(confObj);
       if (!(this.checkObjectPropertyType(confObj.config, 'globalEventListLength', 'number'))) return;
-      if (!(this.checkObjectPropertyType(confObj.config, 'assetEventListLength', 'number'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'showRegistry', 'boolean'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logToFile', 'string'))) return;

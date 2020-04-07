@@ -14,11 +14,11 @@ import {
   Tab,
   Box,
   Checkbox,
-  TextField,
+  // TextField,
   Button,
   Select,
   MenuItem,
-  InputAdornment,
+  // InputAdornment,
 } from '@material-ui/core';
 
 import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
@@ -60,7 +60,7 @@ export class ClickableFooter extends React.Component {
       <Dialog
         open={this.state.dialogOpen}
         onClose={() => this.setState({ dialogOpen: false })}
-        maxwidth='lg'
+        maxwidth='xl'
       >
         <DialogTitle><img src={this.props.bigLogo} alt="OI4Logo2" style={{ textAlign: 'center', maxWidth: '550px', height: 'auto' }} /></DialogTitle>
         <DialogContent>
@@ -71,7 +71,7 @@ export class ClickableFooter extends React.Component {
           </Tabs>
           <TabPanel value={this.state.selectedTab} index={0}>
             <Typography variant='h5' style={{ textAlign: 'center' }}>Registry Information</Typography>
-            <DialogContent style={{ paddingLeft: '13px', paddingRight: '13px' }}>
+            <DialogContent style={{ paddingLeft: '10px', paddingRight: '10px' }}>
               <p>
                 Be aware to start the Open Industry 4.0 Alliance's Registry as the very first application in the runtime.
                 Otherwise, you might miss information from other applications and devices.
@@ -98,7 +98,7 @@ export class ClickableFooter extends React.Component {
             </DialogContent>
           </TabPanel>
           <TabPanel value={this.state.selectedTab} index={1}>
-            <DialogContent style={{ paddingLeft: '13px', paddingRight: '13px' }}>
+            <DialogContent style={{ paddingLeft: '10px', paddingRight: '10px' }}>
               <p>In this section, expert configurations can be set by the maintainer.</p>
 
               <p>The expert mode will allow the following options:</p>
@@ -137,10 +137,9 @@ export class ClickableFooter extends React.Component {
 
               {/* ENTRYPOINT OF DEVELOPMENT MODE */}
               {this.props.backendConfig.developmentMode ? <>
-
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
-                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.saveToFile() }}>
-                  Save config
+                <div style={{ marginBottom: '1em' }}>
+                  <Button endIcon={<GetApp />} color='secondary' size='small' variant="contained" onClick={() => { this.props.saveToFile() }}>
+                    Export config
                     </Button>
                   <input
                     accept=".json"
@@ -151,100 +150,109 @@ export class ClickableFooter extends React.Component {
                   />
                   <label htmlFor='contained-button-file'>
                     <Button
-                    endIcon={<Publish />}
-                    color='secondary'
-                    size='small'
-                    style={{ marginLeft: '10px' }}
-                    variant="contained"
-                    component='span'
+                      endIcon={<Publish />}
+                      color='secondary'
+                      size='small'
+                      style={{ marginLeft: '10px' }}
+                      variant="contained"
+                      component='span'
                     >
-                      Load config
+                      Import config
                     </Button>
                   </label>
                 </div>
 
-                <span style={{ fontSize: '18px' }}>Maintainer Actions</span>
-                <Divider />
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
-                  <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllAssets() }}>
-                  Delete all Assets <span role='img' aria-label='warn'>⚠️</span>
-                    </Button></div>
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>
-                  <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllLogs() }}>
-                  Delete all Logfiles <span role='img' aria-label='warn'>⚠️</span>
-                    </Button></div>
-
-                <span style={{ fontSize: '18px' }}>Frontend Configuration
-                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
-                    Get
-                    </Button>
-                  <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleSetConfig}>
-                    Set
-                    </Button>
-                </span>
-                <Divider />
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Count of shown Audit Elements:
-                  <Select
-                    value={this.props.config.globalEventListLength || ''}
-                    onChange={this.props.handleGlobalTrailLength}
-                    style={{ marginLeft: '10px', marginRight: '10px' }}
-                  >
-                    <MenuItem value={25}>25</MenuItem>
-                    <MenuItem value={50}>50</MenuItem>
-                    <MenuItem value={100}>100</MenuItem>
-                    <MenuItem value={200}>200</MenuItem>
-                    <MenuItem value={400}>400</MenuItem>
-                  </Select>
+                <div>
+                  <span style={{ fontSize: '18px' }}>Maintainer Actions</span>
+                  <Divider />
+                  <ul style={{ listStyleType: 'none' }}>
+                    <li style={{ marginBottom: '1em', marginTop: '1em' }}>
+                      <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllAssets() }}>
+                        Delete all Assets
+                        </Button>
+                    </li>
+                    <li>
+                      <Button endIcon={<DeleteForever />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={() => { this.props.clearAllLogs() }}>
+                        Delete all Logfiles
+                        </Button>
+                    </li>
+                  </ul>
                 </div>
 
-                <span style={{ fontSize: '18px' }}>Backend Configuration
-                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleGetConfig}>
-                    Get
-                    </Button>
-                  <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px' }} variant="contained" onClick={this.props.handleSetConfig}>
-                    Set
-                    </Button>
-                </span>
-                <Divider />
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Show / Add Registry to Database:
-                  <Checkbox
-                    checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
-                    onChange={this.props.handleShowRegistryChange} // lifting state up
-                    value='primary'
-                  />
-                </div>
+                <div>
+                  <span style={{ fontSize: '18px' }}>Configuration</span>
+                  <Divider />
+                  <ul>
+                    <li style={{ marginBottom: '1em', marginTop: '1em' }}>
+                      <div>
+                        <span style={{ fontSize: '18px' }}>Frontend Configuration</span>
+                        <Divider />
+                        <ul style={{ listStyleType: 'none' }}>
+                          <li>
+                            Count of shown Audit Elements:
+                            <Select
+                              value={this.props.config.globalEventListLength || ''}
+                              onChange={this.props.handleGlobalTrailLength}
+                              style={{ marginLeft: '10px', marginRight: '10px' }}
+                            >
+                              <MenuItem value={25}>25</MenuItem>
+                              <MenuItem value={50}>50</MenuItem>
+                              <MenuItem value={100}>100</MenuItem>
+                              <MenuItem value={200}>200</MenuItem>
+                              <MenuItem value={400}>400</MenuItem>
+                            </Select>
+                          </li>
+                        </ul>
+                      </div>
+                    </li>
 
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Set Audit Level:
-                  <Select
-                    value={this.props.backendConfig.auditLevel || ''}
-                    onChange={this.props.handleAuditLevelChange}
-                    color='primary'
-                    style={{ marginLeft: '10px' }}
-                  >
-                    <MenuItem value='trace'>Trace</MenuItem>
-                    <MenuItem value='debug'>Debug</MenuItem>
-                    <MenuItem value='info'>Info</MenuItem>
-                    <MenuItem value='warn'>Warn</MenuItem>
-                    <MenuItem value='error'>Error</MenuItem>
-                    <MenuItem value='fatal'>Fatal</MenuItem>
-                  </Select>
-                </div>
+                    <li style={{ marginBottom: '1em', marginTop: '1em' }}>
+                      <div>
+                        <span style={{ fontSize: '18px' }}>Backend Configuration</span>
+                        <Divider />
+                        <ul style={{ listStyleType: 'none' }}>
+                          <li>
+                            List Registry in Frontend:
+                            <Checkbox
+                              checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
+                              onChange={this.props.handleShowRegistryChange} // lifting state up
+                              value='primary'
+                            />
+                          </li>
 
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Enable Logging to file:
-                  <Select
-                    value={this.props.backendConfig.logToFile || 'disabled'}
-                    onChange={this.props.handleLogToFileChange}
-                    color='primary'
-                    style={{ marginLeft: '10px' }}
-                  >
-                    <MenuItem value='enabled'>Log to local file</MenuItem>
-                    <MenuItem value='disabled'>Disable storage</MenuItem>
-                    <MenuItem value='endpoint'>Custom Endpoint</MenuItem>
-                  </Select>
-                </div>
+                          <li>
+                            Set Audit Level:
+                            <Select
+                              value={this.props.backendConfig.auditLevel || ''}
+                              onChange={this.props.handleAuditLevelChange}
+                              color='primary'
+                              style={{ marginLeft: '10px' }}
+                            >
+                              <MenuItem value='trace'>Trace</MenuItem>
+                              <MenuItem value='debug'>Debug</MenuItem>
+                              <MenuItem value='info'>Info</MenuItem>
+                              <MenuItem value='warn'>Warn</MenuItem>
+                              <MenuItem value='error'>Error</MenuItem>
+                              <MenuItem value='fatal'>Fatal</MenuItem>
+                            </Select>
+                          </li>
 
-                <div style={{ marginTop: '1em', marginBottom: '1em' }}>Logfile Size:
-                  <TextField
+                          <li>
+                            Enable Logging to file:
+                            <Select
+                              value={this.props.backendConfig.logToFile || 'disabled'}
+                              onChange={this.props.handleLogToFileChange}
+                              color='primary'
+                              style={{ marginLeft: '10px' }}
+                            >
+                              <MenuItem value='enabled'>Log to local file</MenuItem>
+                              <MenuItem value='disabled'>Disable storage</MenuItem>
+                              {/* <MenuItem value='endpoint'>Custom Endpoint</MenuItem> */}
+                            </Select>
+                          </li>
+
+                          <li>Logfile Size:
+                  {/* <TextField
                     error={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000}
                     id="outlined-number"
                     type="number"
@@ -255,7 +263,7 @@ export class ClickableFooter extends React.Component {
                     InputProps={{
                       inputProps: {
                         min: '500',
-                        max: '10000',
+                        max: '10001',
                         step: '250',
                       },
                       endAdornment: (
@@ -265,19 +273,51 @@ export class ClickableFooter extends React.Component {
                     layout='dense'
                     size='small'
                     style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
-                  />
+                  /> */}
+                            <Select
+                              value={this.props.backendConfig.logFileSize || ''}
+                              onChange={this.props.handleGlobalTrailSize}
+                              color='primary'
+                              style={{ marginLeft: '10px' }}
+                            >
+                              <MenuItem value={250}>250kB</MenuItem>
+                              <MenuItem value={500}>500kB</MenuItem>
+                              <MenuItem value={750}>750kB</MenuItem>
+                              <MenuItem value={1000}>1MB</MenuItem>
+                              <MenuItem value={2000}>2MB</MenuItem>
+                              <MenuItem value={3000}>3MB</MenuItem>
+                              <MenuItem value={4000}>4MB</MenuItem>
+                              <MenuItem value={5000}>5MB</MenuItem>
+                              <MenuItem value={7500}>7.5MB</MenuItem>
+                              <MenuItem value={10000}>10MB</MenuItem>
+                            </Select>
+                          </li>
+                        </ul>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
-                <span style={{ fontSize: '18px' }}>Developer Options
+                <div>
+
+                  <Button endIcon={<GetApp />} color='secondary' size='small' style={{ marginBottom: '1em' }} variant="contained" onClick={this.props.handleGetConfig}>
+                    Get
+                </Button>
+                  <Button endIcon={<Publish />} color='secondary' size='small' style={{ marginLeft: '10px', marginBottom: '1em' }} variant="contained" onClick={this.props.handleSetConfig}>
+                    Set
+                </Button>
+                </div>
+                <span style={{ fontSize: '18px' }}>Developer Options (will disappear in V1)
                 </span>
+
                 <Divider />
                 <Button variant="contained" style={{ margin: '10px' }} onClick={this.props.handleUpdateTrail}>
                   Force Update Global Trail
-                    </Button>
+                </Button>
               </> : null}
             </DialogContent>
           </TabPanel>
-          <Divider variant='middle' />
-          <Typography style={{ textAlign: 'center' }} variant='body2'>Copyright (C): 2019 Hilscher Gesellschaft für Systemautomation mbH</Typography>
+          <Divider variant='middle' style={{ marginBottom: '1em' }} />
+          <Typography style={{ textAlign: 'center', marginBottom: '1em' }} variant='body2'>Copyright (C): 2019 Hilscher Gesellschaft für Systemautomation mbH</Typography>
         </DialogContent>
       </Dialog>
       <Grid container justify='center' style={{ paddingBottom: '10px' }}>
