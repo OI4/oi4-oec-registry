@@ -264,7 +264,8 @@ class ContainerState extends ConfigParser implements IContainerState {
         resInterval = 0;
       }
       this.publicationList.publicationList.push({
-        tag: `${resources}/${this.mam.ProductInstanceUri}`,
+        resource: resources,
+        tag: this.mam.ProductInstanceUri,
         DataSetWriterId: this.mam.ProductInstanceUri,
         status: true,
         interval: resInterval,

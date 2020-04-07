@@ -77,6 +77,7 @@ interface ISubscriptionListObject {
 }
 
 interface IPublicationListObject {
+  resource: string;
   tag: string;
   DataSetWriterId: string; // Actually OI4-Identifier: TODO: Validator
   status: boolean;

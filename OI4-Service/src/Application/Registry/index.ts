@@ -74,7 +74,8 @@ export class Registry extends EventEmitter {
     this.queue = new SequentialTaskQueue();
     this.containerState = contState;
     this.containerState.publicationList.publicationList.push({
-      tag: 'mam/',
+      resource: 'mam',
+      tag: '',
       DataSetWriterId: this.appId,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
@@ -515,7 +516,8 @@ export class Registry extends EventEmitter {
     }
     // Update own publicationList with new Asset
     this.containerState.publicationList.publicationList.push({
-      tag: `mam/${assetId}`,
+      resource: 'mam',
+      tag: assetId,
       DataSetWriterId: this.appId,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
