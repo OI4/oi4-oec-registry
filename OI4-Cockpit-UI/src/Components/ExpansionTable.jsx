@@ -388,7 +388,7 @@ class ExpansionTable extends React.Component {
                   }
                 />
               </span>
-              Number</TableCell>
+              ErrorCode</TableCell>
             <TableCell>Description</TableCell>
             <TableCell>Payload</TableCell>
           </TableRow>
