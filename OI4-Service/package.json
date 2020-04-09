@@ -1,6 +1,6 @@
 {
   "name": "oi4-service",
-  "version": "0.11.2",
+  "version": "0.11.3",
   "description": "Acts as the application in a running OI4 container",
   "main": "index.js",
   "scripts": {
