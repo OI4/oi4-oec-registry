@@ -211,7 +211,7 @@ export class Registry extends EventEmitter {
             console.log('something went wrong with file deletion');
             if (e.code === 'ENOENT') {
               // That's ok, no need to delete a non-existing file
-              this.logger.log('Trying to delete an already deleted files in flushToFile');
+              this.logger.log('Trying to delete an already deleted files in flushToFile', ESubResource.warn);
             } else {
               console.log(e);
             }
@@ -248,16 +248,16 @@ export class Registry extends EventEmitter {
     try {
       firstPayload = JSON.parse(message.toString());
     } catch (e) {
-      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`);
+      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESubResource.warn);
       return;
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
     if (!schemaResult) {
-      this.logger.log('Error in payload schema validation');
+      this.logger.log('Error in payload schema validation', ESubResource.warn);
       return;
     }
     if (firstPayload.Messages.length === 0) {
-      this.logger.log('Messages Array empty');
+      this.logger.log('Messages Array empty', ESubResource.warn);
       return;
     }
     const networkMessage: IOPCUAData = JSON.parse(message.toString());
@@ -312,7 +312,7 @@ export class Registry extends EventEmitter {
     } else if (topic.includes('/pub/health')) {
       this.logger.log(`Got Health from ${oi4Id} in processMqttMessage`);
       if (oi4Id in assetLookup) {
-        this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`);
+        this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESubResource.info);
         // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
         clearTimeout(this.timeoutLookup[oi4Id]);
         assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
@@ -323,7 +323,7 @@ export class Registry extends EventEmitter {
         assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
         await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids.mam)));
-        this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`);
+        this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESubResource.debug);
       }
     } else if (topic.includes('/pub/license')) {
       if (oi4Id in assetLookup) {
@@ -351,7 +351,7 @@ export class Registry extends EventEmitter {
         case 'get': {
           switch (topicResource) {
             case 'mam': {
-              this.logger.log('Someone requested a mam with out appId', ESubResource.debug);
+              this.logger.log('Someone requested a mam with out appId', ESubResource.trace);
               this.sendOutMam(topicTag);
               break;
             }
@@ -425,7 +425,7 @@ export class Registry extends EventEmitter {
           return await this.addDevice(mqttObj.topic, mqttObj.message);
         });
       } catch (addErr) {
-        this.logger.log(`Add-Error: ${addErr}`);
+        this.logger.log(`Add-Error: ${addErr}`, ESubResource.error);
       }
     }
   }
@@ -437,19 +437,19 @@ export class Registry extends EventEmitter {
    * @param device The MasterAssetModel of the device
    */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
-    this.logger.log(`------------- ADDING DEVICE -------------${fullTopic}`, ESubResource.debug);
+    this.logger.log(`------------- ADDING DEVICE ------------:  ${fullTopic}`, ESubResource.info);
     const topicArr = fullTopic.split('/');
     const originator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
 
     if (this.getApplication(assetId) || this.getDevice(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-      this.logger.log('MasterAssetModel already in Registry - addDevice');
+      this.logger.log('MasterAssetModel already in Registry - addDevice', ESubResource.debug);
       return;
     }
 
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${originator}`, assetId);
     if (Object.keys(device).length === 0) {
-      this.logger.log('Critical Error: MAM of device to be added is empty', ESubResource.warn);
+      this.logger.log('Critical Error: MAM of device to be added is empty', ESubResource.error);
       return;
     }
     const fullDevice: IDeviceMessage = {
@@ -540,7 +540,7 @@ export class Registry extends EventEmitter {
       const apps = this.applications as IDeviceLookup;
       const devices = this.devices as IDeviceLookup;
       const assets = Object.assign({}, apps, devices);
-      this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`);
+      this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESubResource.debug);
       for (const device of Object.keys(assets)) {
         // TODO: URL ENCODING???
         await this.registryClient.publish(`oi4/Registry/${this.appId}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].appId, new Date(), dscids.mam)));
@@ -589,9 +589,9 @@ export class Registry extends EventEmitter {
         `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
         JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
       );
-      this.logger.log(`Deleted Device: ${device}`, ESubResource.debug);
+      this.logger.log(`Deleted Device: ${device}`, ESubResource.info);
     } else {
-      this.logger.log('Nothing to remove here!');
+      this.logger.log('Nothing to remove here!', ESubResource.debug);
     }
   }
 
@@ -678,12 +678,12 @@ export class Registry extends EventEmitter {
   async resourceTimeout(oi4Id: string, resource: string) {
     if (oi4Id in this.applicationLookup) {
       await this.registryClient.publish(`${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
-      this.logger.log(`Registry:Timeout - Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
-      this.applicationLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
+      this.logger.log(`Timeout - Get ${resource} on ${this.applicationLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, ESubResource.warn);
+      this.applicationLookup[oi4Id].available = false; // We timeouted, it's not available for the moment... TODO: Log if the device is really "gone"?
     }
     if (oi4Id in this.deviceLookup) {
       await this.registryClient.publish(`${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
-      this.logger.log(`Registry:Timeout - Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
+      this.logger.log(`Timeout - Get ${resource} on ${this.deviceLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, ESubResource.warn);
       this.deviceLookup[oi4Id].available = false; // We timeouted, it's not available for the moment...
     }
     // this.healthTimeout = <any>setTimeout(() => this.updateResourceInDevice(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...

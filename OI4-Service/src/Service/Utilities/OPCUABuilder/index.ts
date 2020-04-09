@@ -238,6 +238,7 @@ export class OPCUABuilder {
   }
 
   async checkOPCUAJSONValidity(payload: any): Promise<boolean> {
+    // FIXME: In refactoring, replace console log with logger log
     let networkMessageValidationResult = false;
     try {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);

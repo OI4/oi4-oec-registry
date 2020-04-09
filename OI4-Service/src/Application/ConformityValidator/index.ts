@@ -144,7 +144,7 @@ export class ConformityValidator extends EventEmitter {
     try {
       oi4Result = await ConformityValidator.checkOI4IDConformity(oi4Id);
     } catch (err) {
-      this.logger.log(`Error in checkOI4IDConformity: ${err}`, ESubResource.debug);
+      this.logger.log(`OI4-ID does not match the specified format: ${err}`, ESubResource.error);
       return conformityObject;
     }
     if (oi4Result) {
@@ -152,8 +152,6 @@ export class ConformityValidator extends EventEmitter {
       const profileRes = await this.checkResourceConformity(fullTopic, oi4Id, 'profile') as IResultObject;
       if (profileRes.eRes === EValidity.ok) {
         conformityObject.profileResourceList = profileRes.payload.resource;
-        // console.log(mandatoryResourceList);
-        // console.log(conformityObject.profileResourceList);
         if (mandatoryResourceList.every(i => conformityObject.profileResourceList.includes(i))) {
           conformityObject.resource['profile'] = {
             validity: EValidity.ok,
@@ -229,7 +227,7 @@ export class ConformityValidator extends EventEmitter {
             };
           }
         } catch (err) {
-          this.logger.log(`${resource} did not pass with ${err}`, ESubResource.debug);
+          this.logger.log(`${resource} did not pass check with ${err}`, ESubResource.error);
           conformityObject.resource[resource] = {
             validity: EValidity.nok,
           };
@@ -250,7 +248,7 @@ export class ConformityValidator extends EventEmitter {
         conformityObject.validity = EValidity.ok;
       }
     }
-    console.log(`Final conformity object: ${JSON.stringify(conformityObject)}`);
+    this.logger.log(`Final conformity object: ${JSON.stringify(conformityObject)}`);
     return conformityObject;
   }
 
@@ -269,26 +267,23 @@ export class ConformityValidator extends EventEmitter {
     const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, dscids[resource]);
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
-      this.logger.log(`Received conformity message on ${resource} from ${tag}`);
-      // this.logger.log('Payload:');
-      // this.logger.log(rawMsg.toString());
+      this.logger.log(`Received conformity message on ${resource} from ${tag}`, ESubResource.info);
       if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
         let networkMessageValidationResult;
         let payloadValidationResult;
-        if (resource === 'mam') {
-          console.log();
-        }
+        // if (resource === 'mam') {
+        //   console.log();
+        // }
         try {
           networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', parsedMessage);
         } catch (validateErr) {
-          this.logger.log(`ConformityValidator-AJV:${validateErr}`);
+          this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
           networkMessageValidationResult = false;
         }
         if (!networkMessageValidationResult) {
-          console.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
-          this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
+          this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
         }
         if (networkMessageValidationResult) {
           if (parsedMessage.MessageType === 'ua-metadata') {
@@ -297,11 +292,11 @@ export class ConformityValidator extends EventEmitter {
             try {
               payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
             } catch (validateErr) {
-              this.logger.log(`ConformityValidator-AJV:${validateErr}`);
+              this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
               payloadValidationResult = false;
             }
             if (!payloadValidationResult) {
-              this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`);
+              this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
             }
           }
         }
@@ -310,13 +305,13 @@ export class ConformityValidator extends EventEmitter {
             eRes = EValidity.ok;
           } else {
             eRes = EValidity.partial;
-            this.logger.log(`CorrelationID did not pass for ${tag} with resource ${resource}`);
+            this.logger.log(`CorrelationID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
         } else {
           eRes = EValidity.partial;
         }
         if (!(parsedMessage.DataSetClassId === dscids[resource])) {
-          this.logger.log(`DataSetClassID did not pass for ${tag} with resource ${resource}`);
+          this.logger.log(`DataSetClassID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           eRes = EValidity.partial;
         }
         let resPayload;
@@ -335,7 +330,7 @@ export class ConformityValidator extends EventEmitter {
     });
     await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${tag}`);
     await this.conformityClient.publish(`${fullTopic}/get/${resource}/${tag}`, JSON.stringify(conformityPayload));
-    this.logger.log(`Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`);
+    this.logger.log(`Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`, ESubResource.info);
     return await promiseTimeout(new Promise((resolve, reject) => {
       this.once(`${resource}${fullTopic}Success`, (res) => {
         resolve(res);

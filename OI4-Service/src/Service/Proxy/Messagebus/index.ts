@@ -102,12 +102,12 @@ class OI4MessageBusProxy extends OI4Proxy {
     try {
       parsedMessage = JSON.parse(message.toString());
     } catch (e) {
-      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`);
+      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESubResource.warn);
       return;
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(parsedMessage);
     if (!schemaResult) {
-      this.logger.log('Error in payload schema validation');
+      this.logger.log('Error in payload schema validation', ESubResource.warn);
       return;
     }
     // Split the topic into its different elements
@@ -374,7 +374,7 @@ class OI4MessageBusProxy extends OI4Proxy {
 
   // Basic Error Functions
   async sendError(error: string) {
-    this.logger.log(`Error: ${error}`);
+    this.logger.log(`Error: ${error}`, ESubResource.error);
   }
 
   // SET Function section ------//
@@ -418,9 +418,9 @@ class OI4MessageBusProxy extends OI4Proxy {
     }
     if ((tagName in dataLookup)) {
       delete this.containerState.dataLookup[tagName];
-      this.logger.log(`Deleted ${tagName} from dataLookup`);
+      this.logger.log(`Deleted ${tagName} from dataLookup`, ESubResource.warn);
     } else {
-      this.logger.log(`Cannot find ${tagName} in lookup`);
+      this.logger.log(`Cannot find ${tagName} in lookup`, ESubResource.warn);
     }
   }
 
