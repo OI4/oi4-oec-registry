@@ -85,7 +85,8 @@ Environment variables:
 > OI4_ADDR=\<IP of Broker\>\
 > OI4_PORT=\<Port of Broker\>\
 > LOCAL_ADDR=\<IP of docker HOST(!)\>(used for UI-REST API calls)\
-> CONTAINERNAME=\<Name of docker container\> (used for SerialNumber in MasterAssetSet, must be unique)
+> CONTAINERNAME=\<Name of docker container\> (used for SerialNumber in MasterAssetSet, must be unique)\
+> (optional) USE_HTTPS=\<true> or \<false> (see TLS section)
 
 Next, the ports for ```4567:4567``` and ```5000:5000``` need to be forwarded in order to work. (TCP)
 
@@ -95,18 +96,29 @@ If you don't want to use the Cockpit-Plugin, just remove the mount path in your 
 A run command can be found here(without cockpit mount): ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest```\
 (with cockpit mount) ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer registrycheckout:latest```
 
+Paths that currently can be bound:
+> /usr/local/share/cockpit <-The cockpit plugin\
+> /usr/local/share/cert <- The path of the certificates (see Using TLS / HTTPS)\
+> /usr/local/share/logs <- The path where the logfiles are located (in enabled in the UI)
+
+These paths can be bound to any path on the host system to enable easy access or own certificates.
+
 ## Using TLS / HTTPS:
 Using TLS / HTTPS is currently experimental and writing issues is encouraged.
 
-In order to use HTTP, the environment variable ```CERT_PATH``` has to be provided, which contains the full path to your certificate and corresponding key. (example: ```usr/local/share/cert```)
+In order to use HTTPS, the environment variable ```USE_HTTPS``` has to be provided and set to ```true```.
+The paths where the certificates are expected are 
+>```/usr/local/share/cert``` on linux systems / wsl / docker container\
+and\
+> ```C:/certs``` on windows systems.\
 
-***Don't forget to add the path to the container create options (mount) and make sure that the path actually exists on the file system of the host.***
+***Don't forget to add the path to the container create options (mount) if using docker and make sure that the path actually exists on the file system of the host.***
 
 The directory must be filled with a ```cert.pem``` and ```key.pem```
 
-- If the ```CERT_PATH``` variable is present, but there are no files in the directory, the container will create a self-signed test certificate and place it in the path.
-- If the ```CERT_PATH``` variable is not present, neither the frontend nor the backend will be using secure communication
-- If the ```CERT_PATH``` variable is present and there is a certificate in the directory, this certificate will be used to establish a secure connection.
+- If the ```USE_HTTPS``` variable is ```true```, but there are no files in the directory, the container will create a self-signed test certificate and place it in the path. (For testing purposes, you need to create your certificate yourself using openssl or similar)
+- If the ```USE_HTTPS``` variable is other than ```true```, neither the frontend nor the backend will be using secure communication
+- If the ```USE_HTTPS``` variable is ```true``` and there is a certificate in the directory, this certificate will be used to establish a secure connection.
 
 ### Peculiarities in the browser:
 If the automatically generated self-signed certificate is used, an exception for the certificate needs to be added for *both* the frontend *and* the backend.
