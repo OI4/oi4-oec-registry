@@ -100,7 +100,7 @@ export class ClickableFooter extends React.Component {
           <TabPanel value={this.state.selectedTab} index={1}>
             <DialogContent style={{ paddingLeft: '10px', paddingRight: '10px' }}>
               <p>In this section, expert configurations can be set by the maintainer.</p>
-              <p>With the expert mode, single assets can be deleted by clicking the bucket icon in the table.</p>
+              <p>With the expert mode, single assets can be deleted from the registry by clicking the bucket icon in the table.</p>
               <p>The conformity test is extended by all available resources (displayed in red). The result of these resources
                 does not influence the general result displayed in the header.
               </p>
