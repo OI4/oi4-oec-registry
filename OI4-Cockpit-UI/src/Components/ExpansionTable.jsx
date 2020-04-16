@@ -75,6 +75,10 @@ class ExpansionTable extends React.Component {
     };
   }
 
+  /**
+   * Main render method of the ExpansionTable
+   * @memberof OI4Base
+   */
   render() {
     const { classes } = this.props;
     return (
@@ -238,6 +242,7 @@ class ExpansionTable extends React.Component {
                               oi4Id={oi4Id}
                               assetLookup={this.props.assetLookup}
                               updateConformity={this.updateConformity.bind(this)}
+                              getResourceObject={this.getResourceObject.bind(this)}
                               lookupType={this.props.lookupType}
                               fontColor={this.props.fontColor}
                               updatingConformity={this.props.updatingConformity}
@@ -262,7 +267,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Checks whether the resource is available in the lookup and returns it
-   *
    * @param {string} oi4Id - The oi4Id that si to be looked up
    * @param {string} resource - The resource that will be displayed if the lookup succeedes
    * @returns The requested resource, if found. An error, if not
@@ -278,7 +282,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Checks if the health property of the payload is available and prints it, if yes.
-   *
    * @param {string} oi4Id
    * @param {string} [type='application']
    * @returns The actual health object of the payload, if it finds anything, an error string, if it does not
@@ -301,7 +304,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Checks the state of the expansion of the table and returns the corresponding icon
-   *
    * @param {string} oi4Id
    * @returns ExpandMore-Icon, if the table is not expanded ; ExpandLess-Icon, if it is expanded
    * @memberof ExpansionTable
@@ -316,7 +318,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Displays the validity result of the overall conformity in Emoji-Form
-   *
    * @param {string} oi4Id
    * @returns An emoji, if the item is available, 'wait...' string, if it is not
    * @memberof ExpansionTable
@@ -331,7 +332,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Displays the received namur health as the corresponding image in the header
-   *
    * @param {string} status The healthstatus according to NAMUR spec
    * @param {string} [height='25']
    * @param {string} [width='30']
@@ -411,7 +411,6 @@ class ExpansionTable extends React.Component {
   /**
    * Callback handler in order to update the conformity of a buttonpress.
    * Calls the parent callback to handle the function.
-   *
    * @param {string} fullTopic
    * @param {string} appId
    * @memberof ExpansionTable

@@ -71,6 +71,10 @@ class ExpansionTableDetail extends React.Component {
     };
   }
 
+  /**
+   * Main render method of the ExpansionTableDetail
+   * @memberof OI4Base
+   */
   render() {
     const { classes } = this.props;
     return (
@@ -134,7 +138,7 @@ class ExpansionTableDetail extends React.Component {
           <div>
             <h3>Detailed Health:</h3>
             <Paper className={classes.paper}>
-              {this.detailedHealthViewer(this.getResourceObject(this.props.oi4Id, 'health'))}
+              {this.detailedHealthViewer(this.props.getResourceObject(this.props.oi4Id, 'health'))}
             </Paper>
           </div>
           {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
@@ -165,24 +169,7 @@ class ExpansionTableDetail extends React.Component {
   }
 
   /**
-   * Checks whether the resource is available in the lookup and returns it
-   *
-   * @param {string} oi4Id - The oi4Id that si to be looked up
-   * @param {string} resource - The resource that will be displayed if the lookup succeedes
-   * @returns The requested resource, if found. An error, if not
-   * @memberof ExpansionTableDetail
-   */
-  getResourceObject(oi4Id, resource) {
-    const lookup = this.props.assetLookup;
-    if (resource in lookup[oi4Id].resources) {
-      return lookup[oi4Id].resources[resource];
-    }
-    return 'Error - getResourceObject: resource not found in lookup';
-  }
-
-  /**
    * Displays the current health state in Namur form via the lookup as an <img> Tag
-   *
    * @param {string} status - The health string defined in Namur format
    * @param {string} [height='25'] - The height of the resulting <img> tag
    * @param {string} [width='30'] - The width of the resulting <img> tag
@@ -199,7 +186,6 @@ class ExpansionTableDetail extends React.Component {
 
   /**
    * Displayed the entire health object in human readable form
-   *
    * @param {object} healthObject - The healthobject that is to be converted
    * @returns The helath in human readable form
    * @memberof ExpansionTableDetail
@@ -276,7 +262,6 @@ class ExpansionTableDetail extends React.Component {
   /**
    * Converts the validity of a conformity Object to human readable emojis
    * and replaces the validity with these emoji
-   *
    * @param {object} conformityObject
    * @param {string} oi4Id
    * @returns {object} A conformity object, where the validity results are emoji instead of numbers
