@@ -433,11 +433,6 @@ class OI4Base extends React.Component {
         const listOfDevices = JSON.parse(JSON.stringify(this.state.listOfDevices));
         let wasUpdated = false;
         for (const oi4Id of Object.keys(jsonData)) {
-          if (this.state.deviceLookup[oi4Id] === undefined || this.state.deviceLookup[oi4Id] === null) {
-            // const fullTopic = jsonData[oi4Id].fullDevicePath;
-            // const appId = jsonData[oi4Id].appId;
-            // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
-          }
           // Update auditTrail
           jsonData[oi4Id].eventList = [];
           for (const audits of this.reverse(this.state.globalEventTrail)) {
@@ -475,11 +470,6 @@ class OI4Base extends React.Component {
         const jsonData = JSON.parse(data);
         const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
         for (const oi4Id of Object.keys(jsonData)) {
-          if (this.state.applicationLookup[oi4Id] === undefined || this.state.applicationLookup[oi4Id] === null) {
-            // const fullTopic = jsonData[oi4Id].fullDevicePath;
-            // const appId = jsonData[oi4Id].appId;
-            // this.updateConformity(fullTopic, appId); // Update only when pressing the refresh button
-          }
           // Update auditTrail
           jsonData[oi4Id].eventList = [];
           for (const audits of this.reverse(this.state.globalEventTrail)) {
