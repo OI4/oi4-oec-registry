@@ -253,16 +253,12 @@ class OI4Base extends React.Component {
             <ClickableFooter
               clearAllAssets={this.clearAllAssets.bind(this)}
               clearAllLogs={this.clearAllLogs.bind(this)}
+              updateBackendConfig={this.updateBackendConfig.bind(this)}
+              updateFrontendConfig={this.updateFrontendConfig.bind(this)}
               config={this.state.config}
               backendConfig={this.state.backendConfig}
-              handleExpertChange={this.handleExpertChange.bind(this)}
-              handleLogToFileChange={this.handleLogToFileChange.bind(this)}
-              handleShowRegistryChange={this.handleShowRegistryChange.bind(this)}
-              handleGlobalTrailLength={this.setGlobalTrailLength.bind(this)}
-              handleGlobalTrailSize={this.setGlobalTrailSize.bind(this)}
               handleGetConfig={this.getBackendConfig.bind(this)}
               handleSetConfig={this.setBackendConfig.bind(this)}
-              handleAuditLevelChange={this.setAuditLevel.bind(this)}
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
               handleLoadFromFile={this.loadFromFile.bind(this)}
@@ -295,24 +291,6 @@ class OI4Base extends React.Component {
     .then(data => {
       console.log(data);
     });
-  }
-
-  handleLogToFileChange = (event) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    oldConfigObj.logToFile = event.target.value;
-    this.setState({ backendConfig: oldConfigObj });
-  }
-
-  handleExpertChange = (event, newValue) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    oldConfigObj.developmentMode = !oldConfigObj.developmentMode;
-    this.setState({ backendConfig: oldConfigObj });
-  }
-
-  handleShowRegistryChange = (event, newValue) => {
-    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    oldConfigObj.showRegistry = !oldConfigObj.showRegistry;
-    this.setState({ backendConfig: oldConfigObj });
   }
 
   /**
@@ -623,23 +601,16 @@ class OI4Base extends React.Component {
   }
 
   // SETTERS
-  setGlobalTrailLength(ev) {
-    const configObj = JSON.parse(JSON.stringify(this.state.config));
-    configObj.globalEventListLength = ev.target.value;
-    this.setState({ config: configObj });
+  updateBackendConfig (configPropertyName, newProperty) {
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
+    oldConfigObj[configPropertyName] = newProperty;
+    this.setState({ backendConfig: oldConfigObj });
   }
 
-  setGlobalTrailSize(ev) {
-    const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    configObj.logFileSize = ev.target.value;
-    console.log(ev.target.value);
-    this.setState({ backendConfig: configObj });
-  }
-
-  setAuditLevel(ev) {
-    const configObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-    configObj.auditLevel = ev.target.value;
-    this.setState({ backendConfig: configObj });
+  updateFrontendConfig(configPropertyName, newProperty) {
+    const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
+    oldConfigObj[configPropertyName] = newProperty;
+    this.setState({ config: oldConfigObj });
   }
 
   setBackendConfig() {

@@ -133,7 +133,10 @@ export class ClickableFooter extends React.Component {
               <div style={{ marginTop: '1em', marginBottom: '1em' }}>Enable / Disable the expert mode:
                 <Checkbox
                   checked={this.props.backendConfig.developmentMode || false} // Default value needed to stay in controlled mode
-                  onChange={this.props.handleExpertChange} // lifting state up
+                  onChange={ () => {
+                    const currentProperty = this.props.backendConfig.developmentMode;
+                    this.props.updateBackendConfig('developmentMode', !currentProperty);
+                  } }
                   value='primary'
                 />
               </div>
@@ -195,7 +198,7 @@ export class ClickableFooter extends React.Component {
                             Count of shown Audit Elements:
                             <Select
                               value={this.props.config.globalEventListLength || ''}
-                              onChange={this.props.handleGlobalTrailLength}
+                              onChange={ (ev) => this.props.updateFrontendConfig('globalEventListLength', ev.target.value) }
                               style={{ marginLeft: '10px', marginRight: '10px' }}
                             >
                               <MenuItem value={25}>25</MenuItem>
@@ -218,7 +221,10 @@ export class ClickableFooter extends React.Component {
                             List Registry in Frontend:
                             <Checkbox
                               checked={this.props.backendConfig.showRegistry || false} // Default value needed to stay in controlled mode
-                              onChange={this.props.handleShowRegistryChange} // lifting state up
+                              onChange={ () => {
+                                const currentProperty = this.props.backendConfig.showRegistry;
+                                this.props.updateBackendConfig('showRegistry', !currentProperty);
+                              } }
                               value='primary'
                             />
                           </li>
@@ -227,7 +233,7 @@ export class ClickableFooter extends React.Component {
                             Set Audit Level:
                             <Select
                               value={this.props.backendConfig.auditLevel || ''}
-                              onChange={this.props.handleAuditLevelChange}
+                              onChange={ (ev) => this.props.updateBackendConfig('auditLevel', ev.target.value) }
                               color='primary'
                               style={{ marginLeft: '10px' }}
                             >
@@ -244,7 +250,7 @@ export class ClickableFooter extends React.Component {
                             Enable Logging to file:
                             <Select
                               value={this.props.backendConfig.logToFile || 'disabled'}
-                              onChange={this.props.handleLogToFileChange}
+                              onChange={ (ev) => this.props.updateBackendConfig('logToFile', ev.target.value) }
                               color='primary'
                               style={{ marginLeft: '10px' }}
                             >
@@ -279,7 +285,7 @@ export class ClickableFooter extends React.Component {
                   /> */}
                             <Select
                               value={this.props.backendConfig.logFileSize || ''}
-                              onChange={this.props.handleGlobalTrailSize}
+                              onChange={ (ev) => this.props.updateBackendConfig('logFileSize', ev.target.value) }
                               color='primary'
                               style={{ marginLeft: '10px' }}
                             >
