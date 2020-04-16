@@ -105,6 +105,7 @@ class OI4Base extends React.Component {
   constructor(props) {
     super(props);
     this.platform = 'fetch';
+
     // The following lines will give access to the external Endpoint for the REST API defined by the Environment variables.
     // This way, the registry backend is fully decoupled from the front-end
     /* eslint-disable */
@@ -113,6 +114,7 @@ class OI4Base extends React.Component {
       this.port = serviceEndpoint.port;
       this.platform = serviceEndpoint.platform;
     }
+
     // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
     // the local UI and the cockpit frontend.
     // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
@@ -150,24 +152,22 @@ class OI4Base extends React.Component {
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
+
     // Update apps and devices right away
     setTimeout(() => { this.updateApplications() }, 500);
     setTimeout(() => { this.updateDevices() }, 800);
     setTimeout(() => { this.getBackendConfig() }, 300);
+
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
      * The resources kept by the registry of all applications are updated individually.
      */
     this.activeIntervals.push(setInterval(() => { this.updateHealth() }, 7000)); // UpdateHealth gets the health of the registry
-    this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 7000));
-    this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 7000));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 8100));
-    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('config') }, 8200));
-    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('rtLicense') }, 8300));
-    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('license') }, 8400));
+    this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 6000));
+    this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 6000));
+    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 7000));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 8500));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
-    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('profile') }, 8600));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
     // If we start out with a couple of applications, we should update their conformity right away
@@ -191,13 +191,16 @@ class OI4Base extends React.Component {
     document.body.style.fontSize = '14px';
   }
 
-  // On close, clear all cyclic intervals
   componentWillUnmount() {
     for (const intervals of this.activeIntervals) {
       clearInterval(intervals);
     }
   }
 
+  /**
+   * Main render method of the entrypoint
+   * @memberof OI4Base
+   */
   render() {
     const { classes } = this.props;
     return (
@@ -272,6 +275,15 @@ class OI4Base extends React.Component {
     );
   }
 
+  /**
+   * Checks whether the specified object contains a specified property with a specified type
+   * (used for JSON validation)
+   * @param {object} object - The object that is to be checked
+   * @param {string} property - The property that the object needs to contain
+   * @param {string} type - The desired type of the property
+   * @returns {boolean} true, if the property and type match, false if not
+   * @memberof OI4Base
+   */
   checkObjectPropertyType(object, property, type) {
     if (typeof object[property] !== 'undefined') {
       if (typeof object[property] === type) { // eslint-disable-line
@@ -286,6 +298,10 @@ class OI4Base extends React.Component {
     }
   }
 
+  /**
+   * Clears all logs in the Registry backend by calling the API
+   * @memberof OI4Base
+   */
   clearAllLogs() {
     this.fetch.delete(`/registry/logs`)
     .then(data => {
@@ -295,7 +311,6 @@ class OI4Base extends React.Component {
 
   /**
    * Toggles the theme between light and dark and switches the logos accordingly
-   *
    * @memberof OI4Base
    */
   toggleTheme() {
@@ -372,10 +387,9 @@ class OI4Base extends React.Component {
     }
   }
 
-  // -- CONFORMITY HELPERS
+  // UPDATE-FUNCTIONS OF ASSETS AND RESOURCES //
   /**
    * Updates the conformity of the specified asset via the Registry API
-   *
    * @param {string} fullTopic - The full topic pointing to the asset
    * @param {string} appId - The appId of the asset
    * @memberof OI4Base
@@ -407,10 +421,8 @@ class OI4Base extends React.Component {
     }
   }
 
-  // UPDATE HELPERS
   /**
    * Fetch the devices via the registry API
-   *
    * @memberof OI4Base
    */
   updateDevices() {
@@ -453,15 +465,8 @@ class OI4Base extends React.Component {
       });
   }
 
-  * reverse(arr) {
-    for (let i = arr.length - 1; i >= 0; i--) {
-      yield arr[i];
-    }
-  }
-
   /**
    * Fetch the applications via the registry API
-   *
    * @memberof OI4Base
    */
   updateApplications() {
@@ -547,6 +552,11 @@ class OI4Base extends React.Component {
     }
   }
 
+  // DELETION //
+  /**
+   * Clear all Assets of the Registry backend by calling the corresponding API
+   * @memberof OI4Base
+   */
   clearAllAssets() {
     console.log('Clear all Assets clicked');
     this.fetch.delete(`/registry/assets`)
@@ -555,6 +565,11 @@ class OI4Base extends React.Component {
       });
   }
 
+  /**
+   * Clear an Asset of the Registry backend by calling the corresponding API
+   * @param {string} oi4Id - The oi4Id of the Asset that is to be deleted
+   * @memberof OI4Base
+   */
   clearAssetById(oi4Id) {
     console.log('Clear Asset by Id clicked');
     this.fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
@@ -563,9 +578,9 @@ class OI4Base extends React.Component {
       });
   }
 
+  // API-UPDATES //
   /**
-   * Fetch the most recent health of the Registry
-   *
+   * Fetch the most recent health of the Registry itself
    * @memberof OI4Base
    */
   updateHealth() {
@@ -576,8 +591,7 @@ class OI4Base extends React.Component {
   }
 
   /**
-   * Fetch the AppID of the Registry
-   *
+   * Fetch the AppID of the Registry itself
    * @memberof OI4Base
    */
   updateAppID() {
@@ -588,31 +602,35 @@ class OI4Base extends React.Component {
       });
   }
 
+  // CALLBACKS FOR CLICKABLE FOOTER //
   /**
-   * Fetch the most recent event trail from the Registry
-   *
+   * Callback used for state-lifting and updating the backendConfig (setState cannot be called from child-components!)
+   * @param {string} configPropertyName - The property that is to be changed in the backendConfig
+   * @param {any} newProperty - The new value of the property
    * @memberof OI4Base
    */
-  updateGlobalEventTrail() {
-    this.fetch.get(`/registry/event/${this.state.config.globalEventListLength}`)
-      .then(data => {
-        this.setState({ globalEventTrail: JSON.parse(data) });
-      });
-  }
-
-  // SETTERS
   updateBackendConfig (configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj[configPropertyName] = newProperty;
     this.setState({ backendConfig: oldConfigObj });
   }
 
+    /**
+   * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
+   * @param {string} configPropertyName - The property that is to be changed in the backendConfig
+   * @param {any} newProperty - The new value of the property
+   * @memberof OI4Base
+   */
   updateFrontendConfig(configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
     oldConfigObj[configPropertyName] = newProperty;
     this.setState({ config: oldConfigObj });
   }
 
+  /**
+   * Updates the Registry backend with the config by calling the corresponding API
+   * @memberof OI4Base
+   */
   setBackendConfig() {
     const resizedConfig = JSON.parse(JSON.stringify(this.state.backendConfig));
     resizedConfig.logFileSize = this.state.backendConfig.logFileSize * 1000;
@@ -622,6 +640,10 @@ class OI4Base extends React.Component {
       });
   }
 
+  /**
+   * Updates the local copy of the backendConfig by getting it from the corresponding API
+   * @memberof OI4Base
+   */
   getBackendConfig() {
     this.fetch.get(`/registry/config`)
       .then(data => {
@@ -631,6 +653,10 @@ class OI4Base extends React.Component {
       });
   }
 
+  /**
+   * Saves both the frontendConfig and backendConfig to the local file system of the user via browser
+   * @memberof OI4Base
+   */
   saveToFile() {
     const fullConfigObj = {
       config: this.state.config,
@@ -645,6 +671,12 @@ class OI4Base extends React.Component {
     downloadAnchorNode.remove();
   }
 
+  /**
+   * Callback used to load a file from the local file system of the user via the browser.
+   * Implements basic property/type checks for the loaded json / object.
+   * @param {any} e - The event that caused the callback, typically by an <input/> component
+   * @memberof OI4Base
+   */
   loadFromFile(e) {
     const fileReader = new FileReader();
     fileReader.readAsText(e.target.files[0]);
@@ -664,6 +696,29 @@ class OI4Base extends React.Component {
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'developmentMode', 'boolean'))) return;
       this.setState({ config: confObj.config, backendConfig: confObj.backendConfig });
     };
+  }
+
+  /**
+   * Fetch the most recent event trail from the Registry
+   * @memberof OI4Base
+   */
+  updateGlobalEventTrail() {
+    this.fetch.get(`/registry/event/${this.state.config.globalEventListLength}`)
+      .then(data => {
+        this.setState({ globalEventTrail: JSON.parse(data) });
+      });
+  }
+
+  // HELPER-FUNCTIONS //
+  /**
+   * Reverses the order of an Array
+   * @param {array} arr
+   * @memberof OI4Base
+   */
+  * reverse(arr) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      yield arr[i];
+    }
   }
 }
 
