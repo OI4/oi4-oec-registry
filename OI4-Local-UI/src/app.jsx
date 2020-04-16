@@ -142,7 +142,6 @@ class OI4Base extends React.Component {
       },
       theme: lightTheme,
       darkActivated: false,
-      // TODO: Remove these hardcoded links and replace with relative images...
       smallLogo: oi4SmallLogoLight,
       bigLogo: oi4BigLogoLight,
       globalEventTrail: [],
@@ -252,7 +251,6 @@ class OI4Base extends React.Component {
 
             </div>{/* Padding for dialog */}
             <div style={{ flexGrow: 1 }} />
-            {/* TODO: This is getting a little out of hands with all the state-lifting and props... */}
             <ClickableFooter
               clearAllAssets={this.clearAllAssets.bind(this)}
               clearAllLogs={this.clearAllLogs.bind(this)}
@@ -265,7 +263,7 @@ class OI4Base extends React.Component {
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
               handleLoadFromFile={this.loadFromFile.bind(this)}
-              license='BSD License'
+              license={pjson.license}
               version={pjson.version}
               bigLogo={this.state.bigLogo}
             />

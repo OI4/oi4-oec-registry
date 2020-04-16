@@ -55,6 +55,10 @@ export class ClickableFooter extends React.Component {
     };
   }
 
+  /**
+   * Main render method of the ClickableFooter
+   * @memberof OI4Base
+   */
   render() {
     return (<Fragment>
       <Dialog
@@ -261,28 +265,6 @@ export class ClickableFooter extends React.Component {
                           </li>
 
                           <li>Logfile Size:
-                  {/* <TextField
-                    error={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000}
-                    id="outlined-number"
-                    type="number"
-                    min='20'
-                    value={this.props.backendConfig.logFileSize || ''}
-                    onChange={this.props.handleGlobalTrailSize}
-                    helperText={this.props.backendConfig.logFileSize <= 10 || this.props.backendConfig.logFileSize >= 10000 ? 'Value out of bounds!' : ''}
-                    InputProps={{
-                      inputProps: {
-                        min: '500',
-                        max: '10001',
-                        step: '250',
-                      },
-                      endAdornment: (
-                        <InputAdornment position="end">kB</InputAdornment>
-                      ),
-                    }}
-                    layout='dense'
-                    size='small'
-                    style={{ marginLeft: '10px', marginRight: '10px', width: '30%' }}
-                  /> */}
                             <Select
                               value={this.props.backendConfig.logFileSize || ''}
                               onChange={ (ev) => this.props.updateBackendConfig('logFileSize', ev.target.value) }
