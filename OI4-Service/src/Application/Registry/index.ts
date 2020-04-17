@@ -116,6 +116,10 @@ export class Registry extends EventEmitter {
     // setInterval(() => { this.flushToLogfile; }, 60000);
   }
 
+  /**
+   * Overrides the default mqtt-subscription in order to automatically adjust the 'subscriptionList' resource
+   * @param topic - The topic that should be subscribed to
+   */
   private async ownSubscribe(topic: string) {
     this.containerState.subscriptionList.subscriptionList.push({
       topicPath: topic,
@@ -125,6 +129,21 @@ export class Registry extends EventEmitter {
     return await this.registryClient.subscribe(topic);
   }
 
+  /**
+   * Overrides the default mqtt-unsubscription in order to automatically adjust the 'subscriptionList' resource
+   * @param topic - The topic that should be unsubscribed from
+   */
+  private async ownUnsubscribe(topic: string) {
+    // Remove from subscriptionList
+    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    return await this.registryClient.unsubscribe(topic);
+  }
+
+  /**
+   * Wrapper function for the File-Logger flushToFile. Behaviour:
+   * If logging is not enabled, we skip flushing to file and instead shift the array (in order not to overfill the rambuffer)
+   * If it's enabled and no logs happened, we can simply return and re-set the timeout (no need to shift since the array should be empty)
+   */
   private flushToLogfile() {
     if (this.config.logToFile === 'enabled') {
       if (!this.logHappened) {
@@ -143,12 +162,6 @@ export class Registry extends EventEmitter {
         this.globalEventList.shift();
       }
     }
-  }
-
-  private async ownUnsubscribe(topic: string) {
-    // Remove from subscriptionList
-    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
-    return await this.registryClient.unsubscribe(topic);
   }
 
   /**
@@ -579,6 +592,10 @@ export class Registry extends EventEmitter {
 
   }
 
+  /**
+   * Retrieve and return the audit-trail per device (TODO: this function is unused currently)
+   * @param oi4Id - The oi4id of the device
+   */
   getEventTrailFromDevice(oi4Id: string) {
     if (oi4Id in this.assetLookup) {
       return this.assetLookup[oi4Id].eventList;
@@ -620,6 +637,10 @@ export class Registry extends EventEmitter {
     this.logger.level = this.config.auditLevel as ESubResource;
   }
 
+  /**
+   * Unsubscribe the registry from the auditTrail (multiple levels) of a specified asset
+   * @param oi4Id - The oi4Id of the asset
+   */
   async unsubscribeAssetFromAudit(oi4Id: string) {
     console.log(`unsubbing all audits from ${oi4Id}`);
     if (oi4Id in this.assetLookup) {
@@ -629,6 +650,10 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Unsubscribe the registry from the auditTrail (multiple levels) of a specified asset
+   * @param oi4Id - The oi4Id of the asset
+   */
   async resubscribeAssetFromAudit(oi4Id: string) {
     console.log(`resubbing all audits from ${oi4Id}`);
     if (oi4Id in this.assetLookup) {
@@ -720,6 +745,10 @@ export class Registry extends EventEmitter {
     return this.globalEventList;
   }
 
+  /**
+   * Retrieve the global event trail up to a specified amount of elements
+   * @param noOfElements - The amount of elements that is to be retrieved
+   */
   public getEventTrail(noOfElements: number) {
     if (this.globalEventList.length <= noOfElements) {
       return this.globalEventList;
@@ -737,6 +766,9 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Retrieves the appId of the registry
+   */
   getAppId() {
     return this.appId;
   }
