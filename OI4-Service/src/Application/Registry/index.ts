@@ -666,8 +666,12 @@ export class Registry extends EventEmitter {
     }
   }
 
+  /**
+   * Wrapper for the deleteFiles method of the FileLogger.
+   * Should be called whenever the logfileSize is changed
+   */
   deleteFiles() {
-
+    return this.fileLogger.deleteFiles();
   }
 
   /**
