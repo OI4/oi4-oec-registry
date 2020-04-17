@@ -10,6 +10,9 @@ import {
 import { IMasterAssetModel } from '../../Service/Models/IOPCUAPayload';
 import { IConformity } from './IConformityValidator';
 
+/**
+ * This interface is proprietary and only used between registry backend and frontend.
+ */
 export interface IDeviceMessage {
   resources: IResourceObject;
   fullDevicePath: string;
@@ -20,6 +23,12 @@ export interface IDeviceMessage {
   registeredAt: string;
   conformityObject: IConformity;
   available: boolean;
+  deviceType: EDeviceType;
+}
+
+export enum EDeviceType {
+  device = 0,
+  application = 1,
 }
 
 export interface IResourceObject {
