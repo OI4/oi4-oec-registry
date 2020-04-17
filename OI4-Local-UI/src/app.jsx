@@ -15,8 +15,6 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
-import MaterialTable from 'material-table';
-
 import {
   Typography,
   ExpansionPanel,
@@ -247,58 +245,7 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMore />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
-                  <div style={{ maxWidth: '100%' }}>
-                    <MaterialTable
-                      columns={[
-                        { title: 'Tag-oi4Id', field: 'tag' },
-                        { title: 'ErrorCode', field: 'errorCode' },
-                        { title: 'Description', field: 'description' },
-                        { title: 'Payload', field: 'payload' }
-                      ]}
-                      data={
-                        this.state.globalEventTrail.map((events, idx) => {
-                          const [originManu, ...originRest] = events.Tag.split('/');
-                          return {
-                            tag: `${decodeURIComponent(originManu)}/${originRest.join('/')}`,
-                            errorCode: events.number,
-                            description: events.description,
-                            payload: JSON.stringify(events.payload),
-                          };
-                        })
-                    }
-                      title={<>Copy Event Trail: <Tooltip title="Copy to clipboard">
-                      <IconButton
-                        size='small'
-                        color='default'
-                        onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(this.state.globalEventTrail, null, 2)).then(() => {
-                            this.setState({ copySnackOpen: true });
-                          });
-                        }}
-                      >
-                        <FileCopy />
-                      </IconButton>
-                    </Tooltip>
-                    <Snackbar
-                      open={this.state.copySnackOpen}
-                      anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center',
-                      }}
-                      onClose={() => { this.setState({ copySnackOpen: false }) }}
-                      autoHideDuration={4000}
-                      message='Saved Global Events to clipboard'
-                      action={
-                        <>
-                          <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                            <Close fontSize='small' />
-                          </IconButton>
-                        </>
-                      }
-                    /></>}
-                    />
-                  </div>
-                  {/* {this.displayGlobalEvents(this.state.globalEventTrail)} */}
+                  {this.displayGlobalEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
 
@@ -355,9 +302,9 @@ class OI4Base extends React.Component {
    */
   clearAllLogs() {
     this.fetch.delete(`/registry/logs`)
-      .then(data => {
-        console.log(data);
-      });
+    .then(data => {
+      console.log(data);
+    });
   }
 
   /**
@@ -650,18 +597,18 @@ class OI4Base extends React.Component {
    * @param {any} newProperty - The new value of the property
    * @memberof OI4Base
    */
-  updateBackendConfig(configPropertyName, newProperty) {
+  updateBackendConfig (configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj[configPropertyName] = newProperty;
     this.setState({ backendConfig: oldConfigObj });
   }
 
-  /**
- * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
- * @param {string} configPropertyName - The property that is to be changed in the backendConfig
- * @param {any} newProperty - The new value of the property
- * @memberof OI4Base
- */
+    /**
+   * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
+   * @param {string} configPropertyName - The property that is to be changed in the backendConfig
+   * @param {any} newProperty - The new value of the property
+   * @memberof OI4Base
+   */
   updateFrontendConfig(configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
     oldConfigObj[configPropertyName] = newProperty;
