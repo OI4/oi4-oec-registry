@@ -70,12 +70,16 @@ export class Registry extends EventEmitter {
     this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
     this.fileLogger = new FileLogger(this.config.logFileSize, true);
-    setInterval(
-      () => {
-        globIndex = globIndex + 1;
-        this.testLogger.log(globIndex.toString());
-      },
-      100);
+
+    if (this.testLogger.enabled) {
+      setInterval(
+        () => {
+          globIndex = globIndex + 1;
+          this.testLogger.log(globIndex.toString());
+        },
+        100);
+    }
+
     this.queue = new SequentialTaskQueue();
     this.containerState = contState;
     this.containerState.publicationList.publicationList.push({
