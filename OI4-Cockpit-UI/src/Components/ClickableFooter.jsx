@@ -201,8 +201,8 @@ export class ClickableFooter extends React.Component {
                           <li>
                             Count of shown Audit Elements:
                             <Select
-                              value={this.props.config.globalEventListLength || ''}
-                              onChange={ (ev) => this.props.updateFrontendConfig('globalEventListLength', ev.target.value) }
+                              value={this.props.config.auditTrailLength || ''}
+                              onChange={ (ev) => this.props.updateFrontendConfig('auditTrailLength', ev.target.value) }
                               style={{ marginLeft: '10px', marginRight: '10px' }}
                             >
                               <MenuItem value={25}>25</MenuItem>

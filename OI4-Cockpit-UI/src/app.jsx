@@ -131,7 +131,7 @@ class OI4Base extends React.Component {
       conformityLookup: {},
       footerExpanded: false,
       config: {
-        globalEventListLength: 25,
+        auditTrailLength: 25,
       },
       backendConfig: {
         auditLevel: 'trace',
@@ -676,7 +676,7 @@ class OI4Base extends React.Component {
       console.log(JSON.parse(JSON.stringify(this.state.backendConfig)));
       console.log('New config');
       console.log(confObj);
-      if (!(this.checkObjectPropertyType(confObj.config, 'globalEventListLength', 'number'))) return;
+      if (!(this.checkObjectPropertyType(confObj.config, 'auditTrailLength', 'number'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'showRegistry', 'boolean'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logToFile', 'string'))) return;
@@ -691,7 +691,7 @@ class OI4Base extends React.Component {
    * @memberof OI4Base
    */
   updateGlobalEventTrail() {
-    this.fetch.get(`/registry/event/${this.state.config.globalEventListLength}`)
+    this.fetch.get(`/registry/event/${this.state.config.auditTrailLength}`)
       .then(data => {
         this.setState({ globalEventTrail: JSON.parse(data) });
       });
