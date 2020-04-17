@@ -5,6 +5,7 @@ import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayloa
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
+import { FileLogger } from '../../Service/Utilities/FileLogger/index';
 import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/Utilities/Logger';
 import { IConformity } from '../Models/IConformityValidator';
@@ -12,17 +13,14 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
 import dataSetClassIds = require('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
-import { fstatSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
-const rootdir = './logs';
 let globIndex = 0;
 
 export class Registry extends EventEmitter {
   private assetLookup: IDeviceLookup;
   private registryClient: mqtt.AsyncClient;
   private globalEventList: IEventObject[];
-  private newEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
   private testLogger: Logger;
@@ -38,13 +36,11 @@ export class Registry extends EventEmitter {
     EAuditLevel.debug,
     EAuditLevel.trace,
   ];
-  private currentlyUsedFiles: string[];
-  private currentlyUsedIndex: number;
-  private currentFd: number;
   private fileCount: number;
   private logHappened: boolean;
   private containerState: IContainerState;
   private maxAuditTrailElements: number;
+  private fileLogger: FileLogger;
 
   private flushTimeout: any;
 
@@ -62,8 +58,18 @@ export class Registry extends EventEmitter {
     super();
     const appId = contState.appId;
     this.appId = appId;
+
+    this.config = {
+      logToFile: 'disabled',
+      developmentMode: false,
+      logFileSize: 250000,
+      auditLevel: EAuditLevel.warn,
+      showRegistry: true,
+    }; // TODO: need solid model and good default values for this...
+
     this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, appId, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, appId, 'Registry');
+    this.fileLogger = new FileLogger(this.config.logFileSize, true);
     setInterval(
       () => {
         globIndex = globIndex + 1;
@@ -84,23 +90,10 @@ export class Registry extends EventEmitter {
     this.timeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
-    this.newEventList = [];
     this.assetLookup = {};
     this.fileCount = 4;
-    this.maxAuditTrailElements = 1000;
+    this.maxAuditTrailElements = 100;
     this.logHappened = false;
-    this.config = {
-      logToFile: 'disabled',
-      developmentMode: false,
-      logFileSize: 250000,
-      auditLevel: EAuditLevel.warn,
-      showRegistry: true,
-    }; // TODO: need solid model and good default values for this...
-
-    this.currentlyUsedFiles = [];
-    this.currentlyUsedIndex = 0;
-    this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${this.getCurrentTimestamp()}.reglog`;
-    this.currentFd = 0;
 
     this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Better system for appId!
 
@@ -132,108 +125,30 @@ export class Registry extends EventEmitter {
     return await this.registryClient.subscribe(topic);
   }
 
-  private async ownUnsubscribe(topic: string) {
-    // Remove from subscriptionList
-    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
-    return await this.registryClient.unsubscribe(topic);
-  }
-
-  private getFilesFromPath(path: string, extension: string) {
-    const dir = readdirSync(path);
-    return dir.filter(elm => elm.match(new RegExp(`.*\.(${extension})$`, 'ig')));
-  }
-
-  private getCurrentTimestamp() {
-    let rightNow = new Date().toISOString();
-    rightNow = rightNow.replace(/-/g, '');
-    rightNow = rightNow.replace(/:/g, '');
-    rightNow = rightNow.replace(/\./g, 'MS');
-    return rightNow;
-  }
-
-  deleteFiles() { // As a safety measure, delete all files when we are changing fileSize
-    const reglogArr = this.getFilesFromPath(rootdir, 'reglog');
-    for (const reglogs of reglogArr) {
-      try {
-        console.log(`Deleting ${reglogs}`);
-        unlinkSync(`${rootdir}/${reglogs}`); // Delete old file
-      } catch (e) {
-        if (e.code === 'ENOENT') {
-          // That's ok, no need to delete a non-existing file
-        } else {
-          console.log(e);
-        }
-      }
-    }
-    return reglogArr;
-  }
-
-  private flushToLogfile() { // TODO: Change fileOperations to Async
-    console.log('_____-------_______------FLUSH CALLED------______-----_____');
+  private flushToLogfile() {
     if (this.config.logToFile === 'enabled') {
       if (!this.logHappened) {
         console.log('no logs happened in the past minute... returning...');
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
         return;
       }
-      console.log('log to file enabled');
-      console.log(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`);
-      this.currentFd = openSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`, 'a');
-      let fsObj = fstatSync(this.currentFd);
-      // console.log(fsObj);
-      // console.log(fsObj.isFile());
-      if (fsObj.size === 0) {
-        appendFileSync(this.currentFd, '['); // Start of the file, open Array
-        fsObj = fstatSync(this.currentFd);
-      }
-      if (fsObj.size >= (this.config.logFileSize / this.fileCount)) { // Size is bigger than an individual file may be
-        for (const entries of this.globalEventList) { // Flush last entries... TODO: need to find a better way to do this instead of doubling the code
-          if (fsObj.size !== 1) { // Only '[' in the file
-            appendFileSync(this.currentFd, ','); // Separator between Objects
-            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
-          } else {
-            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
-            fsObj = fstatSync(this.currentFd);
-          }
-
-        }
-        if (this.currentlyUsedIndex < this.fileCount - 1) { // Increment current file counter
-          this.currentlyUsedIndex = this.currentlyUsedIndex + 1;
-        } else {
-          this.currentlyUsedIndex = 0; // Round trip
-        }
-        if (typeof this.currentlyUsedFiles[this.currentlyUsedIndex] !== 'undefined') { // Old file exists
-          try {
-            unlinkSync(`${rootdir}/${this.currentlyUsedFiles[this.currentlyUsedIndex]}`); // Delete old file
-          } catch (e) {
-            console.log('something went wrong with file deletion');
-            if (e.code === 'ENOENT') {
-              // That's ok, no need to delete a non-existing file
-              this.logger.log('Trying to delete an already deleted files in flushToFile', ESubResource.warn);
-            } else {
-              console.log(e);
-            }
-          }
-        }
-        this.currentlyUsedFiles[this.currentlyUsedIndex] = `RegistryLog_${this.currentlyUsedIndex}_${this.getCurrentTimestamp()}.reglog`; // Set new filename, will be created with next openSync
-        appendFileSync(this.currentFd, ']'); // Close Array
-      } else {
-        for (const entries of this.globalEventList) {
-          if (fsObj.size !== 1) { // Only '[' in the file
-            appendFileSync(this.currentFd, ','); // Separator between Objects
-            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
-          } else {
-            appendFileSync(this.currentFd, JSON.stringify(entries, null, 2));
-            fsObj = fstatSync(this.currentFd);
-          }
-
-        }
-      }
-      this.logHappened = false; // Reset LogHappened
+      this.logger.log('Filelogger enable --- calling flushToLogfile', ESubResource.info);
+      this.fileLogger.flushToLogfile(this.globalEventList);
+      this.globalEventList = []; // We flushed the logs, so we can clear our rambuffer
+      this.logHappened = false;
       this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
-      closeSync(this.currentFd);
-      this.globalEventList = [];
+    } else {
+      // If we have too many elements in the list, we purge them so we can add new ones
+      for (let it = 0; it <= (this.globalEventList.length - this.maxAuditTrailElements) + 1; it = it + 1) {
+        this.globalEventList.shift();
+      }
     }
+  }
+
+  private async ownUnsubscribe(topic: string) {
+    // Remove from subscriptionList
+    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    return await this.registryClient.unsubscribe(topic);
   }
 
   /**
@@ -281,20 +196,9 @@ export class Registry extends EventEmitter {
       if (this.globalEventList.length >= this.maxAuditTrailElements) {
         // If we have too many elements in the list, we purge them
         clearTimeout(this.flushTimeout);
-        this.flushToLogfile();
+        this.flushToLogfile(); // This will also shift the array if there are too many entries!
       }
-      this.globalEventList.push({
-        ...parsedPayload,
-        Tag: oi4Id,
-        Timestamp: networkMessage.Messages[0].Timestamp,
-      });
-      if (this.newEventList.length >= this.maxAuditTrailElements) {
-        // If we have too many elements in the list, we purge them
-        for (let it = 0; it <= (this.globalEventList.length - this.maxAuditTrailElements) + 1; it = it + 1) {
-          this.newEventList.shift();
-        }
-      }
-      this.newEventList.push({
+      this.globalEventList.push({ // So we have space for this payload!
         ...parsedPayload,
         Tag: oi4Id,
         Timestamp: networkMessage.Messages[0].Timestamp,
@@ -735,6 +639,10 @@ export class Registry extends EventEmitter {
         }
       }
     }
+  }
+
+  deleteFiles() {
+
   }
 
   /**
