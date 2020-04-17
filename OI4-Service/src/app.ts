@@ -120,7 +120,7 @@ for (const resources of resourceList) {
 
 webClient.get('/registry/event/:noOfElements', (deviceEventReq, deviceEventResp) => {
   const noOfElements = deviceEventReq.params.noOfElements;
-  deviceEventResp.send(JSON.stringify(registry.getEventTrail(parseInt(noOfElements))));
+  deviceEventResp.send(JSON.stringify(registry.getEventTrail(parseInt(noOfElements, 10))));
 });
 
 // -------- Conformity Checker Application (Used to be ConformityValidator instance, now we use the Registry)

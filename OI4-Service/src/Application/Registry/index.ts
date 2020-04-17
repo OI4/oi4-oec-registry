@@ -147,9 +147,9 @@ export class Registry extends EventEmitter {
 
   private getCurrentTimestamp() {
     let rightNow = new Date().toISOString();
-    rightNow = rightNow.replace(/-/g, "");
-    rightNow = rightNow.replace(/:/g, "");
-    rightNow = rightNow.replace(/\./g, "MS");
+    rightNow = rightNow.replace(/-/g, '');
+    rightNow = rightNow.replace(/:/g, '');
+    rightNow = rightNow.replace(/\./g, 'MS');
     return rightNow;
   }
 
@@ -173,7 +173,7 @@ export class Registry extends EventEmitter {
   private flushToLogfile() { // TODO: Change fileOperations to Async
     console.log('_____-------_______------FLUSH CALLED------______-----_____');
     if (this.config.logToFile === 'enabled') {
-      if (this.logHappened === false) {
+      if (!this.logHappened) {
         console.log('no logs happened in the past minute... returning...');
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
         return;
@@ -527,7 +527,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     await this.registryClient.publish(
       `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
     );
   }
 
@@ -570,7 +570,7 @@ export class Registry extends EventEmitter {
       // Publish the new publicationList according to spec
       this.registryClient.publish(
         `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
       );
       this.logger.log(`Deleted App: ${device}`, ESubResource.info);
     } else if (device in this.deviceLookup) {
@@ -587,7 +587,7 @@ export class Registry extends EventEmitter {
       // Publish the new publicationList according to spec
       this.registryClient.publish(
         `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
       );
       this.logger.log(`Deleted Device: ${device}`, ESubResource.info);
     } else {
@@ -612,7 +612,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     this.registryClient.publish(
       `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
     );
     this.applicationLookup = {}; // Clear application lookup
 
@@ -629,7 +629,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     this.registryClient.publish(
       `oi4/Registry/${this.appId}/pub/publicationList/${this.appId}`,
-      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList))
+      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
     );
 
     this.deviceLookup = {}; // Clear device lookup
@@ -892,9 +892,8 @@ export class Registry extends EventEmitter {
   public getEventTrail(noOfElements: number) {
     if (this.globalEventList.length <= noOfElements) {
       return this.globalEventList;
-    } else {
-      return this.globalEventList.slice(this.globalEventList.length - noOfElements, this.globalEventList.length);
-    }
+    } // else
+    return this.globalEventList.slice(this.globalEventList.length - noOfElements, this.globalEventList.length);
   }
 
   /**
