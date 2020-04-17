@@ -119,12 +119,13 @@ class ExpansionTableDetail extends React.Component {
               {this.ownJsonViewer(this.props.asset.resources.mam)}
             </Paper>
           </div>
-          <div>
+          {this.props.expertMode ? <div>
             <h3>Detailed Profile (Debugging):</h3>
             <Paper className={classes.paper}>
               {this.ownJsonViewer(this.props.asset.resources.profile)}
             </Paper>
           </div>
+          : null}
           <div>
             <h3>Conformity Validation:
                 <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>

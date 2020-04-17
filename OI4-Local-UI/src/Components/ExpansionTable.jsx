@@ -206,6 +206,7 @@ class ExpansionTable extends React.Component {
                               <ExpansionTableDetail
                                 asset={this.props.assetLookup[oi4Id]}
                                 conformityLookup={this.props.conformityLookup}
+                                expertMode={this.props.expertMode}
                                 oi4Id={oi4Id}
                                 assetLookup={this.props.assetLookup}
                                 updateConformity={this.updateConformity.bind(this)}
