@@ -186,10 +186,11 @@ export class ConformityValidator extends EventEmitter {
 
       conformityObject.checkedResourceList = checkedList;
 
+      // Actually start checking the resources
       for (const resource of checkedList) {
         let validity: EValidity = EValidity.nok;
         try {
-          if (resource === 'profile') continue;
+          if (resource === 'profile') continue; // We already checked profile
           if (resource === 'license') { // License is a different case. We actually need to parse the return value here
             resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
             validity = resObj.eRes;
@@ -203,9 +204,14 @@ export class ConformityValidator extends EventEmitter {
               validity = resObj.eRes;
             }
           } else {
-            resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
+            if (resource === 'publicationList' || resource === 'subscriptionList') {
+              resObj = await this.checkResourceConformity(fullTopic, '', resource) as IResultObject;
+            } else {
+              resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IResultObject;
+            }
             validity = resObj.eRes;
           }
+          
           if (validity === EValidity.ok) { // Set the validity according to the results
             conformityObject.resource[resource] = {
               validity: EValidity.ok,
@@ -264,11 +270,17 @@ export class ConformityValidator extends EventEmitter {
    * @param resource - the resource that is to be checked (health, license, etc...)
    */
   async checkResourceConformity(fullTopic: string, tag: string, resource: string) {
+    let endTag = '';
+    if (tag === '') {
+      endTag = tag;
+    } else {
+      endTag = `/${tag}`
+    }
     const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, dscids[resource]);
     this.conformityClient.once('message', async (topic, rawMsg) => {
-      await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}/${tag}`);
+      await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}${endTag}`);
       this.logger.log(`Received conformity message on ${resource} from ${tag}`, ESubResource.info);
-      if (topic === `${fullTopic}/pub/${resource}/${tag}`) {
+      if (topic === `${fullTopic}/pub/${resource}${endTag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
         let networkMessageValidationResult;
@@ -328,16 +340,16 @@ export class ConformityValidator extends EventEmitter {
         // This way, ONLY the corresponding Conformity gets updated!
       }
     });
-    await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}/${tag}`);
-    await this.conformityClient.publish(`${fullTopic}/get/${resource}/${tag}`, JSON.stringify(conformityPayload));
-    this.logger.log(`Trying to validate resource ${resource} on ${fullTopic}/get/${resource}/${tag}`, ESubResource.info);
+    await this.conformityClient.subscribe(`${fullTopic}/pub/${resource}${endTag}`);
+    await this.conformityClient.publish(`${fullTopic}/get/${resource}${endTag}`, JSON.stringify(conformityPayload));
+    this.logger.log(`Trying to validate resource ${resource} on ${fullTopic}/get/${resource}${endTag}`, ESubResource.info);
     return await promiseTimeout(new Promise((resolve, reject) => {
       this.once(`${resource}${fullTopic}Success`, (res) => {
         resolve(res);
       });
     }),
       700, /*tslint:disable-line*/ // 700ms as the timeout
-      `checkResourceConformity-${resource}Error-onTopic-${fullTopic}/get/${resource}/${tag}`, /*tslint:disable-line*/
+      `checkResourceConformity-${resource}Error-onTopic-${fullTopic}/get/${resource}${endTag}`, /*tslint:disable-line*/
     );
 
   }
