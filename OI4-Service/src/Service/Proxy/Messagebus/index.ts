@@ -7,7 +7,7 @@ import { Logger } from '../../Utilities/Logger/index';
 import { EDeviceHealth, ESubResource, IDataSetClassIds, ESubscriptionListConfig } from '../../Models/IContainer';
 
 // DSCIds
-import dataSetClassIds = require ('../../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
+import dataSetClassIds = require('../../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 interface TMqttOpts {
@@ -151,7 +151,7 @@ class OI4MessageBusProxy extends OI4Proxy {
             }
             case 'licenseText': {
               if (topicTag !== '') {
-                await this.sendLicenseText(topicTag, parsedMessage.MessageId);
+                await this.sendResource('licenseText', parsedMessage.MessageId, topicTag);
               }
               break;
             }
@@ -175,13 +175,13 @@ class OI4MessageBusProxy extends OI4Proxy {
             }
             case 'publicationList': {
               if (topicTag !== '') {
-                await this.sendResource('publicationList', parsedMessage.MessageId);
+                await this.sendResource('publicationList', parsedMessage.MessageId, '');
               }
               break;
             }
             case 'subscriptionList': {
               if (topicTag !== '') {
-                await this.sendResource('subscriptionList', parsedMessage.MessageId);
+                await this.sendResource('subscriptionList', parsedMessage.MessageId, '');
               }
               break;
             }
@@ -330,28 +330,35 @@ class OI4MessageBusProxy extends OI4Proxy {
    * Sends the saved Resource from containerState to the message bus
    * @param resource - the resource that is to be sent to the bus (health, license etc.)
    * @param messageId - the messageId that was sent to us with the request. If it's present, we need to put it into the correlationID of our response
+   * @param [tag] - the tag of the resource
    */
-  async sendResource(resource: string, messageId: string = '') {
+  async sendResource(resource: string, messageId: string = '', tag?: string) {
+    let endTag = '';
+    let payload = {};
     if (hasKey(this.containerState, resource)) {
+      if (resource === 'licenseText') { // FIXME: REMOVE THE HOTFIX AND BUILD A CHECKER INTO OPCUABUILDER..
+        if (typeof tag !== 'undefined') {  
+          if (typeof this.containerState.licenseText[tag] === 'undefined') {
+            return;
+          } else {
+            payload = { licText: this.containerState.licenseText[tag] }; // licenseText is special...
+          }
+        }
+      } else {
+        payload = this.containerState[resource];
+      }
+      if (typeof tag === 'undefined') {
+        endTag = `/${this.appId}`;
+      } else if (tag === '') {
+        endTag = tag;
+      } else {
+        endTag = `/${tag}`;
+      }
       await this.client.publish(
-        `${this.standardRoute}/pub/${resource}/${this.appId}`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState[resource], new Date(), dscids[resource], messageId)));
-      this.logger.log(`Published ${resource} on ${this.standardRoute}/pub/${resource}/${this.appId}`);
+        `${this.standardRoute}/pub/${resource}${endTag}`,
+        JSON.stringify(this.builder.buildOPCUADataMessage(payload, new Date(), dscids[resource], messageId)));
+      this.logger.log(`Published ${resource} on ${this.standardRoute}/pub/${resource}${endTag}`);
     }
-  }
-
-  /**
-   * Sends the licenseText specific to the license of the containerState to the message bus
-   * TODO: Maybe cover this in the sendResource function?
-   * @param license - the license of which the text is requested
-   * @param messageId - the messageId that was sent to us with the request. If it's present, we need to put it into the correlationID of our response
-   */
-  async sendLicenseText(license: string, messageId: string = '') {
-    if (typeof this.containerState.licenseText[license] === 'undefined') { // FIXME: REMOVE THE HOTFIX AND BUILD A CHECKER INTO OPCUABUILDER
-      return;
-    }
-    await this.client.publish(`${this.standardRoute}/pub/licenseText/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({ licText: this.containerState.licenseText[license] }, new Date(), dscids.licenseText, messageId)));
-    this.logger.log(`Published LicenseText on ${this.standardRoute}/pub/licenseText/${this.appId}`);
   }
 
   /**
