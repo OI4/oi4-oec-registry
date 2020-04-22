@@ -677,10 +677,26 @@ class OI4Base extends React.Component {
       console.log('New config');
       console.log(confObj);
       if (!(this.checkObjectPropertyType(confObj.config, 'auditTrailLength', 'number'))) return;
+      if (![25, 50, 100, 200, 400].includes(confObj.config.auditTrailLength)) {
+        console.log(`${confObj.config.auditTrailLength} not part of auditTrailLength-array`);
+        return;
+      }
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
+      if (!['trace', 'debug', 'info', 'warn', 'error', 'fatal'].includes(confObj.backendConfig.auditLevel)) {
+        console.log(`${confObj.backendConfig.auditLevel} not part of auditLevel-array`);
+        return;
+      }
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'showRegistry', 'boolean'))) return;
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logToFile', 'string'))) return;
+      if (!['enabled', 'disabled', 'endpoint'].includes(confObj.backendConfig.logToFile)) {
+        console.log(`${confObj.backendConfig.logToFile} not part of logToFile-array`);
+        return;
+      }
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logFileSize', 'number'))) return;
+      if (![250, 500, 750, 1000, 2000, 3000, 4000, 5000, 7500, 10000].includes(confObj.backendConfig.logFileSize)) {
+        console.log(`${confObj.backendConfig.logFileSize} not part of logFileSize-array`);
+        return;
+      }
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'developmentMode', 'boolean'))) return;
       this.setState({ config: confObj.config, backendConfig: confObj.backendConfig });
     };
