@@ -27,7 +27,9 @@ import {
   TableRow,
   IconButton,
   Snackbar,
-  Tooltip
+  Tooltip,
+  TextField,
+  InputAdornment,
 } from '@material-ui/core';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -37,6 +39,7 @@ import {
   ExpandMore,
   FileCopy,
   Close,
+  Search,
 } from '@material-ui/icons';
 
 import _ from 'lodash';
@@ -146,6 +149,7 @@ class OI4Base extends React.Component {
       bigLogo: oi4BigLogoLight,
       globalEventTrail: [],
       updatingConformity: false,
+      filterWord: '',
     };
 
     this.controller = new AbortController();
@@ -196,12 +200,25 @@ class OI4Base extends React.Component {
     }
   }
 
+  handleFilterChange(ev) {
+    this.setState({ filterWord: ev.target.value });
+  }
+
   /**
    * Main render method of the entrypoint
    * @memberof OI4Base
    */
   render() {
     const { classes } = this.props;
+    const filteredTrail = this.state.globalEventTrail // TODO: Maybe get this to another place?
+    .filter((item) => {
+      if (this.state.filterWord === '') return true;
+      if (item.Tag.includes(this.state.filterWord)) return true;
+      if (item.description.includes(this.state.filterWord)) return true;
+      if (item.number.toString().includes(this.state.filterWord)) return true;
+      if (JSON.stringify(item.payload).includes(this.state.filterWord)) return true;
+      return false;
+    });
     return (
       <React.Fragment>
         <MuiThemeProvider theme={this.state.theme}>
@@ -243,9 +260,28 @@ class OI4Base extends React.Component {
                 clearAsset={this.clearAssetById.bind(this)}
               />
               <ExpansionPanel>
-                <ExpansionPanelSummary expandIcon={<ExpandMore />}> Global Event Trail: ({this.state.globalEventTrail.length} entries)</ExpansionPanelSummary>
+                <ExpansionPanelSummary expandIcon={<ExpandMore />}>
+                  Global Event Trail: ({this.state.globalEventTrail.length} entries)
+                  <TextField
+                    id='filterText'
+                    value={this.state.filterWord}
+                    onChange={this.handleFilterChange.bind(this)}
+                    onClick={(ev) => ev.stopPropagation()}
+                    onFocus={(ev) => ev.stopPropagation()}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <Search />
+                        </InputAdornment>
+                      ),
+                    }}
+                    placeholder='Filtertext'
+                    style={{ marginLeft: 'auto', minWidth: '80px', maxWidth: '200px' }}
+                    color='secondary'
+                  />
+                </ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
-                  {this.displayGlobalEvents(this.state.globalEventTrail)}
+                  {this.displayGlobalEvents(filteredTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
 
@@ -302,9 +338,9 @@ class OI4Base extends React.Component {
    */
   clearAllLogs() {
     this.fetch.delete(`/registry/logs`)
-    .then(data => {
-      console.log(data);
-    });
+      .then(data => {
+        console.log(data);
+      });
   }
 
   /**
@@ -597,18 +633,18 @@ class OI4Base extends React.Component {
    * @param {any} newProperty - The new value of the property
    * @memberof OI4Base
    */
-  updateBackendConfig (configPropertyName, newProperty) {
+  updateBackendConfig(configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
     oldConfigObj[configPropertyName] = newProperty;
     this.setState({ backendConfig: oldConfigObj });
   }
 
-    /**
-   * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
-   * @param {string} configPropertyName - The property that is to be changed in the backendConfig
-   * @param {any} newProperty - The new value of the property
-   * @memberof OI4Base
-   */
+  /**
+ * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
+ * @param {string} configPropertyName - The property that is to be changed in the backendConfig
+ * @param {any} newProperty - The new value of the property
+ * @memberof OI4Base
+ */
   updateFrontendConfig(configPropertyName, newProperty) {
     const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
     oldConfigObj[configPropertyName] = newProperty;
