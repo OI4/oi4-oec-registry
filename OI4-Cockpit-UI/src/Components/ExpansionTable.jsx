@@ -75,6 +75,7 @@ class ExpansionTable extends React.Component {
         3: '❌',
       },
       filterWord: '',
+      filterWordEvent: '',
     };
   }
 
@@ -219,10 +220,34 @@ class ExpansionTable extends React.Component {
                               fontColor={this.props.fontColor}
                               updatingConformity={this.props.updatingConformity}
                             />
-                            <div>
+                            <div style={{ display: 'flex' }}>
                               <h3>{`Last ${this.props.assetLookup[oi4Id].eventList.length} Events:`}</h3>
-                              {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList)}
-                            </div>
+                              <TextField
+                                id='filterText'
+                                value={this.state.filterWordEvent}
+                                onChange={this.handleFilterEventChange.bind(this)}
+                                onClick={(ev) => ev.stopPropagation()}
+                                onFocus={(ev) => ev.stopPropagation()}
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position='end'>
+                                      <Search />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                placeholder='Filtertext'
+                                style={{ marginLeft: 'auto', minWidth: '80px', maxWidth: '200px' }}
+                                color='secondary'
+                              />
+                              </div>
+                              {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList.filter((item) => {
+                                if (this.state.filterWordEvent === '') return true;
+                                if (item.Tag.includes(this.state.filterWordEvent)) return true;
+                                if (item.description.includes(this.state.filterWordEvent)) return true;
+                                if (item.number.toString().includes(this.state.filterWordEvent)) return true;
+                                if (JSON.stringify(item.payload).includes(this.state.filterWordEvent)) return true;
+                                return false;
+                              }))}
                           </div>
                         </Collapse>
                       </TableCell>
@@ -394,6 +419,10 @@ class ExpansionTable extends React.Component {
 
   handleFilterChange(ev) {
     this.setState({ filterWord: ev.target.value });
+  }
+
+  handleFilterEventChange(ev) {
+    this.setState({ filterWordEvent: ev.target.value });
   }
 }
 
