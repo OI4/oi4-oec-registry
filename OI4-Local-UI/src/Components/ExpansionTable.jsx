@@ -409,12 +409,12 @@ class ExpansionTable extends React.Component {
    * Callback handler in order to update the conformity of a buttonpress.
    * Calls the parent callback to handle the function.
    * @param {string} fullTopic
-   * @param {string} appId
+   * @param {string} oi4Id
    * @memberof ExpansionTable
    */
-  updateConformity(fullTopic, appId) {
-    console.log(`Updating Conformity for ${fullTopic} with appId: ${appId} FROM EXPANSTIONTABLE COMPONENT`);
-    this.props.updateConformity(fullTopic, appId);
+  updateConformity(fullTopic, oi4Id) {
+    console.log(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id} FROM EXPANSTIONTABLE COMPONENT`);
+    this.props.updateConformity(fullTopic, oi4Id);
   }
 
   handleFilterChange(ev) {

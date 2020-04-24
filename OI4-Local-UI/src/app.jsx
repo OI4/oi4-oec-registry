@@ -125,7 +125,7 @@ class OI4Base extends React.Component {
     /* eslint-enable */
 
     this.state = {
-      appId: 'empty',
+      oi4Id: 'empty',
       copySnackOpen: false,
       applicationLookup: {},
       deviceLookup: {},
@@ -173,17 +173,7 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
-    // If we start out with a couple of applications, we should update their conformity right away
-    // setTimeout(() => {
-    //   for (const oi4Id of Object.keys(this.state.applicationLookup)) {
-    //     this.updateConformity(this.state.applicationLookup[oi4Id].fullDevicePath, this.state.applicationLookup[oi4Id].appId);
-    //   }
-    //   for (const oi4Id of Object.keys(this.state.deviceLookup)) {
-    //     this.updateConformity(this.state.deviceLookup[oi4Id].fullDevicePath, this.state.deviceLookup[oi4Id].appId);
-    //   }
-    // },
-    //   2000);
-    setTimeout(() => { this.updateAppID() }, 300); // This will retrieve the AppID of the registry itself.
+    setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
     setTimeout(() => {
       this.toggleTheme();
     },
@@ -425,15 +415,14 @@ class OI4Base extends React.Component {
   /**
    * Updates the conformity of the specified asset via the Registry API
    * @param {string} fullTopic - The full topic pointing to the asset
-   * @param {string} appId - The appId of the asset
+   * @param {string} oi4Id - The oi4Id of the asset
    * @memberof OI4Base
    */
-  updateConformity(fullTopic, appId) {
+  updateConformity(fullTopic, oi4Id) {
     this.setState({ updatingConformity: true });
-    console.log(`Updating Conformity for ${fullTopic} with appId: ${appId}`);
-    const oi4Id = appId;
+    console.log(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id}`);
     if (this.state.backendConfig.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
-      this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
+      this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
         .then(data => {
           this.setState({ updatingConformity: false });
           const jsonData = JSON.parse(data);
@@ -443,7 +432,7 @@ class OI4Base extends React.Component {
           this.setState({ conformityLookup: confLookup, updatingConformity: false });
         });
     } else { // If not, retrieve only mandatory conformity values
-      this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(appId)}`)
+      this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
         .then(data => {
           this.setState({ updatingConformity: false });
           const jsonData = JSON.parse(data);
@@ -615,14 +604,14 @@ class OI4Base extends React.Component {
   }
 
   /**
-   * Fetch the AppID of the Registry itself
+   * Fetch the oi4Id of the Registry itself
    * @memberof OI4Base
    */
-  updateAppID() {
+  updateOi4Id() {
     this.fetch.get('')
       .then(data => {
         console.log(data);
-        this.setState({ appId: JSON.parse(data) });
+        this.setState({ oi4Id: JSON.parse(data) });
       });
   }
 
