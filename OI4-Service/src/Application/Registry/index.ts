@@ -436,7 +436,7 @@ export class Registry extends EventEmitter {
     });
     // Publish the new publicationList according to spec
     await this.registryClient.publish(
-      `oi4/Registry/${this.oi4Id}/pub/publicationList/${this.oi4Id}`,
+      `oi4/Registry/${this.oi4Id}/pub/publicationList`,
       JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
     );
   }
@@ -452,8 +452,7 @@ export class Registry extends EventEmitter {
       const assets = Object.assign({}, apps, devices);
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESubResource.debug);
       for (const device of Object.keys(assets)) {
-        // TODO: URL ENCODING??? --> Change productinstanceuri to oi4identifier
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].resources.mam.ProductInstanceUri}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].oi4Id, new Date(), dscids.mam)));
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].oi4Id, new Date(), dscids.mam)));
         this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
       }
     } else {
@@ -479,7 +478,7 @@ export class Registry extends EventEmitter {
       this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
       // Publish the new publicationList according to spec
       this.registryClient.publish(
-        `oi4/Registry/${this.oi4Id}/pub/publicationList/${this.oi4Id}`,
+        `oi4/Registry/${this.oi4Id}/pub/publicationList`,
         JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
       );
       this.logger.log(`Deleted App: ${device}`, ESubResource.info);
@@ -504,7 +503,7 @@ export class Registry extends EventEmitter {
     }
     // Publish the new publicationList according to spec
     this.registryClient.publish(
-      `oi4/Registry/${this.oi4Id}/pub/publicationList/${this.oi4Id}`,
+      `oi4/Registry/${this.oi4Id}/pub/publicationList`,
       JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
     );
     this.assetLookup = {}; // Clear application lookup
