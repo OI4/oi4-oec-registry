@@ -3,7 +3,7 @@
     "Locale": "en-US",
     "Text": "Hilscher"
   },
-  "ManufacturerUri": "http://hilscher.com",
+  "ManufacturerUri": "urn:hilscher.com",
   "Model": {
     "Locale": "en-US",
     "Text": "Registry Application"
