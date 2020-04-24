@@ -21,6 +21,10 @@ import {
   // InputAdornment,
 } from '@material-ui/core';
 
+import namur0 from '../Images/namur_0.png';
+import namur1 from '../Images/namur_1.png';
+import namur2 from '../Images/namur_2.png';
+
 import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
 
 function TabPanel(props) {
@@ -88,9 +92,12 @@ export class ClickableFooter extends React.Component {
                 Every recognized asset gets tested for a basic set of compatibility to Open Industry 4.0 Alliance specification. The result will be displayed as one of:
               </p>
               <ul>
-                <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
+                {/* <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
                 <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <span role='img' aria-label='warn'>⚠️</span></li>
-                <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li>
+                <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li> */}
+                <li>Fully passed all tests for GET/PUB methods and related payload formats: <img src={namur0} alt="Namur" height='25px' width='30px' /></li>
+                <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <img src={namur2} alt="Namur" height='25px' width='30px' /></li>
+                <li>Failed because mandatory GET methods are not answered: <img src={namur1} alt="Namur" height='25px' width='30px' /></li>
                 <li>Not yet tested (neither successful nor fail): <span role='img' aria-label='default'>❔</span></li>
               </ul>
               <p>

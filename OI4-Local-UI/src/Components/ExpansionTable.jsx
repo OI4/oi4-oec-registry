@@ -70,9 +70,9 @@ class ExpansionTable extends React.Component {
       tableName: `${this.props.lookupType.substring(0, 1).toUpperCase()}${this.props.lookupType.substring(1)} Table`, // First character to UpperCase, concatenate the rest
       validityLookup: {
         0: '❔',
-        1: '✅',
-        2: '⚠️',
-        3: '❌',
+        1: <img src={namur0} alt="Namur" height='25px' width='30px' />,
+        2: <img src={namur2} alt="Namur" height='25px' width='30px' />,
+        3: <img src={namur1} alt="Namur" height='25px' width='30px' />,
       },
       filterWord: '',
       filterWordEvent: '',

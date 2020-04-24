@@ -58,9 +58,9 @@ class ExpansionTableDetail extends React.Component {
       // Maps the validity numbers to emojis
       validityLookup: {
         0: '❔',
-        1: '✅',
-        2: '⚠️',
-        3: '❌',
+        1: <img src={namur0} alt="Namur" height='25px' width='30px' />,
+        2: <img src={namur2} alt="Namur" height='25px' width='30px' />,
+        3: <img src={namur1} alt="Namur" height='25px' width='30px' />,
       },
       copySnackOpen: false,
     };
