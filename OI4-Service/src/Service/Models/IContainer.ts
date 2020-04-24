@@ -1,10 +1,4 @@
-import { IEnvironmentAppID } from './IEnvironment';
 import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel } from './IOPCUAPayload';
-
-export interface IContainerInfo {
-  serviceType: string;
-  appID: IEnvironmentAppID;
-}
 
 export interface IEventObject {
   originId?: string;
@@ -87,7 +81,7 @@ interface IPublicationListObject {
 }
 
 export interface IContainerState {
-  appId: string;
+  oi4Id: string;
   health: IContainerHealth;
   license: IContainerLicense;
   licenseText: IContainerLicenseText;

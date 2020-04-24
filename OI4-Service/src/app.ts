@@ -14,7 +14,7 @@ if (!(process.env.OI4_ADDR) || !(process.env.OI4_PORT) || !(process.env.CONTAINE
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 'Registry-Entrypoint', ESubResource.warn, busProxy.mqttClient, busProxy.appId, busProxy.serviceType);
+const logger = new Logger(true, 'Registry-Entrypoint', ESubResource.warn, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESubResource.fatal;
 logger.log(`Testprint for level ${ESubResource.trace}`, ESubResource.trace);
 logger.log(`Testprint for level ${ESubResource.debug}`, ESubResource.debug);
@@ -47,7 +47,7 @@ const webClient = webProxy.webClient;
 webClient.get('/registry/application', (deviceReq, deviceResp) => {
   const filteredApps = JSON.parse(JSON.stringify(registry.applications));
   if (!registry.getConfig().showRegistry) {
-    delete filteredApps[registry.getAppId()];
+    delete filteredApps[registry.getOi4Id()];
   }
   deviceResp.send(JSON.stringify(filteredApps));
 });

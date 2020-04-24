@@ -16,7 +16,7 @@ class OI4WebProxy extends OI4Proxy {
   constructor(container: IContainerState) {
     super(container);
     this.logger = new Logger(true, 'Registry-WebProxy', ESubResource.info);
-    this.logger.log(`WebProxy: Standardroute: ${this.standardRoute}`, ESubResource.info);
+    this.logger.log(`WebProxy: Standardroute: ${this.topicPreamble}`, ESubResource.info);
 
     this.client = express();
     this.client.use((initReq, initRes, initNext) => {
@@ -61,7 +61,7 @@ class OI4WebProxy extends OI4Proxy {
 
     // Handle Get Requests
     this.client.get('/', (indexReq, indexResp) => {
-      indexResp.send(JSON.stringify(this.appId));
+      indexResp.send(JSON.stringify(this.oi4Id));
     });
 
     this.client.get('/health', (healthReq, healthResp) => {

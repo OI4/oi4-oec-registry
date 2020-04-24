@@ -45,14 +45,14 @@ interface IOPCUABuilderProps {
 }
 
 export class OPCUABuilder {
-  appId: string;
+  oi4Id: string;
   serviceType: string;
   publisherId: string;
   jsonValidator: Ajv.Ajv;
-  constructor(appId: string, serviceType: string) {
-    this.appId = appId;
+  constructor(oi4Id: string, serviceType: string) {
+    this.oi4Id = oi4Id;
     this.serviceType = serviceType;
-    this.publisherId = `${serviceType}/${appId}`;
+    this.publisherId = `${serviceType}/${oi4Id}`;
     this.jsonValidator = new Ajv();
     // Add Validation Schemas
     // First common Schemas
@@ -131,7 +131,7 @@ export class OPCUABuilder {
    */
   private buildOPCUAData(actualPayload: any, timestamp: Date): IOPCUADataMessage {
     const opcUaDataPayload: IOPCUADataMessage = { // TODO: More elements
-      DataSetWriterId: this.appId,
+      DataSetWriterId: this.oi4Id,
       Timestamp: timestamp.toISOString(),
       Status: 0, // TODO switch to UASTATUSCODES
       Payload: actualPayload,

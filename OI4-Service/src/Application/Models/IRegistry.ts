@@ -16,9 +16,9 @@ import { IConformity } from './IConformityValidator';
 export interface IDeviceMessage {
   resources: IResourceObject;
   fullDevicePath: string;
-  appId: string;
+  oi4Id: string;
   eventList: IEventObject[];
-  originator: string;
+  oi4IdOriginator: string;
   lastMessage: string;
   registeredAt: string;
   conformityObject: IConformity;

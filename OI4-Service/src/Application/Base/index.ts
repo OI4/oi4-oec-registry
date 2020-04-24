@@ -139,7 +139,7 @@ export class BaseApplication {
     setInterval(() => { this.msgProxy.sendData('weatherData'); }, 10000);
     setInterval(() => { this.msgProxy.sendData('arrayData'); }, 10000);
     setInterval(() => { this.msgProxy.sendData('matrixData'); }, 10000);
-    setInterval(() => { this.msgProxy.sendEvent(`Ping from ${this.msgProxy.appId}: ${(Math.random() * 100).toString()} at ${new Date().toString()}`, ESubResource.info); }, 60000);
+    setInterval(() => { this.msgProxy.sendEvent(`Ping from ${this.msgProxy.oi4Id}: ${(Math.random() * 100).toString()} at ${new Date().toString()}`, ESubResource.info); }, 60000);
   }
 
   updateWeatherData() {

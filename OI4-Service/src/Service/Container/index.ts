@@ -21,7 +21,7 @@ import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel, EOPCUALocale } from '../
 import masterAssetModel from '../../Config/masterAssetModel.json'; /*tslint:disable-line*/
 
 class ContainerState extends ConfigParser implements IContainerState {
-  public appId: string;
+  public oi4Id: string; // TODO: doubling? Not needed here
   public health: IContainerHealth;
   public license: IContainerLicense;
   public licenseText: IContainerLicenseText;
@@ -39,10 +39,9 @@ class ContainerState extends ConfigParser implements IContainerState {
     this.mam = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
     this.mam.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
     this.mam.SerialNumber = process.env.CONTAINERNAME as string;
-
-    this.appId = `${encodeURIComponent(this.mam.ManufacturerUri)}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
+    // TODO: change manufacturerURI from http:// to urn: to avoid forward slashes
     this.mam.ProductInstanceUri = `${this.mam.ManufacturerUri}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
-
+    this.oi4Id = this.mam.ProductInstanceUri;
     this.health = {
       health: EDeviceHealth.NORMAL_0,
       healthState: 100,
@@ -265,8 +264,8 @@ class ContainerState extends ConfigParser implements IContainerState {
       }
       this.publicationList.publicationList.push({
         resource: resources,
-        tag: this.mam.ProductInstanceUri,
-        DataSetWriterId: this.mam.ProductInstanceUri,
+        tag: this.oi4Id,
+        DataSetWriterId: this.oi4Id,
         status: true,
         interval: resInterval,
         precision: 0,
@@ -274,7 +273,7 @@ class ContainerState extends ConfigParser implements IContainerState {
       });
 
       this.subscriptionList.subscriptionList.push({
-        topicPath: `oi4/${this.mam.DeviceClass}/${this.appId}/get/${resources}/${this.appId}`,
+        topicPath: `oi4/${this.mam.DeviceClass}/${this.oi4Id}/get/${resources}/${this.oi4Id}`,
         interval: 0,
         config: ESubscriptionListConfig.NONE_0,
       });

@@ -17,7 +17,7 @@ class Logger {
   private _level: ESubResource; /*tslint:disable-line*/
   private _name: string; /*tslint:disable-line*/
   private _mqttClient?: mqtt.AsyncClient;
-  private _appId?: string;
+  private _oi4Id?: string;
   private _serviceType?: string;
   private _builder?: OPCUABuilder;
   private readonly topicToEnum = {
@@ -29,7 +29,7 @@ class Logger {
     fatal: 5,
   };
 
-  constructor(enabled: boolean = true, name: string, level: ESubResource = ESubResource.info, mqttClient?: mqtt.AsyncClient, appId?: string, serviceType?: string) {
+  constructor(enabled: boolean = true, name: string, level: ESubResource = ESubResource.info, mqttClient?: mqtt.AsyncClient, oi4Id?: string, serviceType?: string) {
     /**
      * Enables or disables the logging. Default: `true`
      * @type {boolean}
@@ -50,9 +50,9 @@ class Logger {
     if (mqttClient) {
       this._mqttClient = mqttClient;
     }
-    if (appId) {
-      this._appId = appId;
-      this._builder = new OPCUABuilder(appId, 'Registry');
+    if (oi4Id) {
+      this._oi4Id = oi4Id;
+      this._builder = new OPCUABuilder(oi4Id, 'Registry');
     }
     if (serviceType) {
       this._serviceType = serviceType;
@@ -110,7 +110,7 @@ class Logger {
             }, new Date(), 'eventID'); /*tslint:disable-line*/
           }
           /* Optimistic log...if we want to be certain, we have to convert this to async */
-          this._mqttClient.publish(`oi4/${this._serviceType}/${this._appId}/pub/event/${level}/${this._appId}`, JSON.stringify(logPayload));
+          this._mqttClient.publish(`oi4/${this._serviceType}/${this._oi4Id}/pub/event/${level}/${this._oi4Id}`, JSON.stringify(logPayload));
         }
       }
     }

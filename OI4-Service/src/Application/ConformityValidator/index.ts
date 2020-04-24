@@ -67,7 +67,7 @@ export class ConformityValidator extends EventEmitter {
     'publicationList',
     'subscriptionList',
   ];
-  constructor(appId: string) {
+  constructor(oi4Id: string) {
     super();
     const serverObj = {
       host: process.env.OI4_ADDR as string,
@@ -75,13 +75,13 @@ export class ConformityValidator extends EventEmitter {
     };
 
     const mqttOpts: TMqttOpts = {
-      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}${appId as string}`,
+      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}${oi4Id as string}`,
       servers: [serverObj],
     };
     this.conformityClient = mqtt.connect(mqttOpts);
 
-    this.logger = new Logger(true, 'ConformityValidator-App', ESubResource.trace, this.conformityClient, appId, 'Utility');
-    this.builder = new OPCUABuilder(appId, 'Registry'); // TODO: Set appId to something useful
+    this.logger = new Logger(true, 'ConformityValidator-App', ESubResource.trace, this.conformityClient, oi4Id, 'Utility');
+    this.builder = new OPCUABuilder(oi4Id, 'Registry'); // TODO: Set oi4Id to something useful
 
     this.jsonValidator = new Ajv();
     // Add Validation Schemas
@@ -126,11 +126,10 @@ export class ConformityValidator extends EventEmitter {
    * If a resource passes, its entry in the conformity Object is set to 'OK', otherwise, the initialized 'NOK' values persist.
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
-  async checkConformity(fullTopic: string, appId: string, resourceList?: string[]) {
+  async checkConformity(fullTopic: string, oi4Id: string, resourceList?: string[]) {
     let mandatoryResourceList = ['mam', 'health', 'license', 'licenseText', 'profile', 'publicationList'];
     const ignoredResources = ['data', 'metadata', 'event'];
     const topicArray = fullTopic.split('/');
-    const oi4Id = appId;
     const originator = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
     if (originator !== oi4Id) { // FIXME: This needs to be changed to a real detection or a function parameter.
       // Not every unequal originator/device combo has to be device - application pair...
