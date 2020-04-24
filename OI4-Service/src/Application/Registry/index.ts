@@ -46,7 +46,7 @@ export class Registry extends EventEmitter {
 
   // Timeout container TODO: types
   private timeoutLookup: any;
-
+  private secondStageTimeoutLookup: any;
   private conformityValidator: ConformityValidator;
 
   /**
@@ -91,6 +91,7 @@ export class Registry extends EventEmitter {
       status: true,
     });
     this.timeoutLookup = {};
+    this.secondStageTimeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
     this.assetLookup = {};
@@ -225,6 +226,7 @@ export class Registry extends EventEmitter {
         this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESubResource.info);
         // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
         clearTimeout(this.timeoutLookup[oi4Id]);
+        clearTimeout(this.secondStageTimeoutLookup[oi4Id]);
         this.assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
         const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
         this.timeoutLookup[oi4Id] = timeout;
@@ -543,12 +545,23 @@ export class Registry extends EventEmitter {
  */
   async resourceTimeout(oi4Id: string, resource: string) {
     if (oi4Id in this.assetLookup) {
+      if (this.assetLookup[oi4Id].available === false) {
+        if (typeof this.assetLookup[oi4Id].resources.health !== 'undefined') {
+          this.assetLookup[oi4Id].resources.health = {
+            health: EDeviceHealth.FAILURE_1,
+            healthState: 0,
+          }
+        }
+        this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESubResource.warn);
+        return;
+      }
       await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
-      this.logger.log(`Timeout - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, ESubResource.warn);
-      this.assetLookup[oi4Id].available = false; // We timeouted, it's not available for the moment... TODO: Log if the device is really "gone"?
+      this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
+      this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESubResource.warn);
+      this.assetLookup[oi4Id].available = false;
     }
-    // this.healthTimeout = <any>setTimeout(() => this.updateResourceInDevice(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
   }
+
 
   /**
    * Updates the licenseText of a registered asset by publishing a /get/ request on the corresponding oi4-topic
