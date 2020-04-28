@@ -89,8 +89,8 @@ const lightTheme = createMuiTheme({
 
 const styles = theme => ({
   root: {
-    paddingLeft: '120px',
-    paddingRight: '120px',
+    paddingLeft: '3%',
+    paddingRight: '3%',
     display: 'flex',
     minHeight: '100vh',
     flexDirection: 'column',
@@ -169,7 +169,7 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 6000));
     this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 6000));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 7000));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 8500));
+    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 3500));
     this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
@@ -222,12 +222,12 @@ class OI4Base extends React.Component {
                   icon={<BrightnessHigh />}
                   checkedIcon={<Brightness3 />}
                   checked={this.state.darkActivated}
-                  style={{ right: '30px' }}
+                  style={{ right: '1%' }}
                   onChange={() => { this.toggleTheme() }}
                 />
               </Toolbar>
             </AppBar>
-            <div style={{ marginTop: '30px' }}>
+            <div style={{ marginTop: '5%' }}>
               <ExpansionTable
                 lookupType='application'
                 assetLookup={this.state.applicationLookup}
@@ -266,7 +266,7 @@ class OI4Base extends React.Component {
                       ),
                     }}
                     placeholder='Filtertext'
-                    style={{ marginLeft: 'auto', minWidth: '80px', maxWidth: '200px' }}
+                    style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
                     color='secondary'
                   />
                 </ExpansionPanelSummary>
