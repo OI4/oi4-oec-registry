@@ -333,12 +333,11 @@ class OI4MessageBusProxy extends OI4Proxy {
     let payload = {};
     if (hasKey(this.containerState, resource)) {
       if (resource === 'licenseText') { // FIXME: REMOVE THE HOTFIX AND BUILD A CHECKER INTO OPCUABUILDER..
-        if (typeof tag !== 'undefined') {  
+        if (typeof tag !== 'undefined') {
           if (typeof this.containerState.licenseText[tag] === 'undefined') {
             return;
-          } else {
-            payload = { licText: this.containerState.licenseText[tag] }; // licenseText is special...
           }
+          payload = { licText: this.containerState.licenseText[tag] }; // licenseText is special...
         }
       } else {
         payload = this.containerState[resource];

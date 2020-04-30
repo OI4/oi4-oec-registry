@@ -545,12 +545,12 @@ export class Registry extends EventEmitter {
  */
   async resourceTimeout(oi4Id: string, resource: string) {
     if (oi4Id in this.assetLookup) {
-      if (this.assetLookup[oi4Id].available === false) {
+      if (!this.assetLookup[oi4Id].available) {
         if (typeof this.assetLookup[oi4Id].resources.health !== 'undefined') {
           this.assetLookup[oi4Id].resources.health = {
             health: EDeviceHealth.FAILURE_1,
             healthState: 0,
-          }
+          };
         }
         this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESubResource.warn);
         return;
@@ -561,7 +561,6 @@ export class Registry extends EventEmitter {
       this.assetLookup[oi4Id].available = false;
     }
   }
-
 
   /**
    * Updates the licenseText of a registered asset by publishing a /get/ request on the corresponding oi4-topic

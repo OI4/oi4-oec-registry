@@ -65,5 +65,5 @@ export interface IRegistryConfig {
   logFileSize: number;
   auditLevel: string;
   showRegistry: boolean;
-  logToFile: string; //TODO: ENUM with either enabled, disabled or endpoint
+  logToFile: string; // TODO: ENUM with either enabled, disabled or endpoint
 }

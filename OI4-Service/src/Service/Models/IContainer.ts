@@ -75,7 +75,7 @@ interface IPublicationListObject {
   tag: string;
   DataSetWriterId: string; // Actually OI4-Identifier: TODO: Validator
   status: boolean;
-  interval: number; //UINT32
+  interval: number; // UINT32
   precision: number; // REAL
   config: EPublicationListConfig;
 }

@@ -210,7 +210,7 @@ export class ConformityValidator extends EventEmitter {
             }
             validity = resObj.eRes;
           }
-          
+
           if (validity === EValidity.ok) { // Set the validity according to the results
             conformityObject.resource[resource] = {
               validity: EValidity.ok,
@@ -273,7 +273,7 @@ export class ConformityValidator extends EventEmitter {
     if (tag === '') {
       endTag = tag;
     } else {
-      endTag = `/${tag}`
+      endTag = `/${tag}`;
     }
     const conformityPayload = this.builder.buildOPCUADataMessage({}, new Date, dscids[resource]);
     this.conformityClient.once('message', async (topic, rawMsg) => {
