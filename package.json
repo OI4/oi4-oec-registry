@@ -3,9 +3,7 @@
   "version": "0.11.4",
   "description": "A Registry that keeps track of all oi4 compatible members \u001b[D\u001b[A\u001b[Bmessagebus",
   "main": "index.js",
-  "dependencies": {
-    "cockpit": "^0.1.1"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "scripts": {
     "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve OI4-Local-UI/build -s",
