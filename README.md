@@ -1,8 +1,8 @@
 # Quick Start!
 ## Prerequisite
 Windows: Make sure that mingw32-make.exe is installed and in your PATH.\
-Linux: Make sure that make is installed and in your PATH.
-All platforms: Make sure that the experimental options in docker are enabled (multi-arch support via buildx)
+Linux: Make sure that make is installed and in your PATH.\
+All platforms: Make sure that the experimental options in docker are enabled. (multi-arch support via buildx)
 
 ## Let's go!
 Checkout the project root (you should see 3 Folders with an OI4-Prefix and this README).\
@@ -12,7 +12,7 @@ In your commandline, switch to this folder and run
 * ```docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t <yourtagname> --push -f Multi.Dockerfile .```
 
 This will build and push a multi-arch container to your logged-in registry. If you want to test the image locally,\
-use one of the provided Dockerfiles in the corresponding folder and build with ```docker build -t <yourtagname> -f <arch>.Dockerfile .``` .
+use one of the provided Dockerfiles in the corresponding folder and build with ```docker build -t <yourtagname> -f <arch>.Dockerfile .``` .\
 Proceed to the Docker-section of the README in order to learn how to start the resulting container image.
 
 # OI4-Service (Alpha)
