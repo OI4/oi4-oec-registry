@@ -1,0 +1,1 @@
+These Dockerfiles can be used as a guideline if separate images are desired for docker.
