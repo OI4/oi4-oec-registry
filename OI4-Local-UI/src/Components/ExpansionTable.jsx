@@ -24,21 +24,15 @@ import {
   TableRow,
   Collapse,
   IconButton,
-  Tooltip,
-  Snackbar,
   TextField,
   InputAdornment,
   Grid,
-  Box,
-  TableContainer
 } from '@material-ui/core';
 
 import {
   ExpandMore,
   ExpandLess,
   Delete,
-  FileCopy,
-  Close,
   Search,
 } from '@material-ui/icons';
 
@@ -357,7 +351,7 @@ class ExpansionTable extends React.Component {
    * @param {array} eventArray - an array of the last few events
    */
   displayLocalEvents(eventArray) {
-    let newArray = [];
+    const newArray = [];
     for (const items of eventArray) {
       newArray.push({
         number: items.number,
@@ -366,16 +360,16 @@ class ExpansionTable extends React.Component {
       });
     }
     if (Array.isArray(eventArray)) {
-      
-      return (<MaterialTable
-        columns={[
-          { title: "ErrorCode", field: "number" },
-          { title: "Description", field: "description" },
-          { title: 'Payload', field: 'payload' }
-        ]}
-        data={newArray}
-        title={`Last ${eventArray.length} Events:`}
-      />);
+      return (
+        <MaterialTable
+          columns={[
+            { title: "ErrorCode", field: "number" },
+            { title: "Description", field: "description" },
+            { title: 'Payload', field: 'payload' }
+          ]}
+          data={newArray}
+          title={`Last ${eventArray.length} Events:`}
+        />);
 
       // return <Grid item xs={3}><Table style={{ width: 'auto', tableLayout: 'auto' }}>
       //   <TableHead>
