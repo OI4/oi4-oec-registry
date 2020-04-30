@@ -27,9 +27,9 @@ import {
 
 const styles = theme => ({
   paper: {
-    padding: theme.spacing(2),
-    marginTop: theme.spacing(3),
-    width: '100%',
+    padding: theme.spacing(1),
+    marginTop: theme.spacing(2),
+    width: '85%',
     overflowX: 'auto',
     marginBottom: theme.spacing(2),
   },
@@ -78,9 +78,8 @@ class ExpansionTableDetail extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-      <Grid item xs={12}>
         <Grid container justify='space-evenly'>
-          <div>
+          <Grid item xs={6}>
             <h3>Detailed MasterAssetModel:
               <span style={{ marginRight: '1%' }}>
                 <Tooltip title="Copy to clipboard">
@@ -118,15 +117,15 @@ class ExpansionTableDetail extends React.Component {
             <Paper className={classes.paper}>
               {this.ownJsonViewer(this.props.asset.resources.mam)}
             </Paper>
-          </div>
-          {this.props.expertMode ? <div>
+          </Grid>
+          {this.props.expertMode ? <Grid item xs>
             <h3>Detailed Profile (Debugging):</h3>
             <Paper className={classes.paper}>
               {this.ownJsonViewer(this.props.asset.resources.profile)}
             </Paper>
-          </div>
+          </Grid>
           : null}
-          <div>
+          <Grid item xs>
             <h3>Conformity Validation:
                 <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>
                 <Refresh />
@@ -135,16 +134,15 @@ class ExpansionTableDetail extends React.Component {
             <Paper className={classes.paper}>
               {this.displayConformity(this.convertConformityToEmoji(this.props.conformityLookup, this.props.oi4Id))}
             </Paper>
-          </div>
-          <div>
+          </Grid>
+          <Grid item xs>
             <h3>Detailed Health:</h3>
             <Paper className={classes.paper}>
               {this.detailedHealthViewer(this.props.getResourceObject(this.props.oi4Id, 'health'))}
             </Paper>
-          </div>
+          </Grid>
           {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
         </Grid>
-      </Grid>
     );
   }
 
@@ -207,17 +205,17 @@ class ExpansionTableDetail extends React.Component {
     if (typeof jsonObject === 'object' && jsonObject !== null) {
       return Object.keys(jsonObject).map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {jsonObject[keys].toString()}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {jsonObject[keys].toString()}</div>;
         }
       });
     } else if (Array.isArray(jsonObject)) {
       return jsonObject.map((keys) => {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
-          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: idx * 25 }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
         }
       });
     } else {

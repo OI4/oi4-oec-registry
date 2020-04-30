@@ -10,6 +10,8 @@ import namur4 from '../Images/namur_4.png';
 
 import PropTypes from 'prop-types';
 
+import MaterialTable from 'material-table';
+
 import {
   Typography,
   ExpansionPanel,
@@ -26,6 +28,9 @@ import {
   Snackbar,
   TextField,
   InputAdornment,
+  Grid,
+  Box,
+  TableContainer
 } from '@material-ui/core';
 
 import {
@@ -128,7 +133,7 @@ class ExpansionTable extends React.Component {
                 ),
               }}
               placeholder='Filtertext'
-              style={{ marginLeft: 'auto', minWidth: '80px', maxWidth: '200px' }}
+              style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
               color='secondary'
             />
           </ExpansionPanelSummary>
@@ -207,20 +212,22 @@ class ExpansionTable extends React.Component {
                           timeout='auto'
                           unmountOnExit
                         >
-                          <div>
-                            <ExpansionTableDetail
-                              asset={this.props.assetLookup[oi4Id]}
-                              conformityLookup={this.props.conformityLookup}
-                              expertMode={this.props.expertMode}
-                              oi4Id={oi4Id}
-                              assetLookup={this.props.assetLookup}
-                              updateConformity={this.updateConformity.bind(this)}
-                              getResourceObject={this.getResourceObject.bind(this)}
-                              lookupType={this.props.lookupType}
-                              fontColor={this.props.fontColor}
-                              updatingConformity={this.props.updatingConformity}
-                            />
-                            <div style={{ display: 'flex' }}>
+                          <Grid container>
+                            <Grid item xs={12}>
+                              <ExpansionTableDetail
+                                asset={this.props.assetLookup[oi4Id]}
+                                conformityLookup={this.props.conformityLookup}
+                                expertMode={this.props.expertMode}
+                                oi4Id={oi4Id}
+                                assetLookup={this.props.assetLookup}
+                                updateConformity={this.updateConformity.bind(this)}
+                                getResourceObject={this.getResourceObject.bind(this)}
+                                lookupType={this.props.lookupType}
+                                fontColor={this.props.fontColor}
+                                updatingConformity={this.props.updatingConformity}
+                              />
+                            </Grid>
+                            {/* <Grid item xs={12}>
                               <h3>{`Last ${this.props.assetLookup[oi4Id].eventList.length} Events:`}</h3>
                               <TextField
                                 id='filterText'
@@ -236,10 +243,11 @@ class ExpansionTable extends React.Component {
                                   ),
                                 }}
                                 placeholder='Filtertext'
-                                style={{ marginLeft: 'auto', minWidth: '80px', maxWidth: '200px' }}
+                                style={{ marginLeft: '10px', minWidth: '80px', maxWidth: '200px' }}
                                 color='secondary'
                               />
-                              </div>
+                            </Grid> */}
+                            <Grid item xs={12}>
                               {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList.filter((item) => {
                                 if (this.state.filterWordEvent === '') return true;
                                 if (item.Tag.includes(this.state.filterWordEvent)) return true;
@@ -248,7 +256,8 @@ class ExpansionTable extends React.Component {
                                 if (JSON.stringify(item.payload).includes(this.state.filterWordEvent)) return true;
                                 return false;
                               }))}
-                          </div>
+                            </Grid>
+                          </Grid>
                         </Collapse>
                       </TableCell>
                     </TableRow>
@@ -348,60 +357,79 @@ class ExpansionTable extends React.Component {
    * @param {array} eventArray - an array of the last few events
    */
   displayLocalEvents(eventArray) {
+    let newArray = [];
+    for (const items of eventArray) {
+      newArray.push({
+        number: items.number,
+        description: items.description,
+        payload: JSON.stringify(items.payload),
+      });
+    }
     if (Array.isArray(eventArray)) {
-      return <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <span style={{ marginRight: '1%' }}>
-                <Tooltip title="Copy to clipboard">
-                  <IconButton
-                    size='small'
-                    color='default'
-                    onClick={() => {
-                      navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                        this.setState({ copySnackOpen: true });
-                      });
-                    }}
-                  >
-                    <FileCopy />
-                  </IconButton>
-                </Tooltip>
-                <Snackbar
-                  open={this.state.copySnackOpen}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                  }}
-                  onClose={() => { this.setState({ copySnackOpen: false }) }}
-                  autoHideDuration={5000}
-                  message='Saved Local Events to clipboard'
-                  action={
-                    <>
-                      <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                        <Close fontSize='small' />
-                      </IconButton>
-                    </>
-                  }
-                />
-              </span>
-              ErrorCode</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Payload</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {
-            eventArray.map((events, idx) => {
-              return <TableRow key={`LocalEvents-${idx}`}>
-                <TableCell component="th" scope="row">{events.number}</TableCell>
-                <TableCell component="th" scope="row">{events.description}</TableCell>
-                <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-              </TableRow>;
-            })
-          }
-        </TableBody>
-      </Table>;
+      
+      return (<MaterialTable
+        columns={[
+          { title: "ErrorCode", field: "number" },
+          { title: "Description", field: "description" },
+          { title: 'Payload', field: 'payload' }
+        ]}
+        data={newArray}
+        title={`Last ${eventArray.length} Events:`}
+      />);
+
+      // return <Grid item xs={3}><Table style={{ width: 'auto', tableLayout: 'auto' }}>
+      //   <TableHead>
+      //     <TableRow>
+      //       <TableCell>
+      //         <span style={{ marginRight: '1%' }}>
+      //           <Tooltip title="Copy to clipboard">
+      //             <IconButton
+      //               size='small'
+      //               color='default'
+      //               onClick={() => {
+      //                 navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+      //                   this.setState({ copySnackOpen: true });
+      //                 });
+      //               }}
+      //             >
+      //               <FileCopy />
+      //             </IconButton>
+      //           </Tooltip>
+      //           <Snackbar
+      //             open={this.state.copySnackOpen}
+      //             anchorOrigin={{
+      //               vertical: 'bottom',
+      //               horizontal: 'center',
+      //             }}
+      //             onClose={() => { this.setState({ copySnackOpen: false }) }}
+      //             autoHideDuration={5000}
+      //             message='Saved Local Events to clipboard'
+      //             action={
+      //               <>
+      //                 <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+      //                   <Close fontSize='small' />
+      //                 </IconButton>
+      //               </>
+      //             }
+      //           />
+      //         </span>
+      //         ErrorCode</TableCell>
+      //       <TableCell>Description</TableCell>
+      //       <TableCell>Payload</TableCell>
+      //     </TableRow>
+      //   </TableHead>
+      //   <TableBody>
+      //     {
+      //       eventArray.map((events, idx) => {
+      //         return <TableRow key={`LocalEvents-${idx}`}>
+      //           <TableCell>{events.number}</TableCell>
+      //           <TableCell component="th" scope="row" style={{ width: '35%' }}>{events.description}</TableCell>
+      //           <TableCell>{JSON.stringify(events.payload)}</TableCell>
+      //         </TableRow>;
+      //       })
+      //     }
+      //   </TableBody>
+      // </Table></Grid>;
     }
   }
 
