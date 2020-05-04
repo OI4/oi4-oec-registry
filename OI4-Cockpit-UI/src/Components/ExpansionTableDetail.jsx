@@ -2,11 +2,11 @@ import React from 'react';
 
 import { withStyles } from '@material-ui/core/styles';
 
-import namur0 from '../Images/namur_0.png';
-import namur1 from '../Images/namur_1.png';
-import namur2 from '../Images/namur_2.png';
-import namur3 from '../Images/namur_3.png';
-import namur4 from '../Images/namur_4.png';
+import namur_normal_0 from '../Images/namur_normal_0.png';
+import namur_failure_1 from '../Images/namur_failure_1.png';
+import namur_check_function_2 from '../Images/namur_check_function_2.png';
+import namur_off_spec_3 from '../Images/namur_off_spec_3.png';
+import namur_maintenance_required_4 from '../Images/namur_maintenance_required_4.png';
 
 import PropTypes from 'prop-types';
 
@@ -47,20 +47,20 @@ class ExpansionTableDetail extends React.Component {
     super(props);
     this.state = {
       expandedLookup: {},
-      // maps the different NAmur-States to their official images
+      // maps the different Namur-States to their official images
       namurLookup: {
-        NORMAL_0: namur0,
-        FAILURE_1: namur1,
-        CHECK_FUNCTION_2: namur2,
-        OFF_SPEC_3: namur3,
-        MAINTENANCE_REQUIRED_4: namur4,
+        NORMAL_0: namur_normal_0,
+        FAILURE_1: namur_failure_1,
+        CHECK_FUNCTION_2: namur_check_function_2,
+        OFF_SPEC_3: namur_off_spec_3,
+        MAINTENANCE_REQUIRED_4: namur_maintenance_required_4,
       },
       // Maps the validity numbers to emojis
       validityLookup: {
         0: '❔',
-        1: <img src={namur0} alt="Namur" height='25px' width='30px' />,
-        2: <img src={namur2} alt="Namur" height='25px' width='30px' />,
-        3: <img src={namur1} alt="Namur" height='25px' width='30px' />,
+        1: <img style={{ verticalAlign: 'middle' }} src={namur_normal_0} alt="Namur" height='20px' width='20px' />,
+        2: <img style={{ verticalAlign: 'middle' }} src={namur_off_spec_3} alt="Namur" height='20px' width='20px' />,
+        3: <img style={{ verticalAlign: 'middle' }} src={namur_failure_1} alt="Namur" height='20px' width='20px' />,
       },
       copySnackOpen: false,
     };
@@ -171,15 +171,15 @@ class ExpansionTableDetail extends React.Component {
    * Displays the current health state in Namur form via the lookup as an <img> Tag
    * @param {string} status - The health string defined in Namur format
    * @param {string} [height='25'] - The height of the resulting <img> tag
-   * @param {string} [width='30'] - The width of the resulting <img> tag
+   * @param {string} [width='25'] - The width of the resulting <img> tag
    * @returns An image tag with the corresponding namur symbol.
    * @memberof ExpansionTableDetail
    */
-  displayNamurHealth(status, height = '25', width = '30') {
+  displayNamurHealth(status, height = '25', width = '25') {
     if (!(status in this.state.namurLookup)) {
       return "Undefined NamurHealth";
     } else {
-      return <img src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
+      return <img style={{ verticalAlign: 'middle' }} src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
     }
   }
 
@@ -191,7 +191,7 @@ class ExpansionTableDetail extends React.Component {
    */
   detailedHealthViewer(healthObject) {
     return <div>
-      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 15, 20)})</div>
+      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 20, 20)})</div>
       <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthState}</div>
     </div>;
   }
@@ -247,9 +247,9 @@ class ExpansionTableDetail extends React.Component {
                 resourceWeight = 600;
               }
               if (conformityObject.resource[resources].validityError) {
-                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
+                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
               } else {
-                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}:{conformityObject.resource[resources].validity}</div>;
+                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
               }
             })
           }

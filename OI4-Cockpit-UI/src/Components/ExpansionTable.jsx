@@ -2,11 +2,11 @@ import React from 'react';
 
 import { withStyles } from '@material-ui/core/styles';
 
-import namur0 from '../Images/namur_0.png';
-import namur1 from '../Images/namur_1.png';
-import namur2 from '../Images/namur_2.png';
-import namur3 from '../Images/namur_3.png';
-import namur4 from '../Images/namur_4.png';
+import namur_normal_0 from '../Images/namur_normal_0.png';
+import namur_failure_1 from '../Images/namur_failure_1.png';
+import namur_check_function_2 from '../Images/namur_check_function_2.png';
+import namur_off_spec_3 from '../Images/namur_off_spec_3.png';
+import namur_maintenance_required_4 from '../Images/namur_maintenance_required_4.png';
 
 import PropTypes from 'prop-types';
 
@@ -59,19 +59,19 @@ class ExpansionTable extends React.Component {
     this.state = {
       expandedLookup: {},
       namurLookup: {
-        NORMAL_0: namur0,
-        FAILURE_1: namur1,
-        CHECK_FUNCTION_2: namur2,
-        OFF_SPEC_3: namur3,
-        MAINTENANCE_REQUIRED_4: namur4,
+        NORMAL_0: namur_normal_0,
+        FAILURE_1: namur_failure_1,
+        CHECK_FUNCTION_2: namur_check_function_2,
+        OFF_SPEC_3: namur_off_spec_3,
+        MAINTENANCE_REQUIRED_4: namur_maintenance_required_4,
       },
       rowOpacity: '1.0',
       tableName: `${this.props.lookupType.substring(0, 1).toUpperCase()}${this.props.lookupType.substring(1)} Table`, // First character to UpperCase, concatenate the rest
       validityLookup: {
         0: '❔',
-        1: <img src={namur0} alt="Namur" height='25px' width='30px' />,
-        2: <img src={namur2} alt="Namur" height='25px' width='30px' />,
-        3: <img src={namur1} alt="Namur" height='25px' width='30px' />,
+        1: <img src={namur_normal_0} alt="Namur" height='25px' width='25px' />,
+        2: <img src={namur_off_spec_3} alt="Namur" height='25px' width='25px' />,
+        3: <img src={namur_failure_1} alt="Namur" height='25px' width='25px' />,
       },
       filterWord: '',
       filterWordEvent: '',
@@ -334,11 +334,11 @@ class ExpansionTable extends React.Component {
    * Displays the received namur health as the corresponding image in the header
    * @param {string} status The healthstatus according to NAMUR spec
    * @param {string} [height='25']
-   * @param {string} [width='30']
+   * @param {string} [width='25']
    * @returns An image of the NAMUR health, if the status is valid. 'Undefined NamurHealth', if it is not
    * @memberof ExpansionTable
    */
-  displayNamurHealth(status, height = '25', width = '30') {
+  displayNamurHealth(status, height = '25', width = '25') {
     if (!(status in this.state.namurLookup)) {
       return 'Undefined NamurHealth';
     } else {

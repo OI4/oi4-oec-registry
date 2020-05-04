@@ -21,9 +21,9 @@ import {
   // InputAdornment,
 } from '@material-ui/core';
 
-import namur0 from '../Images/namur_0.png';
-import namur1 from '../Images/namur_1.png';
-import namur2 from '../Images/namur_2.png';
+import namur_normal_0 from '../Images/namur_normal_0.png';
+import namur_failure_1 from '../Images/namur_failure_1.png';
+import namur_off_spec_3 from '../Images/namur_off_spec_3.png';
 
 import { DeleteForever, GetApp, Publish } from '@material-ui/icons';
 
@@ -95,10 +95,10 @@ export class ClickableFooter extends React.Component {
                 {/* <li>Fully passed all tests for GET/PUB methods and related payload formats: <span role='img' aria-label='ok'>✅</span></li>
                 <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <span role='img' aria-label='warn'>⚠️</span></li>
                 <li>Failed because mandatory GET methods are not answered: <span role='img' aria-label='nok'>❌</span></li> */}
-                <li>Fully passed all tests for GET/PUB methods and related payload formats: <img src={namur0} alt="Namur" height='25px' width='30px' /></li>
-                <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <img src={namur2} alt="Namur" height='25px' width='30px' /></li>
-                <li>Failed because mandatory GET methods are not answered: <img src={namur1} alt="Namur" height='25px' width='30px' /></li>
-                <li>Not yet tested (neither successful nor fail): <span role='img' aria-label='default'>❔</span></li>
+                <li>Fully passed all tests for GET/PUB methods and related payload formats: <img style={{ verticalAlign: 'middle' }} src={namur_normal_0} alt="Namur" height='20px' width='20px' /></li>
+                <li>Partially passed because GET/PUB methods were answered, but related payload was not correct: <img style={{ verticalAlign: 'middle' }} src={namur_off_spec_3} alt="Namur" height='20px' width='20px' /></li>
+                <li>Failed because mandatory GET methods are not answered: <img style={{ verticalAlign: 'middle' }} src={namur_failure_1} alt="Namur" height='20px' width='20px' /></li>
+                <li>Not yet tested (neither successful nor fail): <span style={{ verticalAlign: 'middle' }} role='img' aria-label='default'>❔</span></li>
               </ul>
               <p>
                 The conformity icon in the header bar is an indication of overall conformity.
