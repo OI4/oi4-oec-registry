@@ -59,8 +59,8 @@ class ExpansionTableDetail extends React.Component {
       validityLookup: {
         0: '❔',
         1: <img style={{ verticalAlign: 'middle' }} src={namur_normal_0} alt="Namur" height='20px' width='20px' />,
-        2: <img style={{ verticalAlign: 'middle' }} src={namur_off_spec_3} alt="Namur" height='20px' width='20px' />,
-        3: <img style={{ verticalAlign: 'middle' }} src={namur_failure_1} alt="Namur" height='20px' width='20px' />,
+        2: <Tooltip title="Payload of resource incorrect"><img style={{ verticalAlign: 'middle' }} src={namur_off_spec_3} alt="Namur" height='20px' width='20px' /></Tooltip>,
+        3: <Tooltip title="Unknown resource or resource not answered"><img style={{ verticalAlign: 'middle' }} src={namur_failure_1} alt="Namur" height='20px' width='20px' /></Tooltip>,
       },
       copySnackOpen: false,
     };
@@ -127,9 +127,11 @@ class ExpansionTableDetail extends React.Component {
           : null}
           <Grid item xs>
             <h3>Conformity Validation:
+              <Tooltip title='Refresh conformity'>
                 <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>
                 <Refresh />
               </IconButton>
+              </Tooltip>
             </h3>
             <Paper className={classes.paper}>
               {this.displayConformity(this.convertConformityToEmoji(this.props.conformityLookup, this.props.oi4Id))}
