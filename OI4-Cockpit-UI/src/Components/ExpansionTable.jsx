@@ -360,16 +360,21 @@ class ExpansionTable extends React.Component {
       });
     }
     if (Array.isArray(eventArray)) {
-      return (
-        <MaterialTable
-          columns={[
-            { title: "ErrorCode", field: "number" },
-            { title: "Description", field: "description" },
-            { title: 'Payload', field: 'payload' }
-          ]}
-          data={newArray}
-          title={`Last ${eventArray.length} Events:`}
-        />);
+      if (eventArray.length !== 0) {
+        return (
+          <MaterialTable
+            columns={[
+              { title: "ErrorCode", field: "number" },
+              { title: "Description", field: "description" },
+              { title: 'Payload', field: 'payload' }
+            ]}
+            data={newArray}
+            title={`Last ${eventArray.length} Events:`}
+          />);
+      } else {
+        return <h3>No items in audit trail...</h3>
+      }
+
 
       // return <Grid item xs={3}><Table style={{ width: 'auto', tableLayout: 'auto' }}>
       //   <TableHead>

@@ -15,6 +15,8 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Toolbar from '@material-ui/core/Toolbar';
 import AppBar from '@material-ui/core/AppBar';
 
+import MaterialTable from 'material-table';
+
 import {
   Typography,
   ExpansionPanel,
@@ -200,15 +202,15 @@ class OI4Base extends React.Component {
    */
   render() {
     const { classes } = this.props;
-    const filteredTrail = this.state.globalEventTrail // TODO: Maybe get this to another place?
-    .filter((item) => {
-      if (this.state.filterWord === '') return true;
-      if (item.Tag.includes(this.state.filterWord)) return true;
-      if (item.description.includes(this.state.filterWord)) return true;
-      if (item.number.toString().includes(this.state.filterWord)) return true;
-      if (JSON.stringify(item.payload).includes(this.state.filterWord)) return true;
-      return false;
-    });
+    // const filteredTrail = this.state.globalEventTrail // TODO: Maybe get this to another place?
+    //   .filter((item) => {
+    //     if (this.state.filterWord === '') return true;
+    //     if (item.Tag.includes(this.state.filterWord)) return true;
+    //     if (item.description.includes(this.state.filterWord)) return true;
+    //     if (item.number.toString().includes(this.state.filterWord)) return true;
+    //     if (JSON.stringify(item.payload).includes(this.state.filterWord)) return true;
+    //     return false;
+    //   });
     return (
       <React.Fragment>
         <MuiThemeProvider theme={this.state.theme}>
@@ -252,7 +254,7 @@ class OI4Base extends React.Component {
               <ExpansionPanel>
                 <ExpansionPanelSummary expandIcon={<ExpandMore />}>
                   Global Event Trail: ({this.state.globalEventTrail.length} entries)
-                  <TextField
+                  {/* <TextField
                     id='filterText'
                     value={this.state.filterWord}
                     onChange={this.handleFilterChange.bind(this)}
@@ -268,10 +270,10 @@ class OI4Base extends React.Component {
                     placeholder='Filtertext'
                     style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
                     color='secondary'
-                  />
+                  /> */}
                 </ExpansionPanelSummary>
                 <ExpansionPanelDetails className={classes.paper}>
-                  {this.displayGlobalEvents(filteredTrail)}
+                  {this.displayGlobalEvents(this.state.globalEventTrail)}
                 </ExpansionPanelDetails>
               </ExpansionPanel>
 
@@ -350,64 +352,86 @@ class OI4Base extends React.Component {
    * @param {array} eventArray - an array of the last few events
    */
   displayGlobalEvents(eventArray) {
+    const newArray = [];
+    for (const items of eventArray) {
+      newArray.push({
+        number: items.number,
+        description: items.description,
+        payload: JSON.stringify(items.payload),
+      });
+    }
     if (Array.isArray(eventArray)) {
-      return <>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell key='GlobalEventsOrigin'>
-                <span style={{ marginRight: '1%' }}>
-                  <Tooltip title="Copy to clipboard">
-                    <IconButton
-                      size='small'
-                      color='default'
-                      onClick={() => {
-                        navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                          this.setState({ copySnackOpen: true });
-                        });
-                      }}
-                    >
-                      <FileCopy />
-                    </IconButton>
-                  </Tooltip>
-                  <Snackbar
-                    open={this.state.copySnackOpen}
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'center',
-                    }}
-                    onClose={() => { this.setState({ copySnackOpen: false }) }}
-                    autoHideDuration={4000}
-                    message='Saved Global Events to clipboard'
-                    action={
-                      <>
-                        <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                          <Close fontSize='small' />
-                        </IconButton>
-                      </>
-                    }
-                  />
-                </span>
-                Tag-OI4Id</TableCell>
-              <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
-              <TableCell key='GlobalEventsDesc'>Description</TableCell>
-              <TableCell key='GlobalEventsPayload'>Payload</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-              eventArray.map((events, idx) => {
-                const [originManu, ...originRest] = events.Tag.split('/');
-                return <TableRow key={`GlobalEvents-${idx}`}>
-                  <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
-                  <TableCell component="th" scope="row">{events.number}</TableCell>
-                  <TableCell component="th" scope="row">{events.description}</TableCell>
-                  <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
-                </TableRow>;
-              })
-            }
-          </TableBody>
-        </Table></>;
+      // return <>
+      //   <Table>
+      //     <TableHead>
+      //       <TableRow>
+      //         <TableCell key='GlobalEventsOrigin'>
+      //           <span style={{ marginRight: '1%' }}>
+      //             <Tooltip title="Copy to clipboard">
+      //               <IconButton
+      //                 size='small'
+      //                 color='default'
+      //                 onClick={() => {
+      //                   navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+      //                     this.setState({ copySnackOpen: true });
+      //                   });
+      //                 }}
+      //               >
+      //                 <FileCopy />
+      //               </IconButton>
+      //             </Tooltip>
+      //             <Snackbar
+      //               open={this.state.copySnackOpen}
+      //               anchorOrigin={{
+      //                 vertical: 'bottom',
+      //                 horizontal: 'center',
+      //               }}
+      //               onClose={() => { this.setState({ copySnackOpen: false }) }}
+      //               autoHideDuration={4000}
+      //               message='Saved Global Events to clipboard'
+      //               action={
+      //                 <>
+      //                   <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+      //                     <Close fontSize='small' />
+      //                   </IconButton>
+      //                 </>
+      //               }
+      //             />
+      //           </span>
+      //           Tag-OI4Id</TableCell>
+      //         <TableCell key='GlobalEventsNumber'>ErrorCode</TableCell>
+      //         <TableCell key='GlobalEventsDesc'>Description</TableCell>
+      //         <TableCell key='GlobalEventsPayload'>Payload</TableCell>
+      //       </TableRow>
+      //     </TableHead>
+      //     <TableBody>
+      //       {
+      //         eventArray.map((events, idx) => {
+      //           const [originManu, ...originRest] = events.Tag.split('/');
+      //           return <TableRow key={`GlobalEvents-${idx}`}>
+      //             <TableCell component="th" scope="row">{`${decodeURIComponent(originManu)}/${originRest.join('/')}`}</TableCell>
+      //             <TableCell component="th" scope="row">{events.number}</TableCell>
+      //             <TableCell component="th" scope="row">{events.description}</TableCell>
+      //             <TableCell component="th" scope="row">{JSON.stringify(events.payload)}</TableCell>
+      //           </TableRow>;
+      //         })
+      //       }
+      //     </TableBody>
+      //   </Table></>;
+      if (eventArray.length !== 0) {
+        return (
+          <MaterialTable
+            columns={[
+              { title: "ErrorCode", field: "number" },
+              { title: "Description", field: "description" },
+              { title: 'Payload', field: 'payload' }
+            ]}
+            data={newArray}
+            title={''}
+          />);
+      } else {
+        return <h3>No items in audit trail...</h3>
+      }
     }
   }
 
