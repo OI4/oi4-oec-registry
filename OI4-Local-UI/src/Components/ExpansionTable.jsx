@@ -27,6 +27,8 @@ import {
   TextField,
   InputAdornment,
   Grid,
+  Snackbar,
+  Tooltip,
 } from '@material-ui/core';
 
 import {
@@ -34,6 +36,8 @@ import {
   ExpandLess,
   Delete,
   Search,
+  FileCopy,
+  Close,
 } from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail';
@@ -364,12 +368,46 @@ class ExpansionTable extends React.Component {
         return (
           <MaterialTable
             columns={[
-              { title: "ErrorCode", field: "number" },
-              { title: "Description", field: "description" },
-              { title: 'Payload', field: 'payload' }
+              { title: "ErrorCode", field: "number", cellStyle: { wordBreak: 'break-all' } },
+              { title: "Description", field: "description", cellStyle: { wordBreak: 'break-all' } },
+              { title: 'Payload', field: 'payload', cellStyle: { wordBreak: 'break-all' } }
             ]}
             data={newArray}
-            title={`Last ${eventArray.length} Events:`}
+            title={<span>{`Last ${eventArray.length} Events:`}
+              <span style={{ marginRight: '1%' }}>
+                <Tooltip title="Copy to clipboard">
+                  <IconButton
+                    size='small'
+                    color='default'
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+                        this.setState({ copySnackOpen: true });
+                      });
+                    }}
+                  >
+                    <FileCopy />
+                  </IconButton>
+                </Tooltip>
+                <Snackbar
+                  open={this.state.copySnackOpen}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                  }}
+                  onClose={() => { this.setState({ copySnackOpen: false }) }}
+                  autoHideDuration={4000}
+                  message='Saved Local Events to clipboard'
+                  action={
+                    <>
+                      <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                        <Close fontSize='small' />
+                      </IconButton>
+                    </>
+                  }
+                />
+              </span>
+            </span>
+            }
           />);
       } else {
         return <h3>No items in audit trail...</h3>
