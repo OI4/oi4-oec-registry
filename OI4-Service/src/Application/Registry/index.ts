@@ -12,7 +12,7 @@ import { IConformity } from '../Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
-import dataSetClassIds = require('../../Config/dataSetClassIds.json'); /*tslint:disable-line*/
+import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 let globIndex = 0;
