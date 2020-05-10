@@ -1,18 +1,19 @@
 export interface IConformity {
   oi4Id: EValidity;
-  resource: IOI4TopicResource;
+  resource: IValidityLookup;
   checkedResourceList: string[];
   profileResourceList: string[];
   nonProfileResourceList: string[];
   validity: EValidity;
 }
 
-interface IOI4TopicResource {
-  [key: string]: IOI4TopicValidity;
+interface IValidityLookup {
+  [key: string]: IValidityDetails;
 }
 
-interface IOI4TopicValidity {
+export interface IValidityDetails {
   validity: EValidity;
+  payload: any;
   validityError?: string;
 }
 
