@@ -22,16 +22,9 @@ import {
   ExpansionPanel,
   ExpansionPanelDetails,
   ExpansionPanelSummary,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   IconButton,
   Snackbar,
   Tooltip,
-  TextField,
-  InputAdornment,
 } from '@material-ui/core';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -41,7 +34,6 @@ import {
   ExpandMore,
   FileCopy,
   Close,
-  Search,
 } from '@material-ui/icons';
 
 import _ from 'lodash';
@@ -461,7 +453,7 @@ class OI4Base extends React.Component {
             </span>}
           />);
       } else {
-        return <h3>No items in audit trail...</h3>
+        return <h3>No items in audit trail...</h3>;
       }
     }
   }

@@ -410,9 +410,8 @@ class ExpansionTable extends React.Component {
             }
           />);
       } else {
-        return <h3>No items in audit trail...</h3>
+        return <h3>No items in audit trail...</h3>;
       }
-
 
       // return <Grid item xs={3}><Table style={{ width: 'auto', tableLayout: 'auto' }}>
       //   <TableHead>
