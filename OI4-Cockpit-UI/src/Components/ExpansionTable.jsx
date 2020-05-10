@@ -199,7 +199,7 @@ class ExpansionTable extends React.Component {
                       </TableCell> : null}
                     </TableRow>
                     <TableRow key={`AssetTableDetail-${oi4Id}-${idx}`}>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                      <TableCell colSpan={8}>
                         <Collapse
                           className={classes.tableInside}
                           in={this.state.expandedLookup[oi4Id]}
