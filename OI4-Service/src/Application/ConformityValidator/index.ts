@@ -307,7 +307,7 @@ export class ConformityValidator extends EventEmitter {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
 
-        if (this.checkPayloadConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
+        if (await this.checkPayloadConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) { // Check if the correlationId matches our messageId (according to guideline)
             eRes = EValidity.ok;
           } else {
@@ -316,6 +316,7 @@ export class ConformityValidator extends EventEmitter {
             this.logger.log(`CorrelationID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
         } else {
+          console.log('Some errors with schema validation', ESubResource.error);
           errorMsg = `${errorMsg} + Some issue with schema validation`;
           eRes = EValidity.partial;
         }
@@ -392,7 +393,7 @@ export class ConformityValidator extends EventEmitter {
     }
     if (networkMessageValidationResult && payloadValidationResult) {
       return true;
-    } 
+    }
     return false;
   }
 
