@@ -248,11 +248,12 @@ class ExpansionTableDetail extends React.Component {
               if (this.mandatoryResource[assetType].includes(resources)) {
                 resourceWeight = 600;
               }
-              if (conformityObject.resource[resources].validityError) {
-                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
-              } else {
-                return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
-              }
+              // if (conformityObject.resource[resources].validityError) {
+              //   return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
+              // } else {
+              //   return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
+              // }
+              return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
             })
           }
         </div>;
