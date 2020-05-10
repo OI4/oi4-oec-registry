@@ -48,7 +48,7 @@ interface TMqttOpts {
  */
 export class ConformityValidator extends EventEmitter {
   private conformityClient: mqtt.AsyncClient;
-  private readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
+  static readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
@@ -112,7 +112,7 @@ export class ConformityValidator extends EventEmitter {
    * If a resource passes, its entry in the conformity Object is set to 'OK', otherwise, the initialized 'NOK' values persist.
    * @param fullTopic - the entire topic used to check conformity. Used to extract oi4Id and other values FORMAT:
    */
-  async checkConformity(fullTopic: string, oi4Id: string, resourceList?: string[]) {
+  async checkConformity(fullTopic: string, oi4Id: string, resourceList?: string[]): Promise<IConformity> {
     const ignoredResources = ['data', 'metadata', 'event'];
     let assetType = EAssetType.application;
     const topicArray = fullTopic.split('/');
@@ -170,7 +170,6 @@ export class ConformityValidator extends EventEmitter {
 
       // Actually start checking the resources
       for (const resource of checkedList) {
-        let validity: EValidity = EValidity.nok;
         try {
           if (resource === 'profile') continue; // We already checked profile
           if (resource === 'license') { // License is a different case. We actually need to parse the return value here
@@ -248,9 +247,10 @@ export class ConformityValidator extends EventEmitter {
    * 2) The profile payload should not contain additional resources to the ones specified in the oi4 guideline
    * 3) Every resource that is specified in the profile payload needs to be accessible (exceptions for data, metadata, event)
    * Sidenote: "Custom" Resources will be marked as an error and not checked
-   * @param fullTopic 
-   * @param oi4Id 
-   * @param assetType 
+   * @param fullTopic The fullTopic that is used to check the get-route
+   * @param oi4Id  The oidId of the tested asset ("tag element")
+   * @param assetType The type of asset being tested (device / application)
+   * @returns {IValidityDetails} A validity object containing information about the conformity of the profile resource
    */
 
   async checkProfileConformity(fullTopic: string, oi4Id: string, assetType: EAssetType): Promise<IValidityDetails> {
@@ -265,7 +265,12 @@ export class ConformityValidator extends EventEmitter {
     return resObj;
   }
 
-  getMandatoryResources(assetType: EAssetType) {
+  /**
+   * Retrieves a list of resources which are considered mandatory according to assetType and
+   * @param assetType The type that is used to retrieve the list of mandatory resources
+   * @returns {string[]} A list of mandatory resources
+   */
+  getMandatoryResources(assetType: EAssetType): string[] {
     let mandatoryResources = [];
     if (assetType === EAssetType.application) {
       mandatoryResources = resourceLookup.application.mandatory;
@@ -301,34 +306,9 @@ export class ConformityValidator extends EventEmitter {
       if (topic === `${fullTopic}/pub/${resource}${endTag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
-        let networkMessageValidationResult;
-        let payloadValidationResult;
-        try {
-          networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', parsedMessage);
-        } catch (validateErr) {
-          this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
-          networkMessageValidationResult = false;
-        }
-        if (!networkMessageValidationResult) {
-          this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
-        }
-        if (networkMessageValidationResult) {
-          if (parsedMessage.MessageType === 'ua-metadata') {
-            payloadValidationResult = true; // We accept all metadata messages since we cannot check their contents
-          } else { // Since it's a data message, we can check against schemas
-            try {
-              payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, parsedMessage.Messages[0].Payload);
-            } catch (validateErr) {
-              this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
-              payloadValidationResult = false;
-            }
-            if (!payloadValidationResult) {
-              this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
-            }
-          }
-        }
-        if (networkMessageValidationResult && payloadValidationResult) {
-          if (parsedMessage.CorrelationId === conformityPayload.MessageId) {
+
+        if (this.checkPayloadConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
+          if (parsedMessage.CorrelationId === conformityPayload.MessageId) { // Check if the correlationId matches our messageId (according to guideline)
             eRes = EValidity.ok;
           } else {
             eRes = EValidity.partial;
@@ -339,17 +319,20 @@ export class ConformityValidator extends EventEmitter {
           errorMsg = `${errorMsg} + Some issue with schema validation`;
           eRes = EValidity.partial;
         }
-        if (!(parsedMessage.DataSetClassId === dscids[resource])) {
+
+        if (!(parsedMessage.DataSetClassId === dscids[resource])) { // Check if the dataSetClassId matches our development guideline
           this.logger.log(`DataSetClassID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           errorMsg = `${errorMsg} + DataSetClassId did not pass for ${tag} with resource ${resource}`;
           eRes = EValidity.partial;
         }
+
         let resPayload;
         if (parsedMessage.MessageType === 'ua-data') {
           resPayload = parsedMessage.Messages[0].Payload;
         } else {
           resPayload = 'metadata';
         }
+
         const resObj: IValidityDetails = {
           validity: eRes,
           validityError: errorMsg,
@@ -373,23 +356,58 @@ export class ConformityValidator extends EventEmitter {
 
   }
 
-  async checkPayloadConformity(payload: any) {
-
+  /**
+   * Checks the conformity of the payload by testing it against the correct schemas using the ajv library
+   * Both the networkmessage and the actual payload are tested and only return a positive result if both passed
+   * @param resource The resource that is being checked
+   * @param payload  The payload that is being checked
+   * @returns true, if both the networkmessage and the payload fit the resource, false otherwise
+   */
+  async checkPayloadConformity(resource: string, payload: any): Promise<boolean> {
+    let networkMessageValidationResult;
+    let payloadValidationResult;
+    try {
+      networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
+    } catch (validateErr) {
+      this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
+      networkMessageValidationResult = false;
+    }
+    if (!networkMessageValidationResult) {
+      this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
+    }
+    if (networkMessageValidationResult) {
+      if (payload.MessageType === 'ua-metadata') {
+        payloadValidationResult = true; // We accept all metadata messages since we cannot check their contents
+      } else { // Since it's a data message, we can check against schemas
+        try {
+          payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, payload.Messages[0].Payload);
+        } catch (validateErr) {
+          this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
+          payloadValidationResult = false;
+        }
+        if (!payloadValidationResult) {
+          this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
+        }
+      }
+    }
+    if (networkMessageValidationResult && payloadValidationResult) {
+      return true;
+    } 
+    return false;
   }
 
   /**
    * Checks the full topic (including oi4/... preamble) for conformity.
    * @param topic - the full topic that is checked
    */
-  static async checkTopicConformity(topic: string) {
+  static async checkTopicConformity(topic: string): Promise<boolean> {
     const topicArray = topic.split('/');
     if (topicArray.length >= 8) {
       let oi4String = '';
       for (let i = 0; i < 6; i = i + 1) {
         oi4String = `${oi4String}/${topicArray[i]}`;
       }
-      const serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
-      if (!(serviceTypes.includes(topicArray[1]))) return false; // throw new Error('Unknown ServiceType');
+      if (!(ConformityValidator.serviceTypes.includes(topicArray[1]))) return false; // throw new Error('Unknown ServiceType');
       const oi4Id = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
       return await ConformityValidator.checkOI4IDConformity(oi4Id);
     } else { /*tslint:disable-line*/
@@ -397,7 +415,7 @@ export class ConformityValidator extends EventEmitter {
     }
   }
 
-  static async checkOI4IDConformity(oi4Id: string) {
+  static async checkOI4IDConformity(oi4Id: string): Promise<boolean> {
     const oi4Array = oi4Id.split('/');
     if (oi4Array.length !== 4) return false; // throw new Error('Wrong number of subTopics');
     // further checks will follow!
