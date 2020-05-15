@@ -17,6 +17,7 @@ import MetaDataVersionSchemaJson = require('../../../Config/Schemas/MetaDataVers
 import oi4IdentifierSchemaJson = require('../../../Config/Schemas/oi4Identifier.schema.json');
 import DataSetMessageSchemaJson = require('../../../Config/Schemas/DataSetMessage.schema.json');
 import LocalizedTextSchemaJson = require('../../../Config/Schemas/LocalizedText.schema.json');
+import resourcesSchemaJson = require('../../../Config/Schemas/resources.schema.json');
 
 // Payloads
 import healthSchemaJson = require('../../../Config/Schemas/health.schema.json');
@@ -61,6 +62,7 @@ export class OPCUABuilder {
     this.jsonValidator.addSchema(oi4IdentifierSchemaJson, 'oi4Identifier.schema.json');
     this.jsonValidator.addSchema(DataSetMessageSchemaJson, 'DataSetMessage.schema.json');
     this.jsonValidator.addSchema(LocalizedTextSchemaJson, 'LocalizedText.schema.json');
+    this.jsonValidator.addSchema(resourcesSchemaJson, 'resources.schema.json');
 
     // Then payload Schemas
     this.jsonValidator.addSchema(healthSchemaJson, 'health.schema.json');
