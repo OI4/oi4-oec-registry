@@ -425,6 +425,9 @@ export class ConformityValidator extends EventEmitter {
     const oi4Array = oi4Id.split('/');
     if (oi4Array.length !== 4) return false; // throw new Error('Wrong number of subTopics');
     // further checks will follow!
-    return true;
+    const oi4RegEx = new RegExp(/^urn:(?=.{4,255}$)([a-zA-Z0-9_]([a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?\.){1,126}[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\/[^\/]+){3}$/g);
+    if (oi4RegEx.test(oi4Id)) return true;
+    console.log('Error in checkOI4IDConformity!');
+    return false;
   }
 }
