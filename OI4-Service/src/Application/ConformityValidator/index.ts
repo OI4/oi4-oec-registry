@@ -28,7 +28,7 @@ import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json');
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 // Resource imports
-import resourceLookup from '../../Config/Constants/resources.json';
+import resourceLookup from '../../Config/Constants/resources.json'; /*tslint:disable-line*/
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
 import { Logger } from '../../Service/Utilities/Logger';
@@ -256,7 +256,7 @@ export class ConformityValidator extends EventEmitter {
   async checkProfileConformity(fullTopic: string, oi4Id: string, assetType: EAssetType): Promise<IValidityDetails> {
     const resObj: IValidityDetails = await this.checkResourceConformity(fullTopic, oi4Id, 'profile');
     const profilePayload = resObj.payload;
-    let mandatoryResourceList = this.getMandatoryResources(assetType);
+    const mandatoryResourceList = this.getMandatoryResources(assetType);
 
     if (!(mandatoryResourceList.every(i => profilePayload.resource.includes(i)))) {
       resObj.validity = EValidity.partial;
