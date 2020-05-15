@@ -184,27 +184,30 @@ export class ConformityValidator extends EventEmitter {
             for (const licenses of licenseList) {
               resObj = await this.checkResourceConformity(fullTopic, licenses, resource) as IValidityDetails; // here, the oi4ID is the license
             }
+          } else if (ignoredResources.includes(resource)) {
+            conformityObject.resource[resource] = {
+              validity: EValidity.default,
+              validityError: 'Not evaluated',
+              payload: {},
+            };
           } else {
             if (resource === 'publicationList' || resource === 'subscriptionList') {
               resObj = await this.checkResourceConformity(fullTopic, '', resource) as IValidityDetails;
             } else {
               resObj = await this.checkResourceConformity(fullTopic, oi4Id, resource) as IValidityDetails;
             }
-
             if (resObj.validity === EValidity.ok) { // Set the validity according to the results
               conformityObject.resource[resource] = resObj;
             } else if (resObj.validity === EValidity.partial) {
-
               let evaluatedValidity = EValidity.partial;
               if (mandatoryResourceList.includes(resource)) { // TODO: This is a little strict, but we are strict for now
                 errorSoFar = true;
               } else {
-                if (ignoredResources.includes(resource)) {
+                if (ignoredResources.includes(resource)) { // TODO: not needed due to conditional above
                   evaluatedValidity = EValidity.default;
                   errorSoFar = false;
                 }
               }
-
               conformityObject.resource[resource] = {
                 validity: evaluatedValidity,
                 validityError: resObj.validityError,
@@ -219,7 +222,7 @@ export class ConformityValidator extends EventEmitter {
             validityError: 'Timeout when asking for resource',
             payload: {},
           };
-          if (ignoredResources.includes(resource)) {
+          if (ignoredResources.includes(resource)) { // TODO: not needed due to conditional above
             conformityObject.resource[resource] = {
               validity: EValidity.default,
               validityError: 'Timeout when asking for resource',
@@ -318,7 +321,7 @@ export class ConformityValidator extends EventEmitter {
             this.logger.log(`CorrelationId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
         } else {
-          console.log('Some errors with schema validation', ESubResource.error);
+          this.logger.log(`Some errors with schema validation with tag: ${tag}`, ESubResource.error);
           errorMsg = `${errorMsg} + Some issue with schema validation`;
           eRes = EValidity.partial;
         }
@@ -372,11 +375,11 @@ export class ConformityValidator extends EventEmitter {
     try {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
     } catch (validateErr) {
-      this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
+      this.logger.log(`ConformityValidator-AJV (${resource}):${validateErr}`, ESubResource.error);
       networkMessageValidationResult = false;
     }
     if (!networkMessageValidationResult) {
-      this.logger.log(`AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
+      this.logger.log(`AJV: NetworkMessage invalid (${resource}): ${this.jsonValidator.errorsText()}`, ESubResource.error);
     }
     if (networkMessageValidationResult) {
       if (payload.MessageType === 'ua-metadata') {
@@ -385,11 +388,11 @@ export class ConformityValidator extends EventEmitter {
         try {
           payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, payload.Messages[0].Payload);
         } catch (validateErr) {
-          this.logger.log(`ConformityValidator-AJV:${validateErr}`, ESubResource.error);
+          this.logger.log(`ConformityValidator-AJV (${resource}):${validateErr}`, ESubResource.error);
           payloadValidationResult = false;
         }
         if (!payloadValidationResult) {
-          this.logger.log(`AJV: Payload invalid: ${this.jsonValidator.errorsText()}`, ESubResource.error);
+          this.logger.log(`AJV: Payload invalid (${resource}): ${this.jsonValidator.errorsText()}`, ESubResource.error);
         }
       }
     }
