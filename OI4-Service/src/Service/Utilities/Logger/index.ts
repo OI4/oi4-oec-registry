@@ -107,7 +107,7 @@ class Logger {
                 logLevel: level,
                 logOrigin: this._name,
               },
-            }, new Date(), 'eventID'); /*tslint:disable-line*/
+            }, new Date(), '543ae05e-b6d9-4161-a0a3-350a0fac5976'); /*tslint:disable-line*/
           }
           /* Optimistic log...if we want to be certain, we have to convert this to async */
           this._mqttClient.publish(`oi4/${this._serviceType}/${this._oi4Id}/pub/event/${level}/${this._oi4Id}`, JSON.stringify(logPayload));
