@@ -315,7 +315,7 @@ export class ConformityValidator extends EventEmitter {
           } else {
             eRes = EValidity.partial;
             errorMsg = `${errorMsg} + CorrelationId did not pass for ${tag} with resource ${resource}`;
-            this.logger.log(`CorrelationID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
+            this.logger.log(`CorrelationId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
         } else {
           console.log('Some errors with schema validation', ESubResource.error);
@@ -324,7 +324,7 @@ export class ConformityValidator extends EventEmitter {
         }
 
         if (!(parsedMessage.DataSetClassId === dscids[resource])) { // Check if the dataSetClassId matches our development guideline
-          this.logger.log(`DataSetClassID did not pass for ${tag} with resource ${resource}`, ESubResource.error);
+          this.logger.log(`DataSetClassId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           errorMsg = `${errorMsg} + DataSetClassId did not pass for ${tag} with resource ${resource}`;
           eRes = EValidity.partial;
         }
