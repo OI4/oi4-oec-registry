@@ -372,6 +372,7 @@ class ExpansionTable extends React.Component {
               { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
               { title: 'Payload', field: 'payload', width: '20%', cellStyle: { wordBreak: 'break-all' } }
             ]}
+            style={{ minWidth: '100%' }}
             data={newArray}
             title={<span>{`Last ${eventArray.length} Events:`}
               <span style={{ marginRight: '1%' }}>

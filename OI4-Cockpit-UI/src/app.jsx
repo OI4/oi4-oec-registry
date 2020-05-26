@@ -418,6 +418,7 @@ class OI4Base extends React.Component {
               { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
               { title: 'Payload', field: 'payload', width: '20%', cellStyle: { wordBreak: 'break-all' } }
             ]}
+            style={{ minWidth: '100%' }}
             data={newArray}
             title={<span style={{ marginRight: '1%' }}>
               <Tooltip title="Copy to clipboard">
