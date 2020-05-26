@@ -414,9 +414,9 @@ class OI4Base extends React.Component {
         return (
           <MaterialTable
             columns={[
-              { title: "ErrorCode", field: "number", cellStyle: { wordBreak: 'break-all' } },
-              { title: "Description", field: "description", cellStyle: { wordBreak: 'break-all' } },
-              { title: 'Payload', field: 'payload', cellStyle: { wordBreak: 'break-all' } }
+              { title: "ErrorCode", field: "number", width: '7%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
+              { title: 'Payload', field: 'payload', width: '20%', cellStyle: { wordBreak: 'break-all' } }
             ]}
             data={newArray}
             title={<span style={{ marginRight: '1%' }}>
