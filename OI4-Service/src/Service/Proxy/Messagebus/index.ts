@@ -24,8 +24,8 @@ class OI4MessageBusProxy extends OI4Proxy {
 
     // Add Server Object depending on configuration
     const serverObj = {
-      host: process.env.OI4_ADDR as string,
-      port: parseInt(process.env.OI4_PORT as string, 10),
+      host: process.env.MQTT_BROKER_ADDRESS as string,
+      port: parseInt(process.env.MQTT_PORT as string, 10),
     };
     console.log(`MQTT: Trying to connect with ${serverObj.host}:${serverObj.port}`);
 
@@ -42,7 +42,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     // Initialize MQTT Options
 
     const mqttOpts: TMqttOpts = {
-      clientId: `MessageBus${process.env.CONTAINERNAME as string}`,
+      clientId: `MessageBus${process.env.APPLICATION_INSTANCE_NAME as string}`,
       servers: [serverObj],
       will: {
         topic: `oi4/${this.serviceType}/${this.oi4Id}/pub/health/${this.oi4Id}`,

@@ -38,7 +38,7 @@ class ContainerState extends ConfigParser implements IContainerState {
 
     this.mam = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
     this.mam.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
-    this.mam.SerialNumber = process.env.CONTAINERNAME as string;
+    this.mam.SerialNumber = process.env.APPLICATION_INSTANCE_NAME as string;
     this.mam.ProductInstanceUri = `${this.mam.ManufacturerUri}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
     this.oi4Id = this.mam.ProductInstanceUri;
     this.health = {

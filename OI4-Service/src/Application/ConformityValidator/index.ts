@@ -57,12 +57,12 @@ export class ConformityValidator extends EventEmitter {
   constructor(oi4Id: string) {
     super();
     const serverObj = {
-      host: process.env.OI4_ADDR as string,
-      port: parseInt(process.env.OI4_PORT as string, 10),
+      host: process.env.MQTT_BROKER_ADDRESS as string,
+      port: parseInt(process.env.MQTT_PORT as string, 10),
     };
 
     const mqttOpts: TMqttOpts = {
-      clientId: `ConformityCheck${process.env.CONTAINERNAME as string}${oi4Id as string}`,
+      clientId: `ConformityCheck${process.env.APPLICATION_INSTANCE_NAME as string}${oi4Id as string}`,
       servers: [serverObj],
     };
     this.conformityClient = mqtt.connect(mqttOpts);

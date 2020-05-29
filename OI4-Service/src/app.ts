@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
-if (!(process.env.OI4_ADDR) || !(process.env.OI4_PORT) || !(process.env.CONTAINERNAME)) {
+if (!(process.env.MQTT_BROKER_ADDRESS) || !(process.env.MQTT_PORT) || !(process.env.APPLICATION_INSTANCE_NAME)) {
   dotenv.config({ path: path.join(__dirname, '.env') });
 }
 
