@@ -1,7 +1,8 @@
 export class CommonFetch {
   constructor(mode = 'fetch', address, port) {
     this.mode = mode;
-    this.http = null;
+    this.http = null; // Stays null in 'fetch' mode
+    this.file = null; // Stays null in 'fetch mode'
     this.address = address;
     this.port = port;
     this.httpPrefix = 'http';
@@ -12,35 +13,49 @@ export class CommonFetch {
         port: parseInt(this.port, 10),
       };
       this.http = cockpit.http(cockpitEndpoint); // eslint-disable-line no-undef
-      this.http.get('/health')
-      .then(resp => {
-        console.log(resp.text());
-        console.log('Http works fine, continuing without tls');
-        this.httpPrefix = 'http';
-      })
-      .catch(e => {
-        console.log(e);
-        if (e.message === 'protocol-error') { // If it does not work, try it with https
-          const cockpitEndPointHttps = {
-            address: this.address,
-            port: parseInt(this.port, 10),
-            tls: {
-              validate: false,
-            }
-          };
-          this.http = cockpit.http(cockpitEndPointHttps); // eslint-disable-line no-undef
+      cockpit.script("/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'") // eslint-disable-line no-undef
+        .done((content, tag) => {
+          // Following 2 lines used for hostname file
+          // console.log(`Hostname from /etc/hostname: ${content}, tag:${tag}`);
+          // cockpitEndpoint.address = content.replace(/\n$/, '');
+          console.log(`Retrieved IP from ETH0: ${content}`);
+          cockpitEndpoint.address = content.replace(/\n$/, '');
+          this.address = cockpitEndpoint.address; // update own address aswell for https
           this.http.get('/health')
           .then(resp => {
-            console.log(resp);
-            console.log('No errors with https, continuing with https');
-            this.httpPrefix = 'https';
+            console.log(resp.text());
+            console.log('Http works fine, continuing without tls');
+            this.httpPrefix = 'http';
           })
           .catch(e => {
             console.log(e);
-            console.log('Still erroring with https');
+            if (e.message === 'protocol-error') { // If it does not work, try it with https
+              const cockpitEndPointHttps = {
+                address: this.address,
+                port: parseInt(this.port, 10),
+                tls: {
+                  validate: false,
+                }
+              };
+              this.http = cockpit.http(cockpitEndPointHttps); // eslint-disable-line no-undef
+              this.http.get('/health')
+                .then(resp => {
+                  console.log(resp);
+                  console.log('No errors with https, continuing with https');
+                  this.httpPrefix = 'https';
+                })
+                .catch(e => {
+                  console.log(e);
+                  console.log('Still erroring with https');
+                });
+            }
           });
-        }
-      });
+        })
+        .fail((err) => {
+          // console.log(`Error: ${err} reading hostname from file '/etc/hostname`);
+          console.log(`Error: ${err} reading ip addr from ifconfig command`);
+        });
+      console.log(cockpitEndpoint);
     } else if (mode === 'fetch') {
       console.log('Fetch selected');
       fetch(`http://${this.address}:${this.port}/health`, { // Try to get a simple health resource via HTTP
