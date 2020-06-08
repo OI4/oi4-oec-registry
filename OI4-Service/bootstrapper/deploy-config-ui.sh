@@ -1,8 +1,11 @@
 set -x
 
-echo "Create service-endpoint.js"
+echo "Deploy config ui"
 
-IP=$(printenv LOCAL_ADDR)
+#IP=$(printenv LOCAL_ADDR)
+
+<<COMMENT1
+echo "Create service-endpoint.js"
 
 echo "var serviceEndpoint = { \
   \"address\": \"$IP\", \
@@ -12,6 +15,19 @@ echo "var serviceEndpoint = { \
 
 echo "var serviceEndpoint = { \
   \"address\": \"$IP\", \
+  \"port\": \"4567\", \
+  \"platform\": \"fetch\" \
+}; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
+COMMENT1
+
+echo "Create service-endpoint.js without IP entry"
+
+echo "var serviceEndpoint = { \
+  \"port\": \"4567\", \
+  \"platform\": \"cockpit\" \
+}; " > "$COCKPIT_UI_SRC_PATH/service-endpoint.js"
+
+echo "var serviceEndpoint = { \
   \"port\": \"4567\", \
   \"platform\": \"fetch\" \
 }; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
