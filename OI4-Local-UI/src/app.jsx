@@ -102,12 +102,12 @@ class OI4Base extends React.Component {
   constructor(props) {
     super(props);
     this.platform = 'fetch';
-
+    console.log(`Window.location.hostname: ${window.location.hostname}`);
+    this.address = window.location.hostname;
     // The following lines will give access to the external Endpoint for the REST API defined by the Environment variables.
     // This way, the registry backend is fully decoupled from the front-end
     /* eslint-disable */
     if (typeof serviceEndpoint === 'object' && serviceEndpoint !== null) {
-      this.address = serviceEndpoint.address;
       this.port = serviceEndpoint.port;
       this.platform = serviceEndpoint.platform;
     }
