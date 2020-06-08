@@ -179,6 +179,8 @@ export class Registry extends EventEmitter {
       firstPayload = JSON.parse(message.toString());
     } catch (e) {
       this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESubResource.warn);
+      this.logger.log(`Topic: ${topic}`, ESubResource.warn);
+      this.logger.log(message.toString(), ESubResource.warn);
       return;
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);

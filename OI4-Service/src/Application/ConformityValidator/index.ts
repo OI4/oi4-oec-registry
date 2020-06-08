@@ -399,6 +399,7 @@ export class ConformityValidator extends EventEmitter {
     if (networkMessageValidationResult && payloadValidationResult) {
       return true;
     }
+    this.logger.log(`Faulty payload: ${JSON.stringify(payload)}`, ESubResource.warn);
     return false;
   }
 
