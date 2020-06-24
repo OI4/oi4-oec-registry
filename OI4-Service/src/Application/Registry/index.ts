@@ -81,7 +81,7 @@ export class Registry extends EventEmitter {
 
     this.queue = new SequentialTaskQueue();
     this.containerState = contState;
-    this.containerState.publicationList.publicationList.push({
+    this.containerState.addPublication({
       resource: 'mam',
       tag: '',
       DataSetWriterId: this.oi4Id,
@@ -125,7 +125,7 @@ export class Registry extends EventEmitter {
    * @param topic - The topic that should be subscribed to
    */
   private async ownSubscribe(topic: string) {
-    this.containerState.subscriptionList.subscriptionList.push({
+    this.containerState.addSubscription({
       topicPath: topic,
       config: ESubscriptionListConfig.NONE_0,
       interval: 0,
@@ -139,7 +139,7 @@ export class Registry extends EventEmitter {
    */
   private async ownUnsubscribe(topic: string) {
     // Remove from subscriptionList
-    this.containerState.subscriptionList.subscriptionList = this.containerState.subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    this.containerState.removeSubscriptionByTopic(topic);
     return await this.registryClient.unsubscribe(topic);
   }
 
@@ -429,7 +429,7 @@ export class Registry extends EventEmitter {
       }
     }
     // Update own publicationList with new Asset
-    this.containerState.publicationList.publicationList.push({
+    this.containerState.addPublication({
       resource: 'mam',
       tag: oi4IdAsset,
       DataSetWriterId: oi4IdAsset,
@@ -479,7 +479,7 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/profile/${device}`);
       delete this.assetLookup[device];
       // Remove from publicationList
-      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== device);
+      this.containerState.removePublicationByTag(device);
       // Publish the new publicationList according to spec
       this.registryClient.publish(
         `oi4/Registry/${this.oi4Id}/pub/publicationList`,
@@ -503,7 +503,7 @@ export class Registry extends EventEmitter {
       this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/config/${assets}`);
       this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/profile/${assets}`);
       // Remove from publicationList
-      this.containerState.publicationList.publicationList = this.containerState.publicationList.publicationList.filter(value => value.tag !== assets);
+      this.containerState.removePublicationByTag(assets);
     }
     // Publish the new publicationList according to spec
     this.registryClient.publish(
