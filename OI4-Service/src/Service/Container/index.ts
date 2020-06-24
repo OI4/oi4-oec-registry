@@ -14,39 +14,61 @@ import {
   IContainerSubscriptionList,
   EPublicationListConfig,
   ESubscriptionListConfig,
+  ISubscriptionListObject,
+  IPublicationListObject,
 } from '../Models/IContainer';
 
 import { IOPCUAData, IOPCUAMetaData, IMasterAssetModel, EOPCUALocale } from '../Models/IOPCUAPayload';
 
 import masterAssetModel from '../../Config/masterAssetModel.json'; /*tslint:disable-line*/
 
+import resources from '../../Config/Constants/resources.json'; /*tslint:disable-line*/
+
 class ContainerState extends ConfigParser implements IContainerState {
   public oi4Id: string; // TODO: doubling? Not needed here
-  public health: IContainerHealth;
-  public license: IContainerLicense;
-  public licenseText: IContainerLicenseText;
-  public rtLicense: IContainerRTLicense;
+  private _profile: IContainerProfile;
+  private _mam: IMasterAssetModel;
+  private _health: IContainerHealth;
+  public _license: IContainerLicense;
+  public _licenseText: IContainerLicenseText;
+  public _rtLicense: IContainerRTLicense;
+
+  public _publicationList: IContainerPublicationList;
+  public _subscriptionList: IContainerSubscriptionList;
+
   public dataLookup: IContainerData;
   public metaDataLookup: IContainerMetaData;
-  public mam: IMasterAssetModel;
-  public profile: IContainerProfile;
-  public publicationList: IContainerPublicationList;
-  public subscriptionList: IContainerSubscriptionList;
 
   constructor() {
     super();
 
-    this.mam = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
-    this.mam.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
-    this.mam.SerialNumber = process.env.APPLICATION_INSTANCE_NAME as string;
-    this.mam.ProductInstanceUri = `${this.mam.ManufacturerUri}/${encodeURIComponent(this.mam.Model.Text)}/${encodeURIComponent(this.mam.ProductCode)}/${encodeURIComponent(this.mam.SerialNumber)}`;
-    this.oi4Id = this.mam.ProductInstanceUri;
-    this.health = {
+    this._mam = masterAssetModel as IMasterAssetModel; // Import MAM from JSON
+    this._mam.Description.Locale = EOPCUALocale.enUS; // Fill in container-specific values
+    this._mam.SerialNumber = process.env.APPLICATION_INSTANCE_NAME as string;
+    this._mam.ProductInstanceUri = `${this._mam.ManufacturerUri}/${encodeURIComponent(this._mam.Model.Text)}/${encodeURIComponent(this._mam.ProductCode)}/${encodeURIComponent(this._mam.SerialNumber)}`;
+
+    this.oi4Id = this._mam.ProductInstanceUri;
+
+    this._profile = {
+      resource: [
+        'health',
+        'license',
+        'rtLicense',
+        'config',
+        'mam',
+        'profile',
+        'licenseText',
+        'publicationList',
+        'subscriptionList',
+      ],
+    };
+
+    this._health = {
       health: EDeviceHealth.NORMAL_0,
       healthState: 100,
     };
 
-    this.license = {
+    this._license = {
       licenses: [
         {
           licenseId: 'MIT',
@@ -144,113 +166,92 @@ class ContainerState extends ConfigParser implements IContainerState {
       ],
     };
 
-    this.licenseText = {
-      MIT: `(The MIT License)
-      Copyright (c) 2009-2014 TJ Holowaychuk <tj@vision-media.ca>
-      Copyright (c) 2013-2014 Roman Shtylman <shtylman+expressjs@gmail.com>
-      Copyright (c) 2014-2015 Douglas Christopher Wilson <doug@somethingdoug.com>
+    this._licenseText = {};
+    this.addLicenseText('MIT', `(The MIT License)
+    Copyright (c) 2009-2014 TJ Holowaychuk <tj@vision-media.ca>
+    Copyright (c) 2013-2014 Roman Shtylman <shtylman+expressjs@gmail.com>
+    Copyright (c) 2014-2015 Douglas Christopher Wilson <doug@somethingdoug.com>
 
-      Permission is hereby granted, free of charge, to any person obtaining
-      a copy of this software and associated documentation files (the
-      'Software'), to deal in the Software without restriction, including
-      without limitation the rights to use, copy, modify, merge, publish,
-      distribute, sublicense, and/or sell copies of the Software, and to
-      permit persons to whom the Software is furnished to do so, subject to
-      the following conditions:
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    'Software'), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
 
-      The above copyright notice and this permission notice shall be
-      included in all copies or substantial portions of the Software.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-      THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`,
-      BSD2: `(BSD 2-Clause License)
-      All rights reserved.
-      Redistribution and use in source and binary forms, with or without
-      modification, are permitted provided that the following conditions are met:
+    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`);
 
-      * Redistributions of source code must retain the above copyright notice, this
-        list of conditions and the following disclaimer.
+    this.addLicenseText('BDS-2-Clause', `(BSD 2-Clause License)
+    All rights reserved.
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
 
-      * Redistributions in binary form must reproduce the above copyright notice,
-        this list of conditions and the following disclaimer in the documentation
-        and/or other materials provided with the distribution.
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
 
-      THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-      AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-      IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-      DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-      FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-      DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-      SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-      CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-      OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`,
-      BSD3: `(BSD 3-Clause License)
-      All rights reserved.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
 
-      Redistribution and use in source and binary forms, with or without
-      modification, are permitted provided that the following conditions are met:
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`);
+    this.addLicenseText('BSD-3-Clause', `(BSD 3-Clause License)
+    All rights reserved.
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
 
-      1. Redistributions of source code must retain the above copyright notice, this
-         list of conditions and the following disclaimer.
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
 
-      2. Redistributions in binary form must reproduce the above copyright notice,
-         this list of conditions and the following disclaimer in the documentation
-         and/or other materials provided with the distribution.
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
 
-      3. Neither the name of the copyright holder nor the names of its
-         contributors may be used to endorse or promote products derived from
-         this software without specific prior written permission.
+    3. Neither the name of the copyright holder nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
 
-      THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-      AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-      IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-      DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-      FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-      DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-      SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-      CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-      OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-      `,
-    };
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    `);
 
-    this.rtLicense = {
-
-    };
+    this._rtLicense = {};
 
     this.dataLookup = {};
     this.metaDataLookup = {};
 
-    this.profile = {
-      resource: [
-        'health',
-        'license',
-        'rtLicense',
-        'config',
-        'mam',
-        'profile',
-        'licenseText',
-        'publicationList',
-        'subscriptionList',
-      ],
+    this._publicationList = {
+      publicationList: [],
     };
 
-    this.publicationList = {
-      publicationList: [
-
-      ],
-    };
-
-    this.subscriptionList = {
-      subscriptionList: [
-
-      ],
+    this._subscriptionList = {
+      subscriptionList: [],
     };
 
     // Fill both pubList and subList
@@ -261,7 +262,7 @@ class ContainerState extends ConfigParser implements IContainerState {
       } else {
         resInterval = 0;
       }
-      this.publicationList.publicationList.push({
+      this.addPublication({
         resource: resources,
         tag: this.oi4Id,
         DataSetWriterId: this.oi4Id,
@@ -271,13 +272,92 @@ class ContainerState extends ConfigParser implements IContainerState {
         config: EPublicationListConfig.NONE_0,
       });
 
-      this.subscriptionList.subscriptionList.push({
+      this.addSubscription({
         topicPath: `oi4/${this.mam.DeviceClass}/${this.oi4Id}/get/${resources}/${this.oi4Id}`,
         interval: 0,
         config: ESubscriptionListConfig.NONE_0,
       });
     }
 
+  }
+
+  // Resource accesor section
+  // --- HEALTH ---
+
+  get health() {
+    return this._health;
+  }
+
+  set health(health: IContainerHealth) {
+    if (health.healthState <= 100 && health.healthState >= 0) {
+      this._health = health;
+    } else {
+      console.log('Error when setting health, healthState OOB');
+    }
+  }
+
+  setHealthState(healthState: number) {
+    if (healthState >= 100 && healthState <= 0) throw new RangeError('healthState out of range');
+    this._health.healthState = healthState;
+  }
+
+  setHealth(health: EDeviceHealth) {
+    this._health.health = health;
+  }
+
+  // --- MAM ---
+
+  get mam() {
+    return this._mam;
+  }
+
+  // --- Profile ---
+  get profile() {
+    return this._profile;
+  }
+
+  addProfile(entry: string): void {
+    if (!(resources.full.includes(entry))) console.log('Attention! Adding non-conform profile entry, proceed at own risk');
+    this._profile.resource.push(entry);
+  }
+
+  // --- License ---
+
+  get license() {
+    return this._license;
+  }
+
+  // --- LicenseText ---
+  get licenseText() {
+    return this._licenseText;
+  }
+
+  // TODO: Add dynamic ENUM containing all spdx licenseIds
+  addLicenseText(licenseName: string, licenseText: string) {
+    this._licenseText[licenseName] = licenseText;
+  }
+
+  // --- rtLicense ---
+  get rtLicense() {
+    return this._rtLicense;
+  }
+
+  // --- publicationList ---
+  get publicationList() {
+    return this._publicationList;
+  }
+
+  addPublication(publicationObj: IPublicationListObject): void {
+    this._publicationList.publicationList.push(publicationObj);
+  }
+
+  // --- subscriptionList ---
+  get subscriptionList() {
+    return this._subscriptionList;
+  }
+
+  addSubscription(subscriptionObj: ISubscriptionListObject): void {
+    this._subscriptionList.subscriptionList.push(subscriptionObj);
   }
 
   /**

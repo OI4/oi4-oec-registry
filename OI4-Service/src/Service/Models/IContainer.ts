@@ -64,13 +64,13 @@ export interface IContainerSubscriptionList {
   subscriptionList: ISubscriptionListObject[];
 }
 
-interface ISubscriptionListObject {
+export interface ISubscriptionListObject {
   topicPath: string;
   interval: number;
   config: ESubscriptionListConfig;
 }
 
-interface IPublicationListObject {
+export interface IPublicationListObject {
   resource: string;
   tag: string;
   DataSetWriterId: string; // Actually OI4-Identifier: TODO: Validator
@@ -83,16 +83,25 @@ interface IPublicationListObject {
 export interface IContainerState {
   oi4Id: string;
   health: IContainerHealth;
+  profile: IContainerProfile;
+  mam: IMasterAssetModel;
   license: IContainerLicense;
   licenseText: IContainerLicenseText;
   rtLicense: IContainerRTLicense;
   config: IContainerConfig;
-  dataLookup: IContainerData;
-  profile: IContainerProfile;
-  metaDataLookup: IContainerMetaData;
   publicationList: IContainerPublicationList;
   subscriptionList: IContainerSubscriptionList;
-  mam: IMasterAssetModel;
+
+  dataLookup: IContainerData;
+  metaDataLookup: IContainerMetaData;
+
+  setHealthState(healthState: number): void;
+  setHealth(health: EDeviceHealth): void;
+
+  addProfile(entry: string): void;
+  addLicenseText(licenseName: string, licenseText: string): void;
+  addPublication(publicationObj: IPublicationListObject): void;
+  addSubscription(subbscriptionObj: ISubscriptionListObject): void;
 
   // Methods
   addDataSet(dataname: string, data: IOPCUAData, metadata: IOPCUAMetaData): void;
