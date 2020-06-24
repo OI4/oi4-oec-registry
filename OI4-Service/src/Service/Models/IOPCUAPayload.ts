@@ -93,7 +93,7 @@ interface IOPCUALocalizedText {
   Text: string;
 }
 
-interface IOPCUAConfigurationVersion{
+export interface IOPCUAConfigurationVersion{
   majorVersion: number;
   minorVersion: number;
 }
