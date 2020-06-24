@@ -32,7 +32,7 @@ class OI4WebProxy extends OI4Proxy {
     if (process.platform === 'win32') {
       certpath = 'C:/certs';
     } else {
-      certpath = '/usr/local/share/cert';
+      certpath = '/usr/local/share/oi4registry/cert';
     }
     if ((process.env.USE_HTTPS) && process.env.USE_HTTPS === 'true') { // Environment variable found, so we should use HTTPS, check for key/cert
       if (fs.existsSync(`${certpath}/cert.pem`) && fs.existsSync(`${certpath}/key.pem`)) {

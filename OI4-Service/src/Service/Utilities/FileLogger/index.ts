@@ -1,6 +1,6 @@
 import { fstatSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
 
-const rootdir = './logs';
+const rootdir = '/usr/local/share/oi4registry/logs';
 
 export class FileLogger {
   private currentlyUsedFiles: string[];
