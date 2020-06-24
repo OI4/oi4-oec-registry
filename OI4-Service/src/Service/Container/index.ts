@@ -289,20 +289,20 @@ class ContainerState extends ConfigParser implements IContainerState {
   }
 
   set health(health: IContainerHealth) {
-    if (health.healthState <= 100 && health.healthState >= 0) {
-      this._health = health;
-    } else {
-      console.log('Error when setting health, healthState OOB');
-    }
+    if (health.healthState >= 100 && health.healthState <= 0) throw new RangeError('healthState out of range');
+    this._health = health;
+    this.emit('resourceChanged', 'health');
   }
 
   setHealthState(healthState: number) {
     if (healthState >= 100 && healthState <= 0) throw new RangeError('healthState out of range');
     this._health.healthState = healthState;
+    this.emit('resourceChanged', 'health');
   }
 
   setHealth(health: EDeviceHealth) {
     this._health.health = health;
+    this.emit('resourceChanged', 'health');
   }
 
   // --- MAM ---
@@ -319,6 +319,7 @@ class ContainerState extends ConfigParser implements IContainerState {
   addProfile(entry: string): void {
     if (!(resources.full.includes(entry))) console.log('Attention! Adding non-conform profile entry, proceed at own risk');
     this._profile.resource.push(entry);
+    this.emit('resourceChanged', 'profile');
   }
 
   // --- License ---
@@ -335,6 +336,7 @@ class ContainerState extends ConfigParser implements IContainerState {
   // TODO: Add dynamic ENUM containing all spdx licenseIds
   addLicenseText(licenseName: string, licenseText: string) {
     this._licenseText[licenseName] = licenseText;
+    this.emit('resourceChanged', 'licenseText');
   }
 
   // --- rtLicense ---
@@ -349,10 +351,12 @@ class ContainerState extends ConfigParser implements IContainerState {
 
   addPublication(publicationObj: IPublicationListObject): void {
     this._publicationList.publicationList.push(publicationObj);
+    this.emit('resourceChanged', 'publicationList');
   }
 
   removePublicationByTag(tag: string): void {
     this._publicationList.publicationList = this._publicationList.publicationList.filter(value => value.tag !== tag);
+    this.emit('resourceChanged', 'publicationList');
   }
 
   // --- subscriptionList ---
@@ -362,10 +366,12 @@ class ContainerState extends ConfigParser implements IContainerState {
 
   addSubscription(subscriptionObj: ISubscriptionListObject): void {
     this._subscriptionList.subscriptionList.push(subscriptionObj);
+    this.emit('resourceChanged', 'subscriptionList');
   }
 
   removeSubscriptionByTopic(topic: string): void {
     this._subscriptionList.subscriptionList = this._subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
+    this.emit('resourceChanged', 'subscriptionList');
   }
 
   /**
