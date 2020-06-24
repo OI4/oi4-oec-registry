@@ -351,7 +351,7 @@ class ContainerState extends ConfigParser implements IContainerState {
     this._publicationList.publicationList.push(publicationObj);
   }
 
-  removePublicationByTag(tag: string) {
+  removePublicationByTag(tag: string): void {
     this._publicationList.publicationList = this._publicationList.publicationList.filter(value => value.tag !== tag);
   }
 
@@ -364,7 +364,7 @@ class ContainerState extends ConfigParser implements IContainerState {
     this._subscriptionList.subscriptionList.push(subscriptionObj);
   }
 
-  removeSubscriptionByTopic(topic: string) {
+  removeSubscriptionByTopic(topic: string): void {
     this._subscriptionList.subscriptionList = this._subscriptionList.subscriptionList.filter(value => value.topicPath !== topic);
   }
 

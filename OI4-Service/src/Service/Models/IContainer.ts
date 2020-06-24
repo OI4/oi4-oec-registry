@@ -103,6 +103,9 @@ export interface IContainerState {
   addPublication(publicationObj: IPublicationListObject): void;
   addSubscription(subbscriptionObj: ISubscriptionListObject): void;
 
+  removePublicationByTag(tag: string): void;
+  removeSubscriptionByTopic(topic: string): void;
+
   // Methods
   addDataSet(dataname: string, data: IOPCUAData, metadata: IOPCUAMetaData): void;
 }
