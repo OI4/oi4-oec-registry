@@ -135,7 +135,7 @@ class ContainerState extends ConfigParser implements IContainerState {
           ],
         },
         {
-          licenseId: 'BSD2',
+          licenseId: 'BSD-2-Clause',
           components: [
             {
               component: 'dotenv',
@@ -151,7 +151,7 @@ class ContainerState extends ConfigParser implements IContainerState {
           ],
         },
         {
-          licenseId: 'BSD3',
+          licenseId: 'BSD-3-Clause',
           components: [
             {
               component: 'OI4-Registry',
@@ -191,7 +191,7 @@ class ContainerState extends ConfigParser implements IContainerState {
     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`);
 
-    this.addLicenseText('BDS-2-Clause', `(BSD 2-Clause License)
+    this.addLicenseText('BSD-2-Clause', `(BSD 2-Clause License)
     All rights reserved.
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
