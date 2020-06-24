@@ -2,14 +2,17 @@ import fs = require('fs');
 import path = require('path');
 
 import { IContainerConfig } from '../../Container/index';
+import { EventEmitter } from 'events';
 
 /**
  * Responsible for reading / writing configuration data to a containerConfig.json file (currently hardcoded name and path)
  */
-class ConfigParser {
+// TODO: Is this even needed???
+class ConfigParser extends EventEmitter {
   private _config: IContainerConfig;
   private configPath: string = path.join(__dirname, '..', '..', '..', 'Config', 'containerConfig.json');
   constructor() {
+    super();
     this._config = {
       updateInterval: 1337,
       textColor: 'white',
