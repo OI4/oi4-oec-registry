@@ -106,6 +106,8 @@ export interface IContainerState {
   removePublicationByTag(tag: string): void;
   removeSubscriptionByTopic(topic: string): void;
 
+  on(event: string, listener: Function): this;
+
   // Methods
   addDataSet(dataname: string, data: IOPCUAData, metadata: IOPCUAMetaData): void;
 }
