@@ -39,10 +39,10 @@ After that, the proxies can be used to interact with an application.
 4 Application Examples can be found, as well as their implementation in app.ts.
 
 In order to make the MessageBus work inside a container, the following Environment Variables need to be set:
-> OI4_ADDR=\<IP of Broker\>\
-> OI4_PORT=\<Port of Broker\>\
-> LOCAL_ADDR=\<IP of Docker HOST(!)\>(optional, if UI-component is used in conjunction with OI4-Service)
-> CONTAINERNAME=\<Name of docker container\> (used for SerialNumber in MasterAssetSet, must be unique)
+> MQTT_BROKER_ADDRESS=\<IP of Broker\>\
+> MQTT_PORT=\<Port of Broker\>\
+> APPLICATION_INSTANCE_NAME=\<Name of docker container\> (used as SerialNumber in MAM, must be unique)\
+> (optional) USE_HTTPS=\<true\> or \<false\> (see TLS section)
 
 alternatively, a .env file can be placed inside the **out** folder containing these environment variables.
 
@@ -51,7 +51,7 @@ The MasterAssetSet can be found in ```src/config/masterAssetModel.json``` and sh
 
 ### Installation / Launch / Development:
 Take a look at the npm scripts found in the ```package.json``` file of the project root.\
-checkout the project and run ```npm install --production```
+checkout the project and run ```npm install --production```\
 change the port in ```src/Proxy/Web/index.ts``` to fit your needs. (optional)\
 set the environment variables as stated above or create a .env file in ```out/.env``` in order to connect to your local broker\
 run ```npm run tsc``` in order to build the project to the **out** folder\
@@ -61,7 +61,7 @@ running the project manually, run ```node out/app.js``` or, inside vscode, just 
 The UI utilizes the Web-API of the OI4-Service, as well as the Registry application.
 
 ### Installation / Launch:
-checkout the project and run ```npm install``\
+checkout the project and run ```npm install```\
 the local-ui will take address and port of ```service-endpoint.js``` from its **build** folder as a reference to which webAPI it's going to to call.\
 add / change the file to fit your OI4-Service Endpoint. The bootstrapper in *OI4-Service* will do this for you when you create the container.\
 run either ```npm start``` or ```npm run build & npx serve build/``` respectively to either start
@@ -85,18 +85,17 @@ a simplified build instruction can used by going into the project root and execu
 run ```docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t <yourtagname> --push -f Multi.Dockerfile .```\
 with the image and create a container with the following options:\
 Environment variables:
-> OI4_ADDR=\<IP of Broker\>\
-> OI4_PORT=\<Port of Broker\>\
-> LOCAL_ADDR=\<IP of docker HOST(!)\>(used for UI-REST API calls)\
-> CONTAINERNAME=\<Name of docker container\> (used for SerialNumber in MasterAssetSet, must be unique)\
-> (optional) USE_HTTPS=\<true> or \<false> (see TLS section)
+> MQTT_BROKER_ADDRESS=\<IP of Broker\>\
+> MQTT_PORT=\<Port of Broker\>\
+> APPLICATION_INSTANCE_NAME=\<Name of docker container\> (used as SerialNumber in MAM, must be unique)\
+> (optional) USE_HTTPS=\<true\> or \<false\> (see TLS section)
 
 Next, the ports for ```4567``` (WebAPI of the Registry) and ```5000``` (Port for Registry Frontend) need to be forwarded in order to work. (TCP)
 
 As a last step, if you are using the Cockpit-Plugin, the following path needs to be bound and existing (writable): ```usr/local/share/cockpit```.
 If you don't want to use the Cockpit-Plugin, just remove the mount path in your docker run command, the registry will then only be accessible at your specified port.
 
-Example run command (with all mounts and features): ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e OI4_ADDR=10.11.4.232 -e OI4_PORT=1883 -e LOCAL_ADDR=10.11.4.232 -e CONTAINERNAME=RegistryContainer -e USE_HTTPS=true --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest --mount type=bind,source=/usr/local/share/cert,target=/usr/local/share/cert --mount type=bind,source=/usr/local/share/logs,target=/usr/local/share/logs```
+Example run command (with all mounts and features): ```docker run --name RegistryContainer -p 4567:4567 -p 5000:5000 -e MQTT_BROKER_ADDRESS=10.11.4.232 -e MQTT_PORT=1883 -e APPLICATION_INSTANCE_NAME=RegistryContainer -e USE_HTTPS=true --mount type=bind,source=/usr/local/share/cockpit,target=/usr/local/share/cockpit registrycheckout:latest --mount type=bind,source=/usr/local/share/cert,target=/usr/local/share/cert --mount type=bind,source=/usr/local/share/logs,target=/usr/local/share/logs```
 
 Paths that currently can be bound:
 > /usr/local/share/cockpit <-The cockpit plugin\
@@ -123,7 +122,7 @@ The directory must be filled with a ```cert.pem``` and ```key.pem```
 - If the ```USE_HTTPS``` variable is ```true``` and there is a certificate in the directory, this certificate will be used to establish a secure connection.
 
 ### Peculiarities in the browser:
-If the automatically generated self-signed certificate is used, an exception for the certificate needs to be added for *both* the frontend *and* the backend.
+If the automatically generated self-signed certificate is used, an exception in the web-browser for the certificate needs to be added for *both* the frontend *and* the backend.
 - Frontend sample address for exception: "https://*ipOfRegistry*:5000"
 - Backend sample address for exception: "https://*ipOfRegistry*:4567/health"
 
