@@ -51,11 +51,15 @@ export class OPCUABuilder {
   serviceType: string;
   publisherId: string;
   jsonValidator: Ajv.Ajv;
+  lastMessageId: string;
+
   constructor(oi4Id: string, serviceType: string) {
     this.oi4Id = oi4Id;
     this.serviceType = serviceType;
     this.publisherId = `${serviceType}/${oi4Id}`;
     this.jsonValidator = new Ajv();
+    this.lastMessageId = '';
+
     // Add Validation Schemas
     // First common Schemas
     this.jsonValidator.addSchema(NetworkMessageSchemaJson, 'NetworkMessage.schema.json');
@@ -102,6 +106,11 @@ export class OPCUABuilder {
       Messages: opcUaDataPayload,
       CorrelationId: correlationId,
     };
+    if (this.lastMessageId === opcUaDataMessage.MessageId) {
+      opcUaDataMessage.MessageId = `OverFlow${opcUaDataMessage.MessageId}`;
+    } else {
+      this.lastMessageId = opcUaDataMessage.MessageId;
+    }
     return opcUaDataMessage;
   }
 
@@ -124,6 +133,11 @@ export class OPCUABuilder {
       MetaData: opcUaMetaDataPayload,
       CorrelationId: correlationId,
     };
+    if (this.lastMessageId === opcUaMetaDataMessage.MessageId) {
+      opcUaMetaDataMessage.MessageId = `OverFlow${opcUaMetaDataMessage.MessageId}`;
+    } else {
+      this.lastMessageId = opcUaMetaDataMessage.MessageId;
+    }
     return opcUaMetaDataMessage;
   }
 
