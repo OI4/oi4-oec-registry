@@ -73,7 +73,14 @@ class OI4MessageBusProxy extends OI4Proxy {
 
       this.client.on('message', this.processMqttMessage);
       setInterval(() => { this.sendResource('health'); }, 60000); // send our own health every 30 seconds!
+      this.containerState.on('resourceChanged', this.handleResourceChanged.bind(this));
     });
+  }
+
+  private handleResourceChanged(resource: string): void {
+    if (resource === 'health') {
+      this.sendResource('health');
+    }
   }
 
   private async ownSubscribe(topic: string) {
