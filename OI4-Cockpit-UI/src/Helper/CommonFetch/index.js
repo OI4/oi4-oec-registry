@@ -13,13 +13,15 @@ export class CommonFetch {
         port: parseInt(this.port, 10),
       };
       this.http = cockpit.http(cockpitEndpoint); // eslint-disable-line no-undef
-      cockpit.script("/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'") // eslint-disable-line no-undef
+      // cockpit.script("/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'") // eslint-disable-line no-undef
+      cockpit.file('/etc/hostname').read() // eslint-disable-line no-undef
         .done((content, tag) => {
           // Following 2 lines used for hostname file
-          // console.log(`Hostname from /etc/hostname: ${content}, tag:${tag}`);
-          // cockpitEndpoint.address = content.replace(/\n$/, '');
-          console.log(`Retrieved IP from ETH0: ${content}`);
+          console.log(`Hostname from /etc/hostname: ${content}, tag:${tag}`);
           cockpitEndpoint.address = content.replace(/\n$/, '');
+          // Following 2 lines used for retrieving ip from command
+          // console.log(`Retrieved IP from ETH0: ${content}`);
+          // cockpitEndpoint.address = content.replace(/\n$/, '');
           this.address = cockpitEndpoint.address; // update own address aswell for https
           this.http.get('/health')
           .then(resp => {
