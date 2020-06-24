@@ -9,6 +9,7 @@ import {
   IOPCUAFieldMetaData,
   EOPCUALocale,
   EValueRank,
+  IOPCUAConfigurationVersion,
 } from '../../Models/IOPCUAPayload';
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
@@ -84,7 +85,7 @@ export class OPCUABuilder {
    * @param classId - the DataSetClassId that is used for the data (health, license etc.)
    * @param correlationId - If the message is a response to a get, or a forward, input the MessageID of the request as the correlation id. Default: ''
    */
-  buildOPCUADataMessage(actualPayload: any, timestamp: Date, classId: string, correlationId: string = ''): IOPCUAData {
+  buildOPCUADataMessage(actualPayload: any, timestamp: Date, classId: string, correlationId: string = '', metaDataVersion?: IOPCUAConfigurationVersion): IOPCUAData {
     let opcUaDataPayload: IOPCUADataMessage[];
     // Not sure why empty objects were converted to an empty array. The correct behaviour is building an Empty DataSetMessage...
     // if (Object.keys(actualPayload).length === 0 && actualPayload.constructor === Object) {
@@ -92,7 +93,7 @@ export class OPCUABuilder {
     // } else {
     //   opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
     // }
-    opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp)];
+    opcUaDataPayload = [this.buildOPCUAData(actualPayload, timestamp, metaDataVersion)];
     const opcUaDataMessage: IOPCUAData = {
       MessageId: `${Date.now().toString()}-${this.publisherId}`,
       MessageType: EOPCUAMessageType.uadata,
@@ -131,17 +132,16 @@ export class OPCUABuilder {
    * @param actualPayload - the payload (valid key-values) that is to be encapsulated
    * @param timestamp - the current timestamp in Date format
    */
-  private buildOPCUAData(actualPayload: any, timestamp: Date): IOPCUADataMessage {
+  private buildOPCUAData(actualPayload: any, timestamp: Date, metaDataVersion?: IOPCUAConfigurationVersion): IOPCUADataMessage {
     const opcUaDataPayload: IOPCUADataMessage = { // TODO: More elements
       DataSetWriterId: this.oi4Id,
       Timestamp: timestamp.toISOString(),
       Status: 0, // TODO switch to UASTATUSCODES
       Payload: actualPayload,
-      MetaDataVersion: {
-        majorVersion: 0,
-        minorVersion: 0,
-      },
     };
+    if (typeof metaDataVersion !== 'undefined' && metaDataVersion !== null) {
+      opcUaDataPayload.MetaDataVersion = metaDataVersion;
+    }
     return opcUaDataPayload;
   }
 
