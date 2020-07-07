@@ -66,7 +66,7 @@ export class Registry extends EventEmitter {
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
 
-    this.logger = new Logger(true, 'Registry-App', ESubResource.warn, registryClient, this.oi4Id, 'Registry');
+    this.logger = new Logger(true, 'Registry-App', process.env.LOG_LEVEL as ESubResource, registryClient, this.oi4Id, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, this.oi4Id, 'Registry');
     this.fileLogger = new FileLogger(this.config.logFileSize, true);
 

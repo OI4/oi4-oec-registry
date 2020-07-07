@@ -55,7 +55,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     };
 
     this.client = mqtt.connect(mqttOpts);
-    this.logger = new Logger(true, 'Registry-BusProxy', ESubResource.warn, this.client, this.oi4Id, this.serviceType);
+    this.logger = new Logger(true, 'Registry-BusProxy', process.env.LOG_LEVEL as ESubResource, this.client, this.oi4Id, this.serviceType);
     this.logger.log(`Standardroute: ${this.topicPreamble}`, ESubResource.info);
     // Publish Birth Message and start listening to topics
     this.client.on('connect', async (connack: mqtt.IConnackPacket) => {

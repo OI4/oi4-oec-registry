@@ -15,7 +15,7 @@ class OI4WebProxy extends OI4Proxy {
   private logger: Logger;
   constructor(container: IContainerState) {
     super(container);
-    this.logger = new Logger(true, 'Registry-WebProxy', ESubResource.info);
+    this.logger = new Logger(true, 'Registry-WebProxy', process.env.LOG_LEVEL as ESubResource);
     this.logger.log(`WebProxy: Standardroute: ${this.topicPreamble}`, ESubResource.info);
 
     this.client = express();

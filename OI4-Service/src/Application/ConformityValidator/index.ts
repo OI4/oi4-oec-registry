@@ -67,7 +67,7 @@ export class ConformityValidator extends EventEmitter {
     };
     this.conformityClient = mqtt.connect(mqttOpts);
 
-    this.logger = new Logger(true, 'ConformityValidator-App', ESubResource.warn, this.conformityClient, oi4Id, 'Utility');
+    this.logger = new Logger(true, 'ConformityValidator-App', process.env.LOG_LEVEL as ESubResource, this.conformityClient, oi4Id, 'Utility');
     this.builder = new OPCUABuilder(oi4Id, 'Registry'); // TODO: Set oi4Id to something useful
 
     this.jsonValidator = new Ajv();
