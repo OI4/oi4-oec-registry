@@ -1,4 +1,4 @@
-import { fstatSync, appendFileSync, openSync, closeSync, unlinkSync, readdirSync } from 'fs';
+import { fstatSync, existsSync, appendFileSync, openSync, closeSync, unlinkSync, mkdirSync, readdirSync } from 'fs';
 
 const rootdir = '/usr/local/share/oi4registry/logs';
 
@@ -18,6 +18,9 @@ export class FileLogger {
     this.currentFd = 0;
     this.enabled = true;
     this.logFileSize = logsize;
+    if (!existsSync(rootdir)) {
+      mkdirSync(rootdir, { recursive: true });
+    }
   }
 
   private getFilesFromPath(path: string, extension: string) {
