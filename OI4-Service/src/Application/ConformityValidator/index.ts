@@ -1,6 +1,6 @@
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
-import { IConformity, EValidity, IValidityDetails } from '../Models/IConformityValidator';
+import { IConformity, ISchemaConformity, EValidity, IValidityDetails } from '../Models/IConformityValidator';
 const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
 import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
 
@@ -340,7 +340,7 @@ export class ConformityValidator extends EventEmitter {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
 
-        if (await this.checkSchemaConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
+        if ((await this.checkSchemaConformity(resource, parsedMessage)).schemaResult) { // Check if the schema validator threw any faults
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) { // Check if the correlationId matches our messageId (according to guideline)
             eRes = EValidity.ok;
           } else {
@@ -397,39 +397,65 @@ export class ConformityValidator extends EventEmitter {
    * @param payload  The payload that is being checked
    * @returns true, if both the networkmessage and the payload fit the resource, false otherwise
    */
-  async checkSchemaConformity(resource: string, payload: any): Promise<boolean> {
+  async checkSchemaConformity(resource: string, payload: any): Promise<ISchemaConformity> {
     let networkMessageValidationResult;
     let payloadValidationResult;
+
+    let networkMessageResultMsg: string = '';
+    let payloadResultMsg: string = '';
+
     try {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
-    } catch (validateErr) {
-      this.logger.log(`AJV (Catch NetworkMessage): (${resource}):${validateErr}`, ESubResource.error);
+    } catch (networkMessageValidationErr) {
+      this.logger.log(`AJV (Catch NetworkMessage): (${resource}):${networkMessageValidationErr}`, ESubResource.error);
+      networkMessageResultMsg += JSON.stringify(networkMessageValidationErr);
       networkMessageValidationResult = false;
     }
-    if (!networkMessageValidationResult) {
-      this.logger.log(`AJV: NetworkMessage invalid (${resource}): ${JSON.stringify(this.jsonValidator.errors)}`, ESubResource.error);
 
+    if (!networkMessageValidationResult) {
+      const errText = JSON.stringify(this.jsonValidator.errors);
+      this.logger.log(`AJV: NetworkMessage invalid (${resource}): ${errText}`, ESubResource.error);
+      networkMessageResultMsg += errText;
     }
+
     if (networkMessageValidationResult) {
       if (payload.MessageType === 'ua-metadata') {
         payloadValidationResult = true; // We accept all metadata messages since we cannot check their contents
       } else { // Since it's a data message, we can check against schemas
         try {
           payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, payload.Messages[0].Payload);
-        } catch (validateErr) {
-          this.logger.log(`AJV (Catch Payload): (${resource}):${validateErr}`, ESubResource.error);
+        } catch (payloadValidationErr) {
+          this.logger.log(`AJV (Catch Payload): (${resource}):${payloadValidationErr}`, ESubResource.error);
+          networkMessageResultMsg += JSON.stringify(payloadValidationErr);
           payloadValidationResult = false;
         }
         if (!payloadValidationResult) {
-          this.logger.log(`AJV: Payload invalid (${resource}): ${JSON.stringify(this.jsonValidator.errors)}`, ESubResource.error);
+          const errText = JSON.stringify(this.jsonValidator.errors);
+          this.logger.log(`AJV: Payload invalid (${resource}): ${errText}`, ESubResource.error);
+          payloadResultMsg += errText;
         }
       }
     }
+
+    const schemaConformity: ISchemaConformity = {
+      schemaResult: false,
+      networkMessage: {
+        schemaResult: networkMessageValidationResult,
+        resultMsg: networkMessageResultMsg,
+      },
+      payload: {
+        schemaResult: payloadValidationResult,
+        resultMsg: payloadResultMsg,
+      },
+    };
+
     if (networkMessageValidationResult && payloadValidationResult) {
-      return true;
+      schemaConformity.schemaResult = true;
+    } else {
+      this.logger.log(`Faulty payload: ${JSON.stringify(payload)}`, ESubResource.warn);
     }
-    this.logger.log(`Faulty payload: ${JSON.stringify(payload)}`, ESubResource.warn);
-    return false;
+
+    return schemaConformity;
   }
 
   /**
