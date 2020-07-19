@@ -7,6 +7,17 @@ export interface IConformity {
   validity: EValidity;
 }
 
+export interface ISchemaConformity {
+  schemaResult: boolean;
+  networkMessage: ISchemaResult;
+  payload: ISchemaResult;
+}
+
+interface ISchemaResult {
+  schemaResult: boolean;
+  resultMsg: string;
+}
+
 interface IValidityLookup {
   [key: string]: IValidityDetails;
 }
