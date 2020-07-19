@@ -339,8 +339,8 @@ export class ConformityValidator extends EventEmitter {
       if (topic === `${fullTopic}/pub/${resource}${endTag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
-
-        if ((await this.checkSchemaConformity(resource, parsedMessage)).schemaResult) { // Check if the schema validator threw any faults
+        const schemaResult: ISchemaConformity = await this.checkSchemaConformity(resource, parsedMessage);
+        if (schemaResult.schemaResult) { // Check if the schema validator threw any faults, schemaResult is an indicator for overall faults
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) { // Check if the correlationId matches our messageId (according to guideline)
             eRes = EValidity.ok;
           } else {
@@ -348,9 +348,18 @@ export class ConformityValidator extends EventEmitter {
             errorMsg = `${errorMsg} + CorrelationId did not pass for ${tag} with resource ${resource}`;
             this.logger.log(`CorrelationId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
-        } else {
+        } else { // Oops, we have schema erros, let's show them to the user so they can fix them...
           this.logger.log(`Some errors with schema validation with tag: ${tag}`, ESubResource.error);
-          errorMsg = `${errorMsg} + Some issue with schema validation`;
+          errorMsg = `${errorMsg} + Some issue with schema validation: `;
+          if (!(schemaResult.networkMessage.schemaResult)) { // NetworkMessage seems wrong
+            this.logger.log('NetworkMessage wrong', ESubResource.warn);
+            errorMsg = `${errorMsg} ${schemaResult.networkMessage.resultMsg} / `;
+          }
+          if (!(schemaResult.payload.schemaResult)) { // Payload seems wrong
+            this.logger.log('Payload wrong', ESubResource.warn);
+            errorMsg = `${errorMsg} ${schemaResult.payload.resultMsg} / `;
+          }
+
           eRes = EValidity.partial;
         }
 
