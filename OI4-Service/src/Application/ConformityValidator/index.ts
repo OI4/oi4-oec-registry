@@ -340,7 +340,7 @@ export class ConformityValidator extends EventEmitter {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
 
-        if (await this.checkPayloadConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
+        if (await this.checkSchemaConformity(resource, parsedMessage)) { // Check if the schema validator threw any faults
           if (parsedMessage.CorrelationId === conformityPayload.MessageId) { // Check if the correlationId matches our messageId (according to guideline)
             eRes = EValidity.ok;
           } else {
@@ -397,7 +397,7 @@ export class ConformityValidator extends EventEmitter {
    * @param payload  The payload that is being checked
    * @returns true, if both the networkmessage and the payload fit the resource, false otherwise
    */
-  async checkPayloadConformity(resource: string, payload: any): Promise<boolean> {
+  async checkSchemaConformity(resource: string, payload: any): Promise<boolean> {
     let networkMessageValidationResult;
     let payloadValidationResult;
     try {
