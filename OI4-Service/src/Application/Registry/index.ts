@@ -211,7 +211,7 @@ export class Registry extends EventEmitter {
     if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
       // console.log('Got Event!');
       this.logHappened = true; // We got some form of logs
-      console.log(`Length globEventList: ${this.globalEventList.length}`);
+      // console.log(`Length globEventList: ${this.globalEventList.length}`);
       if (this.globalEventList.length >= this.maxAuditTrailElements) {
         // If we have too many elements in the list, we purge them
         clearTimeout(this.flushTimeout);
