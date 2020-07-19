@@ -335,7 +335,7 @@ export class ConformityValidator extends EventEmitter {
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}${endTag}`);
       this.logger.log(`Received conformity message on ${resource} from ${tag}`, ESubResource.info);
-      let errorMsg = 'ValidityError: ';
+      let errorMsg = 'Initial: ';
       if (topic === `${fullTopic}/pub/${resource}${endTag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
