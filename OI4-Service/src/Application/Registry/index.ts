@@ -341,17 +341,22 @@ export class Registry extends EventEmitter {
   async addToRegistry(mqttObj: any) {
     const topicArr = mqttObj.topic.split('/');
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-    if (this.getApplication(assetId) || this.getDevice(assetId)) {
-      this.logger.log('MasterAssetModel already in Registry');
-    } else {
-      try {
-        this.logger.log('Enqueueing ADD-Device', ESubResource.debug);
-        this.queue.push(async () => {
-          return await this.addDevice(mqttObj.topic, mqttObj.message);
-        });
-      } catch (addErr) {
-        this.logger.log(`Add-Error: ${addErr}`, ESubResource.error);
+    if (this.getApplication(assetId) || this.getDevice(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+      this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESubResource.debug);
+      if (this.assetLookup[assetId].available) {
+        this.logger.log(`Device ${assetId} was available before, no need to re-add`, ESubResource.info);
+        return;
       }
+      this.logger.log(`Device ${assetId} was unavailable before and is now back! Re-Registering`, ESubResource.info);
+    }
+
+    try {
+      this.logger.log('Enqueueing ADD-Device', ESubResource.debug);
+      this.queue.push(async () => {
+        return await this.addDevice(mqttObj.topic, mqttObj.message);
+      });
+    } catch (addErr) {
+      this.logger.log(`Add-Error: ${addErr}`, ESubResource.error);
     }
   }
 
@@ -362,14 +367,18 @@ export class Registry extends EventEmitter {
    * @param device The MasterAssetModel of the device
    */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
-    this.logger.log(`------------- ADDING DEVICE ------------:  ${fullTopic}`, ESubResource.info);
+    this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, ESubResource.info);
     const topicArr = fullTopic.split('/');
     const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
 
     if (this.getApplication(oi4IdAsset) || this.getDevice(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-      this.logger.log('MasterAssetModel already in Registry - addDevice', ESubResource.debug);
-      return;
+      this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESubResource.debug);
+      if (this.assetLookup[oi4IdAsset].available) {
+        this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, ESubResource.info);
+        return;
+      }
+      this.logger.log(`Device ${oi4IdAsset} was unavailable before and is now back! Re-Registering`, ESubResource.info);
     }
 
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${oi4IdOriginator}`, oi4IdAsset);
