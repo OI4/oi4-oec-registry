@@ -456,8 +456,12 @@ export class Registry extends EventEmitter {
       const assets = Object.assign({}, apps, devices);
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESubResource.debug);
       for (const device of Object.keys(assets)) {
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].oi4Id, new Date(), dscids.mam)));
-        this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
+        if (assets[device].available) {
+          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].oi4Id, new Date(), dscids.mam)));
+          this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
+        } else {
+          this.logger.log(`Not sending registered mam of ${assets[device].resources.mam.ProductInstanceUri} because it is not available`);
+        }
       }
     } else {
       this.logger.log(`NOT IMPLEMENTED!: Sending Mam with Requested tag: ${tag}`);
