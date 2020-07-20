@@ -273,6 +273,7 @@ export class Registry extends EventEmitter {
               break;
             }
           }
+          break;
         }
         case 'pub': {
           switch (topicResource) {
@@ -284,6 +285,7 @@ export class Registry extends EventEmitter {
               break;
             }
           }
+          break;
         }
         default: {
           break;
@@ -303,6 +305,7 @@ export class Registry extends EventEmitter {
               break;
             }
           }
+          break;
         }
         case 'pub': {
           switch (topicResource) {
@@ -314,6 +317,7 @@ export class Registry extends EventEmitter {
               break;
             }
           }
+          break;
         }
         default: {
           break;
