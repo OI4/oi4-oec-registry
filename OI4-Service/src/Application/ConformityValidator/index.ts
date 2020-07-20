@@ -461,7 +461,7 @@ export class ConformityValidator extends EventEmitter {
     if (networkMessageValidationResult && payloadValidationResult) {
       schemaConformity.schemaResult = true;
     } else {
-      this.logger.log(`Faulty payload: ${JSON.stringify(payload)}`, ESubResource.warn);
+      this.logger.log('Faulty payload, see Conformity Result object for further information', ESubResource.warn);
     }
 
     return schemaConformity;
