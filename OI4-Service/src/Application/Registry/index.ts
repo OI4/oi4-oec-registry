@@ -229,9 +229,16 @@ export class Registry extends EventEmitter {
         // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
         clearTimeout(this.timeoutLookup[oi4Id]);
         clearTimeout(this.secondStageTimeoutLookup[oi4Id]);
-        this.assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
-        const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
-        this.timeoutLookup[oi4Id] = timeout;
+
+        if (parsedPayload.health === EDeviceHealth.FAILURE_1 && parsedPayload.healthState === 0) {
+          this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESubResource.warn);
+          this.assetLookup[oi4Id].available = false;
+        } else {
+          this.assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
+          const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000);
+          this.timeoutLookup[oi4Id] = timeout;
+        }
+
         this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
         parsedPayload.lastMessage = new Date().toISOString();
         this.assetLookup[oi4Id].resources.health = parsedPayload;
