@@ -13,7 +13,7 @@ import { ESubResource } from '../../Models/IContainer';
 class OI4WebProxy extends OI4Proxy {
   private client: express.Application;
   private logger: Logger;
-  constructor(container: IContainerState) {
+  constructor(container: IContainerState, port: number = 4567) {
     super(container);
     this.logger = new Logger(true, 'Registry-WebProxy', process.env.LOG_LEVEL as ESubResource);
     this.logger.log(`WebProxy: Standardroute: ${this.topicPreamble}`, ESubResource.info);
@@ -43,19 +43,19 @@ class OI4WebProxy extends OI4Proxy {
             cert: fs.readFileSync(`${certpath}/cert.pem`),
           },
           this.client)
-          .listen(4567, () => {
-            this.logger.log('WebProxy of Registry listening on 4567 over HTTPS', ESubResource.info);
+          .listen(port, () => {
+            this.logger.log('WebProxy of Registry listening on port over HTTPS', ESubResource.info);
           });
       } else {
         this.logger.log('Key and / or Cert dont exist..fallback to HTTP', ESubResource.info);
-        this.client.listen(4567, () => {
-          this.logger.log('WebProxy of Registry listening on 4567 over HTTP', ESubResource.info);
+        this.client.listen(port, () => {
+          this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESubResource.info);
         });
       }
     } else { // No environment variable found, use HTTP
       this.logger.log('USE_HTTPS not set to "true" or not found..fallback to HTTP', ESubResource.info);
-      this.client.listen(4567, () => {
-        this.logger.log('WebProxy of Registry listening on 4567 over HTTP', ESubResource.info);
+      this.client.listen(port, () => {
+        this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESubResource.info);
       });
     }
 
