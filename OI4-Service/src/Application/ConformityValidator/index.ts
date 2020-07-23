@@ -10,6 +10,7 @@ import oi4IdentifierSchemaJson = require('../../Config/Schemas/schemas/oi4Identi
 import DataSetMessageSchemaJson = require('../../Config/Schemas/schemas/DataSetMessage.schema.json');
 import LocalizedTextSchemaJson = require('../../Config/Schemas/schemas/LocalizedText.schema.json');
 import resourcesSchemaJson = require('../../Config/Schemas/schemas/resources.schema.json');
+import serviceTypeSchemaJson = require('../../Config/Schemas/schemas/serviceType.schema.json');
 
 // Payloads
 import healthSchemaJson = require('../../Config/Schemas/schemas/health.schema.json');
@@ -49,7 +50,8 @@ interface TMqttOpts {
  */
 export class ConformityValidator extends EventEmitter {
   private conformityClient: mqtt.AsyncClient;
-  static readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
+  // static readonly serviceTypes = ['Registry', 'OTConnector', 'Utility', 'Persistence', 'Aggregation', 'OOCConnector'];
+  static readonly serviceTypes = serviceTypeSchemaJson.enum;
   private builder: OPCUABuilder;
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
