@@ -102,6 +102,9 @@ export class CommonFetch {
           },
         })
           .then(resp => {
+            if (resp.status === 404 || resp.status === 500) {
+              reject(new Error(`REST returned ${resp.status}`));
+            }
             resolve(resp.text());
           });
       });
