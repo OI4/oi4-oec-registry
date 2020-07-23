@@ -350,7 +350,7 @@ export class ConformityValidator extends EventEmitter {
           }
         } else { // Oops, we have schema erros, let's show them to the user so they can fix them...
           this.logger.log(`Some errors with schema validation with tag: ${tag}`, ESubResource.error);
-          errorMsgArr.push('Some issue with schema validation');
+          errorMsgArr.push('Some issue with schema validation, read further array messages');
           if (!(schemaResult.networkMessage.schemaResult)) { // NetworkMessage seems wrong
             this.logger.log('NetworkMessage wrong', ESubResource.warn);
             errorMsgArr.push(...schemaResult.networkMessage.resultMsgArr);
