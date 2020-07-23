@@ -253,19 +253,19 @@ export class OPCUABuilder {
 
   }
 
+  /**
+   * A basic check used before processing any incoming payloads on the messagebus.
+   * This check will not tell us where the error lies and what the error is and is just used
+   * to prevent crashing. It's recommended to run the checked payload through the ConformityValidator
+   * before using the asset further
+   * @param payload - The payload that is to be checked
+   */
   async checkOPCUAJSONValidity(payload: any): Promise<boolean> {
-    // FIXME: In refactoring, replace console log with logger log
     let networkMessageValidationResult = false;
     try {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
     } catch (validateErr) {
-      console.log(`OPCUABuilder-AJV:${validateErr}`);
-      console.log(payload);
       networkMessageValidationResult = false;
-    }
-    if (!networkMessageValidationResult) {
-      console.log(`OPCUABuilder-AJV: NetworkMessage invalid: ${this.jsonValidator.errorsText()}`);
-      console.log(payload);
     }
     return networkMessageValidationResult;
   }
