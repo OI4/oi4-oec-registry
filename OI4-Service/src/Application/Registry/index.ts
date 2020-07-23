@@ -185,11 +185,11 @@ export class Registry extends EventEmitter {
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
     if (!schemaResult) {
-      this.logger.log('Error in payload schema validation', ESubResource.warn);
+      this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESubResource.warn);
       return;
     }
     if (firstPayload.Messages.length === 0) {
-      this.logger.log('Messages Array empty', ESubResource.warn);
+      this.logger.log('Messages Array empty - check DataSetMessage format', ESubResource.warn);
       return;
     }
     const networkMessage: IOPCUAData = JSON.parse(message.toString());

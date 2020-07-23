@@ -114,7 +114,7 @@ class OI4MessageBusProxy extends OI4Proxy {
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(parsedMessage);
     if (!schemaResult) {
-      this.logger.log('Error in payload schema validation', ESubResource.warn);
+      this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESubResource.warn);
       return;
     }
     // Split the topic into its different elements
