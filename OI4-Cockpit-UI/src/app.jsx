@@ -478,6 +478,10 @@ class OI4Base extends React.Component {
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
           this.setState({ conformityLookup: confLookup, updatingConformity: false });
+        })
+        .catch(err => {
+          console.log(err);
+          reject(err);
         });
     } else { // If not, retrieve only mandatory conformity values
       this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
@@ -488,6 +492,10 @@ class OI4Base extends React.Component {
           delete confLookup[oi4Id];
           confLookup[oi4Id] = jsonData;
           this.setState({ conformityLookup: confLookup, updatingConformity: false });
+        })
+        .catch(err => {
+          console.log(err);
+          reject(err);
         });
     }
   }
@@ -528,6 +536,10 @@ class OI4Base extends React.Component {
           this.setState({ listOfDevices: listOfDevices }); // FIXME: Potentially dangerous
         }
         this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
       });
   }
 
@@ -556,6 +568,10 @@ class OI4Base extends React.Component {
           confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
         }
         this.setState({ applicationLookup: jsonData, listOfApps: Object.keys(jsonData), conformityLookup: confLookupLoc });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
       });
   }
 
@@ -648,6 +664,10 @@ class OI4Base extends React.Component {
     this.fetch.get(`/health`)
       .then(data => {
         this.setState({ health: JSON.parse(data) });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
       });
   }
 
@@ -660,6 +680,11 @@ class OI4Base extends React.Component {
       .then(data => {
         console.log(data);
         this.setState({ oi4Id: JSON.parse(data) });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
+        reject(err);
       });
   }
 
@@ -711,6 +736,10 @@ class OI4Base extends React.Component {
         const regConfData = JSON.parse(data);
         regConfData.logFileSize = (regConfData.logFileSize) / 1000;
         this.setState({ backendConfig: regConfData });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
       });
   }
 
@@ -783,6 +812,10 @@ class OI4Base extends React.Component {
     this.fetch.get(`/registry/event/${this.state.config.auditTrailLength}`)
       .then(data => {
         this.setState({ globalEventTrail: JSON.parse(data) });
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
       });
   }
 
