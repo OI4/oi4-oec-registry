@@ -155,7 +155,7 @@ export class ConformityValidator extends EventEmitter {
           resource: [], // Timeout = no resources
         },
         validity: EValidity.nok,
-        validityError: 'Timeout on Resource',
+        validityErrors: ['Timeout on Resource'],
       };
     }
 
@@ -172,7 +172,7 @@ export class ConformityValidator extends EventEmitter {
           conformityObject.resource[resources] = {
             payload: {},
             validity: EValidity.nok,
-            validityError: 'resource is unknown to oi4',
+            validityErrors: ['Resource is unknown to oi4'],
           };
         }
       }
@@ -193,7 +193,7 @@ export class ConformityValidator extends EventEmitter {
 
     resObj = { // ResObj Initialization before checking all Resources
       validity: EValidity.default,
-      validityError: 'You should not see this in prod, initialization dummy obj',
+      validityErrors: ['You should not see this in prod, initialization dummy obj'],
       payload: {},
     };
 
@@ -223,7 +223,7 @@ export class ConformityValidator extends EventEmitter {
         this.logger.log(`${resource} did not pass check with ${err}`, ESubResource.error);
         resObj = {
           validity: EValidity.nok,
-          validityError: err,
+          validityErrors: [err],
           payload: {},
         };
         if (mandatoryResourceList.includes(resource)) { // If it's not mandatory, we do not count the error!
@@ -240,7 +240,7 @@ export class ConformityValidator extends EventEmitter {
         } else {
           if (ignoredResources.includes(resource)) {
             resObj.validity = EValidity.default;
-            resObj.validityError = 'Resource result ignored';
+            resObj.validityErrors = ['Resource result ignored, ok'];
             errorSoFar = false;
           }
         }
@@ -249,7 +249,7 @@ export class ConformityValidator extends EventEmitter {
       // Finally, assign the temporary ResObj to the conformityObject
       conformityObject.resource[resource] = {
         validity: resObj.validity,
-        validityError: resObj.validityError,
+        validityErrors: resObj.validityErrors,
         payload: resObj.payload,
       };
     }
@@ -293,7 +293,7 @@ export class ConformityValidator extends EventEmitter {
 
     if (!(mandatoryResourceList.every(i => profilePayload.resource.includes(i)))) {
       resObj.validity = EValidity.partial;
-      resObj.validityError = `${resObj.validityError} + Not every mandatory in resource list of profile`;
+      resObj.validityErrors.push('Not every mandatory in resource list of profile');
     }
     return resObj;
   }
@@ -335,7 +335,7 @@ export class ConformityValidator extends EventEmitter {
     this.conformityClient.once('message', async (topic, rawMsg) => {
       await this.conformityClient.unsubscribe(`${fullTopic}/pub/${resource}${endTag}`);
       this.logger.log(`Received conformity message on ${resource} from ${tag}`, ESubResource.info);
-      let errorMsg = 'Initial: ';
+      const errorMsgArr = [];
       if (topic === `${fullTopic}/pub/${resource}${endTag}`) {
         const parsedMessage = JSON.parse(rawMsg.toString()) as IOPCUAData;
         let eRes = 0;
@@ -345,19 +345,19 @@ export class ConformityValidator extends EventEmitter {
             eRes = EValidity.ok;
           } else {
             eRes = EValidity.partial;
-            errorMsg = `${errorMsg} + CorrelationId did not pass for ${tag} with resource ${resource}`;
+            errorMsgArr.push(`CorrelationId did not pass for ${tag} with resource ${resource}`);
             this.logger.log(`CorrelationId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
           }
         } else { // Oops, we have schema erros, let's show them to the user so they can fix them...
           this.logger.log(`Some errors with schema validation with tag: ${tag}`, ESubResource.error);
-          errorMsg = `${errorMsg} + Some issue with schema validation: `;
+          errorMsgArr.push('Some issue with schema validation');
           if (!(schemaResult.networkMessage.schemaResult)) { // NetworkMessage seems wrong
             this.logger.log('NetworkMessage wrong', ESubResource.warn);
-            errorMsg = `${errorMsg} ${schemaResult.networkMessage.resultMsg} / `;
+            errorMsgArr.push(...schemaResult.networkMessage.resultMsgArr);
           }
           if (!(schemaResult.payload.schemaResult)) { // Payload seems wrong
             this.logger.log('Payload wrong', ESubResource.warn);
-            errorMsg = `${errorMsg} ${schemaResult.payload.resultMsg} / `;
+            errorMsgArr.push(...schemaResult.payload.resultMsgArr);
           }
 
           eRes = EValidity.partial;
@@ -365,7 +365,7 @@ export class ConformityValidator extends EventEmitter {
 
         if (!(parsedMessage.DataSetClassId === dscids[resource])) { // Check if the dataSetClassId matches our development guideline
           this.logger.log(`DataSetClassId did not pass for ${tag} with resource ${resource}`, ESubResource.error);
-          errorMsg = `${errorMsg} + DataSetClassId did not pass for ${tag} with resource ${resource}`;
+          errorMsgArr.push(`DataSetClassId did not pass for ${tag} with resource ${resource}`);
           eRes = EValidity.partial;
         }
 
@@ -378,7 +378,7 @@ export class ConformityValidator extends EventEmitter {
 
         const resObj: IValidityDetails = {
           validity: eRes,
-          validityError: errorMsg,
+          validityErrors: errorMsgArr,
           payload: resPayload, // We add the payload here in case we need to parse it later on (profile, licenseText for exmaple)
         };
         this.emit(`${resource}${fullTopic}Success`, resObj); // God knows how many hours I wasted here! We send the OI4ID with the success emit
@@ -410,21 +410,21 @@ export class ConformityValidator extends EventEmitter {
     let networkMessageValidationResult;
     let payloadValidationResult;
 
-    let networkMessageResultMsg: string = '';
-    let payloadResultMsg: string = '';
+    const networkMessageResultMsgArr: string[] = [];
+    const payloadResultMsgArr: string[] = [];
 
     try {
       networkMessageValidationResult = await this.jsonValidator.validate('NetworkMessage.schema.json', payload);
     } catch (networkMessageValidationErr) {
       this.logger.log(`AJV (Catch NetworkMessage): (${resource}):${networkMessageValidationErr}`, ESubResource.error);
-      networkMessageResultMsg += JSON.stringify(networkMessageValidationErr);
+      networkMessageResultMsgArr.push(JSON.stringify(networkMessageValidationErr));
       networkMessageValidationResult = false;
     }
 
     if (!networkMessageValidationResult) {
       const errText = JSON.stringify(this.jsonValidator.errors);
-      this.logger.log(`AJV: NetworkMessage invalid (${resource}): ${errText}`, ESubResource.error);
-      networkMessageResultMsg += errText;
+      this.logger.log(`AJV: NetworkMessage invalid (${resource}): ${JSON.stringify(errText)}`, ESubResource.error);
+      networkMessageResultMsgArr.push(errText);
     }
 
     if (networkMessageValidationResult) {
@@ -435,13 +435,13 @@ export class ConformityValidator extends EventEmitter {
           payloadValidationResult = await this.jsonValidator.validate(`${resource}.schema.json`, payload.Messages[0].Payload);
         } catch (payloadValidationErr) {
           this.logger.log(`AJV (Catch Payload): (${resource}):${payloadValidationErr}`, ESubResource.error);
-          networkMessageResultMsg += JSON.stringify(payloadValidationErr);
+          payloadResultMsgArr.push(JSON.stringify(payloadValidationErr));
           payloadValidationResult = false;
         }
         if (!payloadValidationResult) {
           const errText = JSON.stringify(this.jsonValidator.errors);
           this.logger.log(`AJV: Payload invalid (${resource}): ${errText}`, ESubResource.error);
-          payloadResultMsg += errText;
+          payloadResultMsgArr.push(errText);
         }
       }
     }
@@ -450,11 +450,11 @@ export class ConformityValidator extends EventEmitter {
       schemaResult: false,
       networkMessage: {
         schemaResult: networkMessageValidationResult,
-        resultMsg: networkMessageResultMsg,
+        resultMsgArr: networkMessageResultMsgArr,
       },
       payload: {
         schemaResult: payloadValidationResult,
-        resultMsg: payloadResultMsg,
+        resultMsgArr: payloadResultMsgArr,
       },
     };
 
@@ -462,6 +462,7 @@ export class ConformityValidator extends EventEmitter {
       schemaConformity.schemaResult = true;
     } else {
       this.logger.log('Faulty payload, see Conformity Result object for further information', ESubResource.warn);
+      console.log(schemaConformity);
     }
 
     return schemaConformity;

@@ -15,7 +15,7 @@ export interface ISchemaConformity {
 
 interface ISchemaResult {
   schemaResult: boolean;
-  resultMsg: string;
+  resultMsgArr: string[];
 }
 
 interface IValidityLookup {
@@ -25,7 +25,7 @@ interface IValidityLookup {
 export interface IValidityDetails {
   validity: EValidity;
   payload: any;
-  validityError?: string;
+  validityErrors: string[];
 }
 
 export enum EValidity {
