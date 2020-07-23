@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "confStandalone": "node ./out/src/app_confValidator.js"
   },
   "keywords": [
     "oi4",
