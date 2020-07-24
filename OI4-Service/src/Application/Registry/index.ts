@@ -99,6 +99,10 @@ export class Registry extends EventEmitter {
     this.maxAuditTrailElements = 100;
     this.logHappened = false;
 
+    this.builder = new OPCUABuilder(this.oi4Id, 'Registry'); // TODO: Better system for oi4Id!
+
+    this.conformityValidator = new ConformityValidator(this.oi4Id); // TODO: Better system for oi4Id!
+
     // Take registryClient from parameter Registry-MQTT-Client
     this.registryClient = registryClient;
     this.registryClient.on('message', this.processMqttMessage);
@@ -106,10 +110,6 @@ export class Registry extends EventEmitter {
       console.log(`subbed initially to ${levels}`);
       this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
     }
-
-    this.builder = new OPCUABuilder(this.oi4Id, 'Registry'); // TODO: Better system for oi4Id!
-
-    this.conformityValidator = new ConformityValidator(this.registryClient, this.oi4Id); // TODO: Better system for oi4Id!
 
     this.ownSubscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
     this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry

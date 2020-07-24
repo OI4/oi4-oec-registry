@@ -35,7 +35,7 @@ logger.level = ESubResource.info;
 // -------- ConfValidator Application
 import { IConformity } from './Application/Models/IConformityValidator';
 import { ConformityValidator } from './Application/ConformityValidator';
-const confValidator = new ConformityValidator(busProxy.mqttClient, contState.oi4Id);
+const confValidator = new ConformityValidator(contState.oi4Id);
 
 // --- WEBCLIENT: Take exposed webClient from webProxy and add custom routes ----
 const webClient = webProxy.webClient;
