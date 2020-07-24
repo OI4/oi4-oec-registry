@@ -56,18 +56,19 @@ export class ConformityValidator extends EventEmitter {
   private readonly jsonValidator: Ajv.Ajv;
   private readonly logger: Logger;
   static completeProfileList: string[] = resourceLookup.full;
-  constructor(oi4Id: string) {
+  constructor(confClient: mqtt.AsyncClient, oi4Id: string) {
     super();
-    const serverObj = {
-      host: process.env.MQTT_BROKER_ADDRESS as string,
-      port: parseInt(process.env.MQTT_PORT as string, 10),
-    };
+    // const serverObj = {
+    //   host: process.env.MQTT_BROKER_ADDRESS as string,
+    //   port: parseInt(process.env.MQTT_PORT as string, 10),
+    // };
 
-    const mqttOpts: TMqttOpts = {
-      clientId: `ConformityCheck${process.env.APPLICATION_INSTANCE_NAME as string}${oi4Id as string}`,
-      servers: [serverObj],
-    };
-    this.conformityClient = mqtt.connect(mqttOpts);
+    // const mqttOpts: TMqttOpts = {
+    //   clientId: `ConformityCheck${process.env.APPLICATION_INSTANCE_NAME as string}${oi4Id as string}`,
+    //   servers: [serverObj],
+    // };
+    // this.conformityClient = mqtt.connect(mqttOpts);
+    this.conformityClient = confClient;
 
     this.logger = new Logger(true, 'ConformityValidator-App', process.env.LOG_LEVEL as ESubResource, this.conformityClient, oi4Id, 'Utility');
     this.builder = new OPCUABuilder(oi4Id, 'Registry'); // TODO: Set oi4Id to something useful
