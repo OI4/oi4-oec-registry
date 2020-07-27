@@ -87,7 +87,6 @@ export class Registry extends EventEmitter {
       DataSetWriterId: this.oi4Id,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
-      precision: 0,
       status: true,
     });
     this.timeoutLookup = {};
@@ -455,7 +454,6 @@ export class Registry extends EventEmitter {
       DataSetWriterId: oi4IdAsset,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
-      precision: 0,
       status: true,
     });
     // Publish the new publicationList according to spec

@@ -268,7 +268,6 @@ class ContainerState extends ConfigParser implements IContainerState {
         DataSetWriterId: this.oi4Id,
         status: true,
         interval: resInterval,
-        precision: 0,
         config: EPublicationListConfig.NONE_0,
       });
 
