@@ -160,11 +160,11 @@ class OI4Base extends React.Component {
      * The resources kept by the registry of all applications are updated individually.
      */
     this.activeIntervals.push(setInterval(() => { this.updateHealth() }, 7000)); // UpdateHealth gets the health of the registry
-    this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 6000));
-    this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 6000));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 7000));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 3500));
-    this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
+    this.activeIntervals.push(setInterval(() => { this.updateApplications() }, 4000));
+    this.activeIntervals.push(setInterval(() => { this.updateDevices() }, 4000));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 7000));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 3500));
+    // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
 
     setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
