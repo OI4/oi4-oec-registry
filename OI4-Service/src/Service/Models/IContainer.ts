@@ -66,18 +66,18 @@ export interface IContainerSubscriptionList {
 
 export interface ISubscriptionListObject {
   topicPath: string;
-  interval: number;
-  config: ESubscriptionListConfig;
+  interval?: number;
+  config?: ESubscriptionListConfig;
 }
 
 export interface IPublicationListObject {
   resource: string;
   tag: string;
   DataSetWriterId: string; // Actually OI4-Identifier: TODO: Validator
-  status: boolean;
-  interval: number; // UINT32
-  precision: number; // REAL
-  config: EPublicationListConfig;
+  status?: boolean;
+  interval?: number; // UINT32
+  precision?: number; // REAL
+  config?: EPublicationListConfig;
 }
 
 export interface IContainerState {
@@ -139,8 +139,6 @@ export enum EPublicationListConfig {
 export enum ESubscriptionListConfig {
   NONE_0 = 'NONE_0',
   CONF_1 = 'CONF_1',
-  CREATE_2 = 'CREATE_2',
-  DELETE_4 = 'DELETE_4',
 }
 
 export interface IDataSetClassIds {
