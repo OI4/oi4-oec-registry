@@ -246,6 +246,12 @@ export class ConformityValidator extends EventEmitter {
             errorSoFar = false;
           }
         }
+      } else if (resObj.validity === EValidity.nok) {
+        if (ignoredResources.includes(resource)) {
+          resObj.validity = EValidity.default;
+          resObj.validityErrors = ['Resource result ignored, ok'];
+          errorSoFar = false;
+        }
       }
 
       // Finally, assign the temporary ResObj to the conformityObject
