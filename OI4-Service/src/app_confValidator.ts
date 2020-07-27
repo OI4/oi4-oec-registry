@@ -19,9 +19,15 @@ if (!(process.env.MQTT_BROKER_ADDRESS) ||
   }
 }
 
+let selectedPort = 4567;
+const portArg = process.argv[2];
+if (typeof portArg !== 'undefined' && portArg !== null) {
+  selectedPort = parseInt(portArg, 10);
+}
+
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
-const webProxy = new OI4WebProxy(contState);
+const webProxy = new OI4WebProxy(contState, selectedPort);
 const logger = new Logger(true, 'Conformity-Validator-Entrypoint', process.env.LOG_LEVEL as ESubResource, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESubResource.fatal;
 logger.log(`Testprint for level ${ESubResource.trace}`, ESubResource.trace);
