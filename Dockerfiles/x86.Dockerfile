@@ -38,6 +38,4 @@ COPY ./OI4-Service/bootstrapper ./bootstrapper/
 COPY ./OI4-Service/scripts ./scripts/
 
 EXPOSE 4567 5000
-RUN chmod +x scripts/entrypoint.sh
-RUN chmod +x /usr/OI4-Service/bootstrapper/deploy-config-ui.sh 
 ENTRYPOINT ["scripts/entrypoint.sh"]
