@@ -11,6 +11,7 @@
     "serveLocalUI": "cd ./OI4-Local-UI && serve build/",
     "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386",
     "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t ghcr.io/oi4/oi4-registry:${npm_package_version} .",
+    "docker:build:local": "docker build -t oi4/oi4-registry:${npm_package_version} -t oi4/oi4-registry:latest .",
     "buildAllWindows": "npm run copyFetchToUI && cd ./OI4-Local-UI && npm run build && cd ../OI4-Cockpit-UI && mingw32-make.exe && cd ../OI4-Service && npm run tsc && cd ..",
     "buildAllLinux": "npm run copyFetchToUI && cd ./OI4-Local-UI && npm run build && cd ../OI4-Cockpit-UI && make && cd ../OI4-Service && npm run tsc && cd ..",
     "installAll": "cd ./OI4-Local-UI && npm install && cd ../OI4-Cockpit-UI && npm install && cd ../OI4-Service && npm install && cd ..",
