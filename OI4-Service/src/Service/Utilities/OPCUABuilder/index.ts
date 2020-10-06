@@ -13,24 +13,24 @@ import {
 } from '../../Models/IOPCUAPayload';
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
-import NetworkMessageSchemaJson = require('../../../Config/Schemas/schemas/NetworkMessage.schema.json');
-import MetaDataVersionSchemaJson = require('../../../Config/Schemas/schemas/MetaDataVersion.schema.json');
-import oi4IdentifierSchemaJson = require('../../../Config/Schemas/schemas/oi4Identifier.schema.json');
-import DataSetMessageSchemaJson = require('../../../Config/Schemas/schemas/DataSetMessage.schema.json');
-import LocalizedTextSchemaJson = require('../../../Config/Schemas/schemas/LocalizedText.schema.json');
-import resourcesSchemaJson = require('../../../Config/Schemas/schemas/resources.schema.json');
+import * as NetworkMessageSchemaJson from '../../../Config/Schemas/schemas/NetworkMessage.schema.json';
+import * as MetaDataVersionSchemaJson from '../../../Config/Schemas/schemas/MetaDataVersion.schema.json';
+import * as oi4IdentifierSchemaJson from '../../../Config/Schemas/schemas/oi4Identifier.schema.json';
+import * as DataSetMessageSchemaJson from '../../../Config/Schemas/schemas/DataSetMessage.schema.json';
+import * as LocalizedTextSchemaJson from '../../../Config/Schemas/schemas/LocalizedText.schema.json';
+import * as resourcesSchemaJson from '../../../Config/Schemas/schemas/resources.schema.json';
 
 // Payloads
-import healthSchemaJson = require('../../../Config/Schemas/schemas/health.schema.json');
-import mamSchemaJson = require('../../../Config/Schemas/schemas/mam.schema.json');
-import licenseSchemaJson = require('../../../Config/Schemas/schemas/license.schema.json');
-import licenseTextSchemaJson = require('../../../Config/Schemas/schemas/licenseText.schema.json');
-import profileSchemaJson = require('../../../Config/Schemas/schemas/profile.schema.json');
-import eventSchemaJson = require('../../../Config/Schemas/schemas/event.schema.json');
-import rtLicenseSchemaJson = require('../../../Config/Schemas/schemas/rtLicense.schema.json');
-import configSchemaJson = require('../../../Config/Schemas/schemas/config.schema.json');
-import publicationListSchemaJson = require('../../../Config/Schemas/schemas/publicationList.schema.json');
-import subscriptionListSchemaJson = require('../../../Config/Schemas/schemas/subscriptionList.schema.json');
+import * as healthSchemaJson from '../../../Config/Schemas/schemas/health.schema.json';
+import * as mamSchemaJson from '../../../Config/Schemas/schemas/mam.schema.json';
+import * as licenseSchemaJson from '../../../Config/Schemas/schemas/license.schema.json';
+import * as licenseTextSchemaJson from '../../../Config/Schemas/schemas/licenseText.schema.json';
+import * as profileSchemaJson from '../../../Config/Schemas/schemas/profile.schema.json';
+import * as eventSchemaJson from '../../../Config/Schemas/schemas/event.schema.json';
+import * as rtLicenseSchemaJson from '../../../Config/Schemas/schemas/rtLicense.schema.json';
+import * as configSchemaJson from '../../../Config/Schemas/schemas/config.schema.json';
+import * as publicationListSchemaJson from '../../../Config/Schemas/schemas/publicationList.schema.json';
+import * as subscriptionListSchemaJson from '../../../Config/Schemas/schemas/subscriptionList.schema.json';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
 
