@@ -18,6 +18,12 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        # checking-out submodule like this should work, but does not https://github.com/actions/checkout/issues/116
+        #with:
+          #ssh-key: ${{ secrets.SSH_KEY_FOR_SUBMODULE }}
+          #submodules: true
       - name: Setup access via public/private key.
         # Below command requires the SSH_KEY_FOR_SUBMODULE to be configured via github repository secrets.
         # Also the key's public part must be added to the submodule repository deploy keys.
@@ -27,11 +33,7 @@ jobs:
           mkdir ~/.ssh
           echo "${{ secrets.SSH_KEY_FOR_SUBMODULE }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-        with:
-          ssh-key: ${{ secrets.SSH_KEY_FOR_SUBMODULE }}
-          submodules: true
+          git submodule update --init --recursive
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
