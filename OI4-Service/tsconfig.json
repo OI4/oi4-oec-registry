@@ -63,6 +63,7 @@
   },
   "include": [
     "src/**/*",
-    "src/Config/*.json"
+    "src/Config/*.json",
+    "src/Service/src/Config/*.json"
   ]
 }
