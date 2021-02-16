@@ -1,9 +1,9 @@
-import { OI4MessageBusProxy } from '../../Service/Proxy/Messagebus/index';
-import { IOPCUAData, IOPCUAMetaData, EBuiltInType, EValueRank } from '../../Service/Models/IOPCUAPayload';
-import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder';
+import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
+import { IOPCUAData, IOPCUAMetaData, EBuiltInType, EValueRank } from '../../Service/src/Models/IOPCUAPayload';
+import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
-import { ESubResource } from '../../Service/Models/IContainer';
+import { ESubResource } from '../../Service/src/Models/IContainer';
 
 export class BaseApplication {
   private msgProxy: OI4MessageBusProxy;

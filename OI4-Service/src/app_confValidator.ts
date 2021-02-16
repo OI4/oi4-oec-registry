@@ -1,8 +1,8 @@
-import { OI4MessageBusProxy } from './Service/Proxy/Messagebus/index';
-import { OI4WebProxy } from './Service/Proxy/Web/index';
-import { ContainerState } from './Service/Container/index';
-import { ESubResource } from './Service/Models/IContainer';
-import { Logger } from './Service/Utilities/Logger/index';
+import { OI4MessageBusProxy } from './Service/src/Proxy/Messagebus/index';
+import { OI4WebProxy } from './Service/src/Proxy/Web/index';
+import { ContainerState } from './Service/src/Container/index';
+import { ESubResource } from './Service/src/Models/IContainer';
+import { Logger } from './Service/src/Utilities/Logger/index';
 import dotenv from 'dotenv';
 import path from 'path';
 

@@ -1,13 +1,13 @@
-import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig } from '../../Service/Models/IContainer';
+import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
 import EAuditLevel = ESubResource;
-import { IMasterAssetModel, IOPCUAData } from '../../Service/Models/IOPCUAPayload';
+import { IMasterAssetModel, IOPCUAData } from '../../Service/src/Models/IOPCUAPayload';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
-import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
-import { FileLogger } from '../../Service/Utilities/FileLogger/index';
+import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder/index';
+import { FileLogger } from '../../Service/src/Utilities/FileLogger/index';
 import { ConformityValidator } from '../ConformityValidator';
-import { Logger } from '../../Service/Utilities/Logger';
+import { Logger } from '../../Service/src/Utilities/Logger';
 import { IConformity } from '../Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
 

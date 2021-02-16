@@ -1,8 +1,8 @@
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
 import { IConformity, ISchemaConformity, EValidity, IValidityDetails } from '../Models/IConformityValidator';
-const { promiseTimeout } = require('../../Service/Utilities/Timeout/index');
-import { OPCUABuilder } from '../../Service/Utilities/OPCUABuilder/index';
+const { promiseTimeout } = require('../../Service/src/Utilities/Timeout/index');
+import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder/index';
 
 import NetworkMessageSchemaJson = require('../../Config/Schemas/schemas/NetworkMessage.schema.json');
 import MetaDataVersionSchemaJson = require('../../Config/Schemas/schemas/MetaDataVersion.schema.json');
@@ -25,7 +25,7 @@ import publicationListSchemaJson = require('../../Config/Schemas/schemas/publica
 import subscriptionListSchemaJson = require('../../Config/Schemas/schemas/subscriptionList.schema.json');
 
 // DSCIds
-import { IDataSetClassIds, ESubResource } from '../../Service/Models/IContainer';
+import { IDataSetClassIds, ESubResource } from '../../Service/src/Models/IContainer';
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
@@ -33,9 +33,9 @@ const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 import resourceLookup from '../../Config/Constants/resources.json'; /*tslint:disable-line*/
 
 import Ajv from 'ajv'; /*tslint:disable-line*/
-import { Logger } from '../../Service/Utilities/Logger';
-import { IOPCUAData, IOPCUADataMessage } from '../../Service/Models/IOPCUAPayload';
-import { EAssetType } from '../../Service/Enums/EContainer';
+import { Logger } from '../../Service/src/Utilities/Logger';
+import { IOPCUAData, IOPCUADataMessage } from '../../Service/src/Models/IOPCUAPayload';
+import { EAssetType } from '../../Service/src/Enums/EContainer';
 
 interface TMqttOpts {
   clientId: string;
@@ -416,7 +416,7 @@ export class ConformityValidator extends EventEmitter {
    */
   async checkSchemaConformity(resource: string, payload: any): Promise<ISchemaConformity> {
     let networkMessageValidationResult;
-    let payloadValidationResult;
+    let payloadValidationResult: boolean = false;
 
     const networkMessageResultMsgArr: string[] = [];
     const payloadResultMsgArr: string[] = [];
