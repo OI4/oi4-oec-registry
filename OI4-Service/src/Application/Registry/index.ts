@@ -8,7 +8,7 @@ import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder/index';
 import { FileLogger } from '../../Service/src/Utilities/FileLogger/index';
 import { ConformityValidator } from '../ConformityValidator';
 import { Logger } from '../../Service/src/Utilities/Logger';
-import { IConformity } from '../Models/IConformityValidator';
+import { IConformity } from '../ConformityValidator/Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds

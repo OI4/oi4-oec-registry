@@ -34,7 +34,7 @@ logger.level = ESubResource.info;
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
-import { IConformity } from './Application/Models/IConformityValidator';
+import { IConformity } from './Application/ConformityValidator/Models/IConformityValidator';
 import { ConformityValidator } from './Application/ConformityValidator';
 const registry = new Registry(busProxy.mqttClient, contState);
 

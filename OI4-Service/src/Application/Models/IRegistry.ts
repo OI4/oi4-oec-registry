@@ -8,7 +8,7 @@ import {
   IContainerLicenseText,
 } from '../../Service/src/Models/IContainer';
 import { IMasterAssetModel } from '../../Service/src/Models/IOPCUAPayload';
-import { IConformity } from './IConformityValidator';
+import { IConformity } from '../ConformityValidator/Models/IConformityValidator';
 
 /**
  * This interface is proprietary and only used between registry backend and frontend.
