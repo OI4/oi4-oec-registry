@@ -13,7 +13,7 @@ ENV COCKPIT_UI_SRC_PATH=/usr/OI4-Service/uiplugin
 # -------NOW LOCALUI
 WORKDIR /usr/OI4-Local-UI
 # --- Install serve & http-server to host local build
-RUN npm install serve && npm install http-server
+RUN npm install http-server
 COPY ./OI4-Local-UI/package.json ./
 COPY ./OI4-Local-UI/build ./build/
 
