@@ -1,40 +1,39 @@
 #!/bin/sh -e
-# script is necessary to catch all signals as PID 1 in a container
+
+# We use a script as we want to pass signal from Docker to all child processes
+# in this file (PID 1)
 
 set -x
-pid_oi4service=0
+# Set initial oi4service pid
+pid_registryui=0
 
 # SIGTERM-handler
 term_handler() {
-
-  # we undeploy first because this process might cease to exist while we wait for stoped server
-  echo "undeploy ..."
+  # We undeploy first because this process might cease to exist while we wait for stoped server
+  echo "Undeploy..."
   /usr/OI4-Service/bootstrapper/undeploy-config-ui.sh
 
-  echo "terminating ..."
-  if [ $pid_oi4service -ne 0 ]; then
-    kill -SIGTERM "$pid_oi4service"
+  echo "Terminating..."
+  if [ $pid_registryui -ne 0 ]; then
+    kill -SIGTERM "$pid_registryui"
   fi
-  wait "$pid_oi4service"
+  wait "$pid_registryui"
    exit 143; # 128 + 15 -- SIGTERM
 }
 
-# setup handlers
-# on callback, kill the last background process, which is `tail -f /dev/null` and execute the specified handler
-# SIGINT SIGKILL SIGTERM SIGQUIT SIGTSTP SIGSTOP SIGHUP 2 9 15 3 20 19 1 
-trap 'kill ${!}; term_handler' 2 9 15 3 20 19 1 
+# On callback, kill the last background process, which is `tail -f /dev/null` and execute the specified handler
+echo "Setup SIGTERM trap"
+trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
-# run bootstrapper 
-echo "run bootstrapper"
+# Run deploy script
+echo "Run deploy script"
 /usr/OI4-Service/bootstrapper/deploy-config-ui.sh
 
-# run applications as services in the background now
+# Run applications as services in the background now
 echo "Starting OI4-Service and LocalUI"
-node ./src/app.js & cd ../OI4-Local-UI
+exec node ./src/app.js & cd ../OI4-Local-UI
 
-# conditional entry: Unsecure Frontend / Secure frontend
-# TODO: Remove "serve" as a server, it does not matter much for now...
-
+# Conditional entry: Unsecure Frontend / Secure frontend
 if [ "$USE_HTTPS" = "true" ];
 then
   echo "USE_HTTPS true detected..."
@@ -47,17 +46,17 @@ then
     mkdir -p /usr/local/share/oi4registry/cert
 		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/oi4registry/cert/key.pem -out /usr/local/share/oi4registry/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
 	fi
-	npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5000 build
+	exec npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5000 build &
 else
    echo "USE_HTTPS other than true detected...serving without https"
-   npx serve -s build
+   exec npx http-server --cors -p 5000 build &
 fi
 
-# get process ID of most recently executed background
-pid_oi4service="$!"
-echo pid_oi4service: $pid_oi4service
+# Get process ID of most recently executed process (http-server hopefully)
+pid_registryui="$!"
+echo pid_registryui: $pid_registryui
 
-# wait forever not to exit the container
+# Wait forever in order to not exit the container
 while true
 do
   tail -f /dev/null & wait ${!}
