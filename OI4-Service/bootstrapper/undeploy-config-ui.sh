@@ -1,6 +1,5 @@
-
 set -x
 
-echo "removing UI from host fs"
+echo "Removing Cockpit-UI from cockpit host fs"
 rm -r /usr/local/share/cockpit/OI4-Registry
-echo "...done removing UI from cockpit host fs"
+echo "...done removing Cockpit-UI from cockpit host fs"
