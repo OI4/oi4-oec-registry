@@ -1,27 +1,8 @@
 set -x
 
-echo "Deploy config ui"
+echo "Deploying UI"
 
-#IP=$(printenv LOCAL_ADDR)
-
-<<COMMENT1
-echo "Create service-endpoint.js"
-
-echo "var serviceEndpoint = { \
-  \"address\": \"$IP\", \
-  \"port\": \"4567\", \
-  \"platform\": \"cockpit\" \
-}; " > "$COCKPIT_UI_SRC_PATH/service-endpoint.js"
-
-echo "var serviceEndpoint = { \
-  \"address\": \"$IP\", \
-  \"port\": \"4567\", \
-  \"platform\": \"fetch\" \
-}; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
-COMMENT1
-
-echo "Create service-endpoint.js without IP entry"
-
+# If backend is hosted elsewhere, add an $IP entry
 echo "var serviceEndpoint = { \
   \"port\": \"4567\", \
   \"platform\": \"cockpit\" \
@@ -32,7 +13,7 @@ echo "var serviceEndpoint = { \
   \"platform\": \"fetch\" \
 }; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
 
-echo "copying UI to host fs"
+echo "copying Cockpit-UI to host fs plugin folder"
 mkdir -p /usr/local/share/cockpit/OI4-Registry
 cp -r $COCKPIT_UI_SRC_PATH/* /usr/local/share/cockpit/OI4-Registry/
  
