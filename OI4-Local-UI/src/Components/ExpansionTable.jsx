@@ -96,7 +96,7 @@ class ExpansionTable extends React.Component {
         }
         for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
           if (items === 'Manufacturer') {
-            if (this.props.assetLookup[key].resources.mam[items].Text.includes(this.state.filterWord)) {
+            if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
               return true;
             }
           }
@@ -163,8 +163,8 @@ class ExpansionTable extends React.Component {
                     // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
                     // (nodejs type inference) then parse it to float, add it together and convert it to a string
                     >
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.Text}</TableCell>
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.Text}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.text}</TableCell>
+                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.text}</TableCell>
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
                       <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
                       <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
@@ -357,12 +357,14 @@ class ExpansionTable extends React.Component {
   displayLocalEvents(eventArray) {
     const newArray = [];
     for (const items of eventArray) {
+      console.log(items);
       newArray.push({
         number: items.number,
         description: items.description,
         payload: JSON.stringify(items.payload),
       });
     }
+    console.log(newArray);
     if (Array.isArray(eventArray)) {
       if (eventArray.length !== 0) {
         return (

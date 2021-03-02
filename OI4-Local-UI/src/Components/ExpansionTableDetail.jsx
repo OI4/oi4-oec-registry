@@ -194,7 +194,7 @@ class ExpansionTableDetail extends React.Component {
   detailedHealthViewer(healthObject) {
     return <div>
       <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 20, 20)})</div>
-      <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthState}</div>
+      <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthScore}</div>
     </div>;
   }
 
