@@ -1,5 +1,5 @@
 import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
-import { IOPCUAData, IOPCUAMetaData } from '../../Service/src/Models/IOPCUA';
+import { IOPCUANetworkMessage, IOPCUAMetaData } from '../../Service/src/Models/IOPCUA';
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
@@ -9,10 +9,10 @@ import { EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Enums/EOPC
 export class BaseApplication {
   private msgProxy: OI4MessageBusProxy;
   private messageBuilder: OPCUABuilder;
-  private weatherData: IOPCUAData;
-  private hostData: IOPCUAData;
-  private arrayData: IOPCUAData;
-  private matrixData: IOPCUAData;
+  private weatherData: IOPCUANetworkMessage;
+  private hostData: IOPCUANetworkMessage;
+  private arrayData: IOPCUANetworkMessage;
+  private matrixData: IOPCUANetworkMessage;
   private weatherDataGUID: string;
   private hostDataGUID: string;
   private arrayDataGUID: string;
