@@ -361,7 +361,8 @@ class ExpansionTable extends React.Component {
       newArray.push({
         number: items.number,
         description: items.description,
-        payload: JSON.stringify(items.payload),
+        category: items.category,
+        details: JSON.stringify(items.details),
       });
     }
     console.log(newArray);
@@ -371,8 +372,9 @@ class ExpansionTable extends React.Component {
           <MaterialTable
             columns={[
               { title: "ErrorCode", field: "number", width: '7%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Category", field: "category", width: '7%', cellStyle: { wordBreak: 'break-all' } },
               { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
-              { title: 'Payload', field: 'payload', width: '20%', cellStyle: { wordBreak: 'break-all' } }
+              { title: 'Details', field: 'details', width: '20%', cellStyle: { wordBreak: 'break-all' } }
             ]}
             style={{ minWidth: '100%' }}
             data={newArray}
