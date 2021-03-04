@@ -1,7 +1,7 @@
 import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
 import EAuditLevel = EGenericEventFilter;
-import { IMasterAssetModel, IOPCUAData } from '../../Service/src/Models/IOPCUAPayload';
+import { IMasterAssetModel, IOPCUAData } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder/index';

@@ -1,5 +1,5 @@
 import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
-import { IOPCUAData, IOPCUAMetaData } from '../../Service/src/Models/IOPCUAPayload';
+import { IOPCUAData, IOPCUAMetaData } from '../../Service/src/Models/IOPCUA';
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/

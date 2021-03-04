@@ -7,7 +7,7 @@ import {
   IContainerProfile,
   IContainerLicenseText,
 } from '../../Service/src/Models/IContainer';
-import { IMasterAssetModel } from '../../Service/src/Models/IOPCUAPayload';
+import { IMasterAssetModel } from '../../Service/src/Models/IOPCUA';
 import { IConformity } from '../ConformityValidator/Models/IConformityValidator';
 
 /**
