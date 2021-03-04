@@ -1,5 +1,5 @@
 import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
-import { IOPCUAData, IOPCUAMetaData, EBuiltInType, EValueRank } from '../../Service/src/Models/IOPCUAPayload';
+import { IOPCUAData, IOPCUAMetaData, EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Models/IOPCUAPayload';
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
@@ -50,56 +50,56 @@ export class BaseApplication {
       Temperature: {
         unit: '°C',
         description: 'Temperature of weather Data',
-        type: EBuiltInType.Byte,
+        type: EOPCUABuiltInType.Byte,
         min: 0,
         max: 100,
-        valueRank: EValueRank.Scalar,
+        valueRank: EOPCUAValueRank.Scalar,
       },
       Humidity: {
         unit: '%',
         description: 'Humidity of weather Data',
-        type: EBuiltInType.String,
+        type: EOPCUABuiltInType.String,
         min: 2,
         max: 4,
-        valueRank: EValueRank.Scalar,
+        valueRank: EOPCUAValueRank.Scalar,
       },
     };
     const hostMetaDataProperties = {
       cpuLoad: {
         unit: '%',
         description: 'CPU Load of HostData',
-        type: EBuiltInType.Int64,
+        type: EOPCUABuiltInType.Int64,
         min: 0,
         max: 100,
-        valueRank: EValueRank.Scalar,
+        valueRank: EOPCUAValueRank.Scalar,
       },
       freeMemory: {
         unit: 'MB',
         description: 'Currently used memory of HostData',
-        type: EBuiltInType.Double,
+        type: EOPCUABuiltInType.Double,
         min: 0,
         max: 100,
-        valueRank: EValueRank.Scalar,
+        valueRank: EOPCUAValueRank.Scalar,
       },
     };
     const arrayDataProperties = {
       myArr: {
         unit: 'Lumberjack',
         description: 'Just a boolean Array to Test OPCUA-Conformity',
-        type: EBuiltInType.Boolean,
+        type: EOPCUABuiltInType.Boolean,
         min: 0,
         max: 2000,
-        valueRank: EValueRank.Array,
+        valueRank: EOPCUAValueRank.Array,
       },
     };
     const matrixDataProperties = {
       myMatrix: {
         unit: 'Lumberjack',
         description: 'Just a boolena Matrix to Test OPCUA-Conformity',
-        type: EBuiltInType.Boolean,
+        type: EOPCUABuiltInType.Boolean,
         min: 10,
         max: 2000,
-        valueRank: EValueRank.Matrix,
+        valueRank: EOPCUAValueRank.Matrix,
       },
     };
     const weatherMetaData: IOPCUAMetaData = this.messageBuilder.buildOPCUAMetaDataMessage(
