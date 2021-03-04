@@ -1,9 +1,10 @@
 import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
-import { IOPCUAData, IOPCUAMetaData, EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Models/IOPCUAPayload';
+import { IOPCUAData, IOPCUAMetaData } from '../../Service/src/Models/IOPCUAPayload';
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
 import { EGenericEventFilter } from '../../Service/src/Models/IContainer';
+import { EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Enums/EOPCUA';
 
 export class BaseApplication {
   private msgProxy: OI4MessageBusProxy;
