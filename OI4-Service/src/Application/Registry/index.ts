@@ -1,4 +1,4 @@
-import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter } from '../../Service/src/Models/IContainer';
+import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
 import EAuditLevel = EGenericEventFilter;
 import { IMasterAssetModel, IOPCUAData } from '../../Service/src/Models/IOPCUAPayload';
@@ -109,10 +109,21 @@ export class Registry extends EventEmitter {
     // Take registryClient from parameter Registry-MQTT-Client
     this.registryClient = registryClient;
     this.registryClient.on('message', this.processMqttMessage);
-      for (const levels of Registry.auditList) {
-        console.log(`Subbed initially to generic category - ${levels}`);
-        this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/generic/${levels}/#`);
-      }
+    // Subscribe to generic events
+    for (const levels of Registry.auditList) {
+      console.log(`Subbed initially to generic category - ${levels}`);
+      this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/generic/${levels}/#`);
+    }
+
+    for (const levels of Object.values(ENamurEventFilter)) {
+      console.log(`Subbed initially to namur category - ${levels}`);
+      this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/ne107/${levels}/#`);
+    }
+
+    for (const levels of Object.values(ESyslogEventFilter)) {
+      console.log(`Subbed initially to syslog category - ${levels}`);
+      this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
+    }
 
     this.ownSubscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
     this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
