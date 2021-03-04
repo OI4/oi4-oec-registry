@@ -38,10 +38,10 @@ export class BaseApplication {
       arrMatrix.push(subArr);
     }
 
-    this.weatherData = this.messageBuilder.buildOPCUADataMessage({ Temperature: 99, Humidity: '99' }, new Date(), this.weatherDataGUID);
-    this.hostData = this.messageBuilder.buildOPCUADataMessage({ cpuLoad: '0', freeMemory: 0 }, new Date(), this.hostDataGUID);
-    this.arrayData = this.messageBuilder.buildOPCUADataMessage({ myArr: boolArr }, new Date(), this.arrayDataGUID);
-    this.matrixData = this.messageBuilder.buildOPCUADataMessage({ myMatrix: arrMatrix }, new Date(), this.matrixDataGUID);
+    this.weatherData = this.messageBuilder.buildOPCUADataMessage([{ payload: { Temperature: 99, Humidity: '99' }}], new Date(), this.weatherDataGUID);
+    this.hostData = this.messageBuilder.buildOPCUADataMessage([{ payload: { cpuLoad: '0', freeMemory: 0 }}], new Date(), this.hostDataGUID);
+    this.arrayData = this.messageBuilder.buildOPCUADataMessage([{ payload: { myArr: boolArr }}], new Date(), this.arrayDataGUID);
+    this.matrixData = this.messageBuilder.buildOPCUADataMessage([{ payload: { myMatrix: arrMatrix }}], new Date(), this.matrixDataGUID);
   }
 
   // Base-Application! Just pump out different sets of data
@@ -145,19 +145,19 @@ export class BaseApplication {
   updateWeatherData() {
     const newTemp = Math.floor(Math.random() * Math.floor(100));
     const newHumidity = (Math.floor(Math.random() * Math.floor(100))).toString();
-    this.weatherData = this.messageBuilder.buildOPCUADataMessage({
+    this.weatherData = this.messageBuilder.buildOPCUADataMessage([{ payload: {
       Temperature: newTemp,
       Humidity: newHumidity,
-    }, new Date(), this.weatherDataGUID); /*tslint:disable-line*/
+    }}], new Date(), this.weatherDataGUID); /*tslint:disable-line*/
   }
 
   updateHostData() {
     const newLoad = Math.floor(Math.random() * Math.floor(100)).toString();
     const newMem = Math.floor(Math.random() * Math.floor(100));
-    this.hostData = this.messageBuilder.buildOPCUADataMessage({
+    this.hostData = this.messageBuilder.buildOPCUADataMessage([{ payload: {
       cpuLoad: newLoad,
       freeMemory: newMem,
-    }, new Date(), this.hostDataGUID); /*tslint:disable-line*/
+    }}], new Date(), this.hostDataGUID); /*tslint:disable-line*/
   }
 
   updateArrayData() {
@@ -165,8 +165,8 @@ export class BaseApplication {
     for (let i = 0; i < 2000; i = i + 1) {
       boolArr.push(Math.random() >= 0.5);
     }
-    this.arrayData = this.messageBuilder.buildOPCUADataMessage({
+    this.arrayData = this.messageBuilder.buildOPCUADataMessage([{ payload: {
       myArr: boolArr,
-    }, new Date(), this.arrayDataGUID); /*tslint:disable-line*/
+    }}], new Date(), this.arrayDataGUID); /*tslint:disable-line*/
   }
 }
