@@ -66,7 +66,7 @@ export class Registry extends EventEmitter {
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
 
-    this.logger = new Logger(true, 'Registry-App', process.env.LOG_LEVEL as ESubResource, registryClient, this.oi4Id, 'Registry');
+    this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESubResource, registryClient, this.oi4Id, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESubResource.trace, registryClient, this.oi4Id, 'Registry');
     this.fileLogger = new FileLogger(this.config.logFileSize, true);
 
@@ -83,11 +83,11 @@ export class Registry extends EventEmitter {
     this.containerState = contState;
     this.containerState.addPublication({
       resource: 'mam',
-      tag: '',
-      DataSetWriterId: this.oi4Id,
+      tag: this.oi4Id,
+      DataSetWriterId: 0,
+      oi4Identifier: this.oi4Id,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
-      status: true,
     });
     this.timeoutLookup = {};
     this.secondStageTimeoutLookup = {};
@@ -242,7 +242,7 @@ export class Registry extends EventEmitter {
         parsedPayload.lastMessage = new Date().toISOString();
         this.assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
-        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids.mam)));
+        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids.mam)));
         this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESubResource.debug);
       }
     } else if (topic.includes('/pub/license')) {
@@ -451,15 +451,15 @@ export class Registry extends EventEmitter {
     this.containerState.addPublication({
       resource: 'mam',
       tag: oi4IdAsset,
-      DataSetWriterId: oi4IdAsset,
+      oi4Identifier: oi4IdAsset,
+      DataSetWriterId: 0,
       config: EPublicationListConfig.NONE_0,
       interval: 0,
-      status: true,
     });
     // Publish the new publicationList according to spec
     await this.registryClient.publish(
       `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
+      JSON.stringify(this.builder.buildOPCUADataMessage([{payload: this.containerState.publicationList}], new Date(), dscids.publicationList)),
     );
   }
 
@@ -475,7 +475,7 @@ export class Registry extends EventEmitter {
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESubResource.debug);
       for (const device of Object.keys(assets)) {
         if (assets[device].available) {
-          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage(assets[device].resources.mam, new Date(), dscids.mam)));
+          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: assets[device].resources.mam}], new Date(), dscids.mam)));
           this.logger.log(`Sent device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
         } else {
           this.logger.log(`Not sending registered mam of ${assets[device].resources.mam.ProductInstanceUri} because it is not available`);
@@ -505,7 +505,7 @@ export class Registry extends EventEmitter {
       // Publish the new publicationList according to spec
       this.registryClient.publish(
         `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-        JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
+        JSON.stringify(this.builder.buildOPCUADataMessage([{payload: this.containerState.publicationList}], new Date(), dscids.publicationList)),
       );
       this.logger.log(`Deleted App: ${device}`, ESubResource.info);
     } else {
@@ -530,7 +530,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     this.registryClient.publish(
       `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-      JSON.stringify(this.builder.buildOPCUADataMessage(this.containerState.publicationList, new Date(), dscids.publicationList)),
+      JSON.stringify(this.builder.buildOPCUADataMessage([{payload: this.containerState.publicationList}], new Date(), dscids.publicationList)),
     );
     this.assetLookup = {}; // Clear application lookup
   }
@@ -557,7 +557,7 @@ export class Registry extends EventEmitter {
    */
   async updateResourceInDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
   }
@@ -573,13 +573,13 @@ export class Registry extends EventEmitter {
         if (typeof this.assetLookup[oi4Id].resources.health !== 'undefined') {
           this.assetLookup[oi4Id].resources.health = {
             health: EDeviceHealth.FAILURE_1,
-            healthState: 0,
+            healthScore: 0,
           };
         }
         this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESubResource.warn);
         return;
       }
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids[resource])));
       this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
       this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESubResource.warn);
       this.assetLookup[oi4Id].available = false;
@@ -595,7 +595,7 @@ export class Registry extends EventEmitter {
    */
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage({}, new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
   }
