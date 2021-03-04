@@ -5,24 +5,42 @@ import { ESubResource } from './Service/src/Models/IContainer';
 import { Logger } from './Service/src/Utilities/Logger/index';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs, { symlinkSync } from 'fs';
 
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
-if (!(process.env.MQTT_BROKER_ADDRESS) ||
-  !(process.env.MQTT_PORT) ||
-  !(process.env.APPLICATION_INSTANCE_NAME) ||
-  !(process.env.USE_HTTPS) ||
-  !(process.env.LOG_LEVEL)) {
+function checkForValidEnvironment() {
+  return (!process.env.OI4_EDGE_MQTT_BROKER_ADDRESS ||
+    !(process.env.OI4_EDGE_APPLICATION_INSTANCE_NAME))
+}
+
+function checkForDefaultEnvironment() {
+  if (!process.env.OI4_EDGE_EVENT_LEVEL) {
+    console.log(`Init: EVENT_LEVEL not present, setting to default 'warn'`);
+    process.env.OI4_EDGE_EVENT_LEVEL = 'warn';
+  } else {
+    if (!(process.env.OI4_EDGE_EVENT_LEVEL in ESubResource)) {
+      console.log(`Init: EVENT_LEVEL set to wrong value: ${process.env.OI4_EDGE_EVENT_LEVEL}, setting to default 'warn'`);
+      process.env.OI4_EDGE_EVENT_LEVEL = 'warn';
+    }
+  }
+  if (!process.env.OI4_EDGE_MQTT_SECURE_PORT) process.env.OI4_EDGE_MQTT_SECURE_PORT = '8883';
+  if (!process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE) process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE = '262144';
+}
+
+if (checkForValidEnvironment()) {
   dotenv.config({ path: path.join(__dirname, '.env') });
-  if (!(process.env.LOG_LEVEL) || !(process.env.LOG_LEVEL in ESubResource)) {
-    console.log('Init: LOG_LEVEL either not specified or wrong enum value');
-    process.env.LOG_LEVEL = 'warn';
+  if (checkForValidEnvironment()) {
+    console.log('Init: Failed to load default environment vars, stopping container');
+    process.exit(1);
   }
 }
+checkForDefaultEnvironment();
+
 
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 'Registry-Entrypoint', process.env.LOG_LEVEL as ESubResource, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
+const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESubResource, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESubResource.fatal;
 logger.log(`Testprint for level ${ESubResource.trace}`, ESubResource.trace);
 logger.log(`Testprint for level ${ESubResource.debug}`, ESubResource.debug);
