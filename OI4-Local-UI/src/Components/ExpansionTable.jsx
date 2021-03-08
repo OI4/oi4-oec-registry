@@ -359,6 +359,7 @@ class ExpansionTable extends React.Component {
     for (const items of eventArray) {
       console.log(items);
       newArray.push({
+        level: items.level,
         number: items.number,
         description: items.description,
         category: items.category,
@@ -371,10 +372,11 @@ class ExpansionTable extends React.Component {
         return (
           <MaterialTable
             columns={[
-              { title: "ErrorCode", field: "number", width: '7%', cellStyle: { wordBreak: 'break-all' } },
-              { title: "Category", field: "category", width: '7%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Level", field: "level", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Number", field: "number", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Category", field: "category", width: '13%', cellStyle: { wordBreak: 'break-all' } },
               { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
-              { title: 'Details', field: 'details', width: '20%', cellStyle: { wordBreak: 'break-all' } }
+              { title: 'Details', field: 'details', cellStyle: { wordBreak: 'break-all' } }
             ]}
             style={{ minWidth: '100%' }}
             data={newArray}

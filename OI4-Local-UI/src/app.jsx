@@ -347,6 +347,7 @@ class OI4Base extends React.Component {
     const newArray = [];
     for (const items of eventArray) {
       newArray.push({
+        level: items.level,
         number: items.number,
         description: items.description,
         category: items.category,
@@ -415,10 +416,11 @@ class OI4Base extends React.Component {
         return (
           <MaterialTable
             columns={[
-              { title: "ErrorCode", field: "number", width: '7%', cellStyle: { wordBreak: 'break-all' } },
-              { title: "Category", field: "category", width: '7%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Level", field: "level", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Number", field: "number", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+              { title: "Category", field: "category", width: '13%', cellStyle: { wordBreak: 'break-all' } },
               { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
-              { title: 'Details', field: 'details', width: '20%', cellStyle: { wordBreak: 'break-all' } }
+              { title: 'Details', field: 'details', cellStyle: { wordBreak: 'break-all' } }
             ]}
             style={{ minWidth: '100%' }}
             data={newArray}
@@ -786,7 +788,7 @@ class OI4Base extends React.Component {
         return;
       }
       if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
-      if (!['trace', 'debug', 'info', 'warn', 'error', 'fatal'].includes(confObj.backendConfig.auditLevel)) {
+      if (!['debug', 'informational', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'].includes(confObj.backendConfig.auditLevel)) {
         console.log(`${confObj.backendConfig.auditLevel} not part of auditLevel-array`);
         return;
       }

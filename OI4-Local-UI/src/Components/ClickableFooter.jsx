@@ -248,12 +248,14 @@ export class ClickableFooter extends React.Component {
                               color='primary'
                               style={{ marginLeft: '10px' }}
                             >
-                              <MenuItem value='trace'>Trace</MenuItem>
                               <MenuItem value='debug'>Debug</MenuItem>
-                              <MenuItem value='info'>Info</MenuItem>
-                              <MenuItem value='warn'>Warn</MenuItem>
+                              <MenuItem value='informational'>Informational</MenuItem>
+                              <MenuItem value='notice'>Notice</MenuItem>
+                              <MenuItem value='warning'>Warning</MenuItem>
                               <MenuItem value='error'>Error</MenuItem>
-                              <MenuItem value='fatal'>Fatal</MenuItem>
+                              <MenuItem value='critical'>Critical</MenuItem>
+                              <MenuItem value='alert'>Alert</MenuItem>
+                              <MenuItem value='emergency'>Emergency</MenuItem>
                             </Select>
                           </li>
 
@@ -315,7 +317,7 @@ export class ClickableFooter extends React.Component {
             </DialogContent>
           </TabPanel>
           <Divider variant='middle' style={{ marginBottom: '1em' }} />
-          <Typography style={{ textAlign: 'center', marginBottom: '1em' }} variant='body2'>Copyright (C): 2019 - 2020 Hilscher Gesellschaft für Systemautomation mbH</Typography>
+          <Typography style={{ textAlign: 'center', marginBottom: '1em' }} variant='body2'>Copyright (C): 2019 - 2021 Hilscher Gesellschaft für Systemautomation mbH</Typography>
         </DialogContent>
       </Dialog>
       <Grid container justify='center' style={{ paddingBottom: '10px' }}>
