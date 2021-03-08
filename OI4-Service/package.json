@@ -24,10 +24,15 @@
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "glossy": "^0.1.7",
     "sequential-task-queue": "^1.2.1",
-    "uuid": "^3.4.0"
+    "uuid": "^3.4.0",
+    "winston": "^3.3.3",
+    "winston-syslog": "^2.4.4"
   },
   "devDependencies": {
+    "@types/winston": "^2.4.4",
+    "@types/winston-syslog": "^2.0.3",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.6",
     "@types/node": "^12.12.37",
