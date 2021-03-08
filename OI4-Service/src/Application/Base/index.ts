@@ -3,7 +3,7 @@ import { IOPCUANetworkMessage, IOPCUAMetaData } from '../../Service/src/Models/I
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
-import { EGenericEventFilter } from '../../Service/src/Models/IContainer';
+import { ESyslogEventFilter } from '../../Service/src/Models/IContainer';
 import { EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Enums/EOPCUA';
 
 export class BaseApplication {
@@ -140,7 +140,7 @@ export class BaseApplication {
     setInterval(() => { this.msgProxy.sendData('weatherData'); }, 10000);
     setInterval(() => { this.msgProxy.sendData('arrayData'); }, 10000);
     setInterval(() => { this.msgProxy.sendData('matrixData'); }, 10000);
-    setInterval(() => { this.msgProxy.sendEvent(`Ping from ${this.msgProxy.oi4Id}: ${(Math.random() * 100).toString()} at ${new Date().toString()}`, EGenericEventFilter.medium); }, 60000);
+    setInterval(() => { this.msgProxy.sendEvent(`Ping from ${this.msgProxy.oi4Id}: ${(Math.random() * 100).toString()} at ${new Date().toString()}`, ESyslogEventFilter.warning); }, 60000);
   }
 
   updateWeatherData() {
