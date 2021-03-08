@@ -9,7 +9,9 @@ import path from 'path';
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
 function checkForValidEnvironment() {
   return (!process.env.OI4_EDGE_MQTT_BROKER_ADDRESS ||
-    !(process.env.OI4_EDGE_APPLICATION_INSTANCE_NAME))
+    !(process.env.OI4_EDGE_APPLICATION_INSTANCE_NAME) ||
+    !(process.env.OI4_EDGE_MQTT_USERNAME) ||
+    !(process.env.OI4_EDGE_MQTT_PASSWORD))
 }
 
 function checkForDefaultEnvironment() {
