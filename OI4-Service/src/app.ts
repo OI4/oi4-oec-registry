@@ -1,7 +1,7 @@
 import { OI4MessageBusProxy } from './Service/src/Proxy/Messagebus/index';
 import { OI4WebProxy } from './Service/src/Proxy/Web/index';
 import { ContainerState } from './Service/src/Container/index';
-import { EGenericEventFilter } from './Service/src/Models/IContainer';
+import { ESyslogEventFilter } from './Service/src/Models/IContainer';
 import { Logger } from './Service/src/Utilities/Logger/index';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -14,12 +14,12 @@ function checkForValidEnvironment() {
 
 function checkForDefaultEnvironment() {
   if (!process.env.OI4_EDGE_EVENT_LEVEL) {
-    console.log(`Init: EVENT_LEVEL not present, setting to default 'medium'`);
-    process.env.OI4_EDGE_EVENT_LEVEL = 'medium';
+    console.log(`Init: EVENT_LEVEL not present, setting to default 'warning'`);
+    process.env.OI4_EDGE_EVENT_LEVEL = 'warning';
   } else {
-    if (!(process.env.OI4_EDGE_EVENT_LEVEL in EGenericEventFilter)) {
-      console.log(`Init: EVENT_LEVEL set to wrong value: ${process.env.OI4_EDGE_EVENT_LEVEL}, setting to default 'medium'`);
-      process.env.OI4_EDGE_EVENT_LEVEL = 'medium';
+    if (!(process.env.OI4_EDGE_EVENT_LEVEL in ESyslogEventFilter)) {
+      console.log(`Init: EVENT_LEVEL set to wrong value: ${process.env.OI4_EDGE_EVENT_LEVEL}, setting to default 'warning'`);
+      process.env.OI4_EDGE_EVENT_LEVEL = 'warning';
     }
   }
   if (!process.env.OI4_EDGE_MQTT_SECURE_PORT) process.env.OI4_EDGE_MQTT_SECURE_PORT = '8883';
@@ -39,12 +39,17 @@ checkForDefaultEnvironment();
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
-const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as EGenericEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
-logger.level = EGenericEventFilter.high;
-logger.log(`Testprint for level ${EGenericEventFilter.low}`, EGenericEventFilter.low);
-logger.log(`Testprint for level ${EGenericEventFilter.medium}`, EGenericEventFilter.medium);
-logger.log(`Testprint for level ${EGenericEventFilter.high}`, EGenericEventFilter.high);
-logger.level = EGenericEventFilter.medium;
+const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
+logger.level = ESyslogEventFilter.emergency;
+logger.log(`Testprint for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
+logger.log(`Testprint for level ${ESyslogEventFilter.informational}`, ESyslogEventFilter.informational);
+logger.log(`Testprint for level ${ESyslogEventFilter.notice}`, ESyslogEventFilter.notice);
+logger.log(`Testprint for level ${ESyslogEventFilter.warning}`, ESyslogEventFilter.warning);
+logger.log(`Testprint for level ${ESyslogEventFilter.error}`, ESyslogEventFilter.error);
+logger.log(`Testprint for level ${ESyslogEventFilter.critical}`, ESyslogEventFilter.critical);
+logger.log(`Testprint for level ${ESyslogEventFilter.alert}`, ESyslogEventFilter.alert);
+logger.log(`Testprint for level ${ESyslogEventFilter.emergency}`, ESyslogEventFilter.emergency);
+logger.level = ESyslogEventFilter.warning;
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
