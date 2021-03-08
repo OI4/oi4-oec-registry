@@ -1,4 +1,4 @@
-import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter } from '../../Service/src/Models/IContainer';
+import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter, EOpcUaEventFilter } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
 import EAuditLevel = ESyslogEventFilter;
 import { IMasterAssetModel, IOPCUANetworkMessage } from '../../Service/src/Models/IOPCUA';
@@ -113,6 +113,11 @@ export class Registry extends EventEmitter {
       console.log(`Subbed initially to syslog category - ${levels}`);
       this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
     }
+    // Subscribe to OPCUA events
+    for (const levels of Object.values(EOpcUaEventFilter)) {
+      console.log(`Subbed initially to syslog category - ${levels}`);
+      this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/opcSC/${levels}/#`);
+    }
 
     this.ownSubscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
     this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
@@ -222,7 +227,7 @@ export class Registry extends EventEmitter {
       }
       this.globalEventList.push({ // So we have space for this payload!
         ...parsedPayload,
-        level: topicTag,
+        level: topicTag.split('/')[1],
         timestamp: networkMessage.Messages[0].Timestamp,
       });
     } else if (topic.includes('/pub/health')) {
