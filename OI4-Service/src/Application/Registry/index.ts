@@ -1,6 +1,6 @@
 import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
-import EAuditLevel = EGenericEventFilter;
+import EAuditLevel = ESyslogEventFilter;
 import { IMasterAssetModel, IOPCUANetworkMessage } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -28,18 +28,7 @@ export class Registry extends EventEmitter {
   private oi4Id: string;
   private queue: SequentialTaskQueue;
   private config: IRegistryConfig;
-  private static auditList: EAuditLevel[] = [
-    EAuditLevel.high,
-    EAuditLevel.medium,
-    EAuditLevel.low,
-  ];
-
-  private static categoryList: ESubResource[] = [
-    ESubResource.opcSC,
-    ESubResource.ne107,
-    ESubResource.syslog,
-    ESubResource.generic,
-  ]
+  // private static auditList: EAuditLevel[] = Object.values(EAuditLevel);
   private fileCount: number;
   private logHappened: boolean;
   private containerState: IContainerState;
@@ -66,12 +55,12 @@ export class Registry extends EventEmitter {
       logToFile: 'disabled',
       developmentMode: false,
       logFileSize: 250000,
-      auditLevel: EAuditLevel.medium,
+      auditLevel: EAuditLevel.warning,
       showRegistry: true,
     }; // TODO: need solid model and good default values for this...
 
-    this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as EGenericEventFilter, registryClient, this.oi4Id, 'Registry');
-    this.testLogger = new Logger(false, 'Registry-TestApp', EGenericEventFilter.low, registryClient, this.oi4Id, 'Registry');
+    this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
+    this.testLogger = new Logger(false, 'Registry-TestApp', ESyslogEventFilter.debug, registryClient, this.oi4Id, 'Registry');
     this.fileLogger = new FileLogger(this.config.logFileSize, true);
 
     if (this.testLogger.enabled) {
@@ -110,16 +99,16 @@ export class Registry extends EventEmitter {
     this.registryClient = registryClient;
     this.registryClient.on('message', this.processMqttMessage);
     // Subscribe to generic events
-    for (const levels of Registry.auditList) {
+    for (const levels of Object.values(EGenericEventFilter)) {
       console.log(`Subbed initially to generic category - ${levels}`);
       this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/generic/${levels}/#`);
     }
-
+    // Subscribe to namur events
     for (const levels of Object.values(ENamurEventFilter)) {
       console.log(`Subbed initially to namur category - ${levels}`);
       this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/ne107/${levels}/#`);
     }
-
+    // Subscribe to syslog events
     for (const levels of Object.values(ESyslogEventFilter)) {
       console.log(`Subbed initially to syslog category - ${levels}`);
       this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
@@ -169,7 +158,7 @@ export class Registry extends EventEmitter {
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
         return;
       }
-      this.logger.log('Filelogger enable --- calling flushToLogfile', EGenericEventFilter.medium);
+      this.logger.log('Filelogger enable --- calling flushToLogfile', ESyslogEventFilter.warning);
       this.fileLogger.flushToLogfile(this.globalEventList);
       this.globalEventList = []; // We flushed the logs, so we can clear our rambuffer
       this.logHappened = false;
@@ -192,18 +181,18 @@ export class Registry extends EventEmitter {
     try {
       firstPayload = JSON.parse(message.toString());
     } catch (e) {
-      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, EGenericEventFilter.medium);
-      this.logger.log(`Topic: ${topic}`, EGenericEventFilter.medium);
-      this.logger.log(message.toString(), EGenericEventFilter.medium);
+      this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESyslogEventFilter.warning);
+      this.logger.log(`Topic: ${topic}`, ESyslogEventFilter.warning);
+      this.logger.log(message.toString(), ESyslogEventFilter.warning);
       return;
     }
     const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
     if (!schemaResult) {
-      this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', EGenericEventFilter.medium);
+      this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESyslogEventFilter.warning);
       return;
     }
     if (firstPayload.Messages.length === 0) {
-      this.logger.log('Messages Array empty - check DataSetMessage format', EGenericEventFilter.medium);
+      this.logger.log('Messages Array empty - check DataSetMessage format', ESyslogEventFilter.warning);
       return;
     }
     const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString());
@@ -233,19 +222,19 @@ export class Registry extends EventEmitter {
       }
       this.globalEventList.push({ // So we have space for this payload!
         ...parsedPayload,
-        Tag: oi4Id,
-        Timestamp: networkMessage.Messages[0].Timestamp,
+        level: topicTag,
+        timestamp: networkMessage.Messages[0].Timestamp,
       });
     } else if (topic.includes('/pub/health')) {
       this.logger.log(`Got Health from ${oi4Id} in processMqttMessage`);
       if (oi4Id in this.assetLookup) {
-        this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, EGenericEventFilter.medium);
+        this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
         // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
         clearTimeout(this.timeoutLookup[oi4Id]);
         clearTimeout(this.secondStageTimeoutLookup[oi4Id]);
 
         if (parsedPayload.health === EDeviceHealth.FAILURE_1 && parsedPayload.healthState === 0) {
-          this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, EGenericEventFilter.medium);
+          this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
           this.assetLookup[oi4Id].available = false;
         } else {
           this.assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
@@ -258,7 +247,7 @@ export class Registry extends EventEmitter {
         this.assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
         await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids.mam)));
-        this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, EGenericEventFilter.low);
+        this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESyslogEventFilter.debug);
       }
     } else if (topic.includes('/pub/license')) {
       if (oi4Id in this.assetLookup) {
@@ -286,7 +275,7 @@ export class Registry extends EventEmitter {
         case 'get': {
           switch (topicResource) {
             case 'mam': {
-              this.logger.log('Someone requested a mam with our oi4Id', EGenericEventFilter.low);
+              this.logger.log('Someone requested a mam with our oi4Id', ESyslogEventFilter.debug);
               this.sendOutMam(topicTag);
               break;
             }
@@ -356,21 +345,21 @@ export class Registry extends EventEmitter {
     const topicArr = mqttObj.topic.split('/');
     const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
     if (this.getApplication(assetId) || this.getDevice(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-      this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', EGenericEventFilter.low);
+      this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
       if (this.assetLookup[assetId].available) {
-        this.logger.log(`Device ${assetId} was available before, no need to re-add`, EGenericEventFilter.medium);
+        this.logger.log(`Device ${assetId} was available before, no need to re-add`, ESyslogEventFilter.warning);
         return;
       }
-      this.logger.log(`Device ${assetId} was unavailable before and is now back! Re-Registering`, EGenericEventFilter.medium);
+      this.logger.log(`Device ${assetId} was unavailable before and is now back! Re-Registering`, ESyslogEventFilter.warning);
     }
 
     try {
-      this.logger.log('Enqueueing ADD-Device', EGenericEventFilter.low);
+      this.logger.log('Enqueueing ADD-Device', ESyslogEventFilter.debug);
       this.queue.push(async () => {
         return await this.addDevice(mqttObj.topic, mqttObj.message);
       });
     } catch (addErr) {
-      this.logger.log(`Add-Error: ${addErr}`, EGenericEventFilter.high);
+      this.logger.log(`Add-Error: ${addErr}`, ESyslogEventFilter.error);
     }
   }
 
@@ -381,23 +370,23 @@ export class Registry extends EventEmitter {
    * @param device The MasterAssetModel of the device
    */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
-    this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, EGenericEventFilter.medium);
+    this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, ESyslogEventFilter.warning);
     const topicArr = fullTopic.split('/');
     const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
 
     if (this.getApplication(oi4IdAsset) || this.getDevice(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-      this.logger.log('--MasterAssetModel already in Registry - addDevice--', EGenericEventFilter.low);
+      this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
       if (this.assetLookup[oi4IdAsset].available) {
-        this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, EGenericEventFilter.medium);
+        this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, ESyslogEventFilter.warning);
         return;
       }
-      this.logger.log(`Device ${oi4IdAsset} was unavailable before and is now back! Re-Registering`, EGenericEventFilter.medium);
+      this.logger.log(`Device ${oi4IdAsset} was unavailable before and is now back! Re-Registering`, ESyslogEventFilter.warning);
     }
 
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${oi4IdOriginator}`, oi4IdAsset);
     if (Object.keys(device).length === 0) {
-      this.logger.log('Critical Error: MAM of device to be added is empty', EGenericEventFilter.high);
+      this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
       return;
     }
     const fullDevice: IDeviceMessage = {
@@ -416,10 +405,10 @@ export class Registry extends EventEmitter {
     };
     console.log(device);
     if (device.HardwareRevision === '') {
-      this.logger.log('___Adding Application___', EGenericEventFilter.low);
+      this.logger.log('___Adding Application___', ESyslogEventFilter.debug);
       fullDevice.deviceType = EDeviceType.application;
     } else {
-      this.logger.log('___Adding Device___', EGenericEventFilter.low);
+      this.logger.log('___Adding Device___', ESyslogEventFilter.debug);
       fullDevice.deviceType = EDeviceType.device;
     }
 
@@ -454,14 +443,14 @@ export class Registry extends EventEmitter {
     } catch (err) {
       console.log(err);
     }
-    // Subscribe to events
-    for (const levels of Registry.auditList) {
-      console.log(`subbed local asset ${oi4IdAsset} to ${levels}`);
-      this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/event/${levels}/${oi4IdAsset}`);
-      if (levels === this.config.auditLevel) {
-        break;
-      }
-    }
+    // Subscribe to events - TODO: No longer necessary since we do not have the oi4Id asset in the filter
+    // for (const levels of Registry.auditList) {
+    //   console.log(`subbed local asset ${oi4IdAsset} to ${levels}`);
+    //   this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/event/${levels}/${oi4IdAsset}`);
+    //   if (levels === this.config.auditLevel) {
+    //     break;
+    //   }
+    // }
     // Update own publicationList with new Asset
     this.containerState.addPublication({
       resource: 'mam',
@@ -487,7 +476,7 @@ export class Registry extends EventEmitter {
       const apps = this.applications as IDeviceLookup;
       const devices = this.devices as IDeviceLookup;
       const assets = Object.assign({}, apps, devices);
-      this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, EGenericEventFilter.low);
+      this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
       for (const device of Object.keys(assets)) {
         if (assets[device].available) {
           await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[device].oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: assets[device].resources.mam}], new Date(), dscids.mam)));
@@ -522,9 +511,9 @@ export class Registry extends EventEmitter {
         `oi4/Registry/${this.oi4Id}/pub/publicationList`,
         JSON.stringify(this.builder.buildOPCUADataMessage([{payload: this.containerState.publicationList}], new Date(), dscids.publicationList)),
       );
-      this.logger.log(`Deleted App: ${device}`, EGenericEventFilter.medium);
+      this.logger.log(`Deleted App: ${device}`, ESyslogEventFilter.warning);
     } else {
-      this.logger.log('Nothing to remove here!', EGenericEventFilter.low);
+      this.logger.log('Nothing to remove here!', ESyslogEventFilter.debug);
     }
   }
 
@@ -591,12 +580,12 @@ export class Registry extends EventEmitter {
             healthScore: 0,
           };
         }
-        this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, EGenericEventFilter.medium);
+        this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
         return;
       }
       await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUADataMessage([{ payload: {}}], new Date, dscids[resource])));
       this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
-      this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, EGenericEventFilter.medium);
+      this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
       this.assetLookup[oi4Id].available = false;
     }
   }
@@ -663,6 +652,10 @@ export class Registry extends EventEmitter {
    * Attention. This clears all saved lists (global + assets)
    */
   async updateAuditLevel() {
+    if (!Object.values(ESyslogEventFilter).includes(this.config.auditLevel as ESyslogEventFilter)) {
+      console.log('AuditLevel is not known to Registry');
+      return;
+    }
     // First, clear all old eventLists
     this.globalEventList = [];
     for (const apps of Object.keys(this.assetLookup)) {
@@ -670,24 +663,26 @@ export class Registry extends EventEmitter {
     }
 
     // Then, unsubscribe from old Audit Trail
-    for (const levels of Registry.auditList) {
-      console.log(`unsubscribed ${levels}`);
-      await this.ownUnsubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
-    }
-    for (const assets of Object.keys(this.assetLookup)) {
-      this.unsubscribeAssetFromAudit(assets);
+    for (const levels of Object.values(ESyslogEventFilter)) {
+      console.log(`Unsubscribed syslog trail from ${levels}`);
+      await this.ownUnsubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
     }
 
+    // Since we do not filter by oi4Id anymore but only by the level, we do not need to unsubscribe from assets!
+    // for (const assets of Object.keys(this.assetLookup)) {
+    //   this.unsubscribeAssetFromAudit(assets);
+    // }
+
     // Then, resubscribe to new Audit Trail
-    for (const levels of Registry.auditList) {
-      console.log(`subscribed ${levels}`);
-      await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/${levels}/#`);
+    for (const levels of Object.values(ESyslogEventFilter)) {
+      console.log(`Resubbed to syslog category - ${levels}`);
+      await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
       if (levels === this.config.auditLevel) {
         return; // We matched our configured auditLevel, returning to not sub to redundant info...
       }
     }
 
-    this.logger.level = this.config.auditLevel as EGenericEventFilter;
+    this.logger.level = this.config.auditLevel as ESyslogEventFilter;
   }
 
   /**
@@ -697,7 +692,7 @@ export class Registry extends EventEmitter {
   async unsubscribeAssetFromAudit(oi4Id: string) {
     console.log(`unsubbing all audits from ${oi4Id}`);
     if (oi4Id in this.assetLookup) {
-      for (const levels of Registry.auditList) {
+      for (const levels of Object.values(ESyslogEventFilter)) {
         await this.ownUnsubscribe(`${this.assetLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
       }
     }
@@ -710,7 +705,7 @@ export class Registry extends EventEmitter {
   async resubscribeAssetFromAudit(oi4Id: string) {
     console.log(`resubbing all audits from ${oi4Id}`);
     if (oi4Id in this.assetLookup) {
-      for (const levels of Registry.auditList) {
+      for (const levels of Object.values(ESyslogEventFilter)) {
         await this.ownUnsubscribe(`${this.assetLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
         if (levels === this.config.auditLevel) {
           break;
@@ -739,7 +734,7 @@ export class Registry extends EventEmitter {
       this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
     }
     if (oldConf.auditLevel !== newConfig.auditLevel) {
-      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, EGenericEventFilter.low);
+      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, ESyslogEventFilter.debug);
       this.updateAuditLevel();
     }
     if (oldConf.logFileSize !== newConfig.logFileSize) { // fileSize changed!
