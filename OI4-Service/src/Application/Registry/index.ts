@@ -236,6 +236,7 @@ export class Registry extends EventEmitter {
         ...parsedPayload,
         level: topicTag.split('/')[1],
         timestamp: networkMessage.Messages[0].Timestamp,
+        tag: topicAppId,
       });
     } else if (topic.includes('/pub/health')) {
       this.logger.log(`Got Health from ${oi4Id} in processMqttMessage`);
