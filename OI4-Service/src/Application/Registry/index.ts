@@ -191,7 +191,14 @@ export class Registry extends EventEmitter {
       this.logger.log(message.toString(), ESyslogEventFilter.warning);
       return;
     }
-    const schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
+    let schemaResult = false;
+    try {
+      schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
+    } catch (e) {
+      if (typeof e === 'string') {
+        this.logger.log(e, ESyslogEventFilter.warning);
+      }
+    }
     if (!schemaResult) {
       this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESyslogEventFilter.warning);
       return;
