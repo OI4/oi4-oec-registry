@@ -34,5 +34,5 @@ RUN mkdir -p logs
 COPY ./OI4-Service/bootstrapper ./bootstrapper/
 COPY ./OI4-Service/scripts ./scripts/
 
-EXPOSE 4567 5000
+EXPOSE 5798 5799
 ENTRYPOINT ["scripts/entrypoint.sh"]
