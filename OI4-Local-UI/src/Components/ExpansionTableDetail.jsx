@@ -163,7 +163,7 @@ class ExpansionTableDetail extends React.Component {
       return <div>
         <h3>Originator:</h3>
         <Paper className={classes.paper}>
-          {this.props.assetLookup[oi4Id].originator}
+          {this.props.assetLookup[oi4Id].oi4IdOriginator}
         </Paper>
       </div>;
     }
