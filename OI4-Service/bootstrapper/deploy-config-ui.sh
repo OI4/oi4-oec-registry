@@ -4,12 +4,12 @@ echo "Deploying UI"
 
 # If backend is hosted elsewhere, add an $IP entry
 echo "var serviceEndpoint = { \
-  \"port\": \"4567\", \
+  \"port\": \"5799\", \
   \"platform\": \"cockpit\" \
 }; " > "$COCKPIT_UI_SRC_PATH/service-endpoint.js"
 
 echo "var serviceEndpoint = { \
-  \"port\": \"4567\", \
+  \"port\": \"5799\", \
   \"platform\": \"fetch\" \
 }; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
 

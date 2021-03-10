@@ -46,10 +46,10 @@ then
     mkdir -p /usr/local/share/oi4registry/cert
 		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/oi4registry/cert/key.pem -out /usr/local/share/oi4registry/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
 	fi
-	exec npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5000 build &
+	exec npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5798 build &
 else
    echo "USE_HTTPS other than true detected...serving without https"
-   exec npx http-server --cors -p 5000 build &
+   exec npx http-server --cors -p 5798 build &
 fi
 
 # Get process ID of most recently executed process (http-server hopefully)
