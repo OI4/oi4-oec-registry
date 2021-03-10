@@ -560,7 +560,7 @@ class OI4Base extends React.Component {
           // Update auditTrail
           jsonData[oi4Id].eventList = [];
           for (const audits of this.reverse(this.state.globalEventTrail)) {
-            if (audits.Tag === oi4Id) {
+            if (audits.tag === oi4Id) {
               jsonData[oi4Id].eventList.push(audits);
             }
           }
