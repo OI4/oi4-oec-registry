@@ -1,6 +1,6 @@
 /* eslint-disable */
 var serviceEndpoint = {
-    port: '4567',
+    port: '5799',
     platform: 'fetch'
 };
 /* eslint-enable */

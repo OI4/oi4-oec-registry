@@ -1,7 +1,7 @@
 /* eslint-disable */
 var serviceEndpoint = {
     address: 'localhost',
-    port: '4567',
+    port: '5799',
     platform: 'cockpit'
 };
 /* eslint-enable */
