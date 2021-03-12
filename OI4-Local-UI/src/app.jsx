@@ -3,10 +3,15 @@ import React from 'react';
 // Import images
 
 // OI4-Logos
-import oi4BigLogoLight from './Images/OI4_Logo_complete_color_RGB.png';
-import oi4BigLogoDark from './Images/OI4_Logo_complete_white_RGB.png';
+// import oi4BigLogoLight from './Images/OI4_Logo_complete_color_RGB.png';
+// import oi4BigLogoDark from './Images/OI4_Logo_complete_white_RGB.png';
+import oi4BigLogoLight from './Images/OI4_Badge_Full_Color_Compliant.png';
+import oi4BigLogoDark from './Images/OI4_Badge_Green_Compliant.png';
 import oi4SmallLogoLight from './Images/OI4_Signet_color_RGB.png';
 import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
+
+import namur_normal_0 from './Images/namur_normal_0.png';
+import namur_failure_1 from './Images/namur_failure_1.png';
 
 import { MuiThemeProvider, createMuiTheme, withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
@@ -144,6 +149,7 @@ class OI4Base extends React.Component {
       globalEventTrail: [],
       updatingConformity: false,
       filterWord: '',
+      brokerState: false,
     };
 
     this.controller = new AbortController();
@@ -166,6 +172,7 @@ class OI4Base extends React.Component {
     // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 3500));
     // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
+    this.activeIntervals.push(setInterval(() => { this.updateBrokerState() }, 5000));
 
     setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
     setTimeout(() => {
@@ -211,12 +218,19 @@ class OI4Base extends React.Component {
             <AppBar position='static' color='inherit'>
               <Toolbar>
                 <img src={this.state.bigLogo} alt="OI4Logo" style={{ marginRight: '10px', maxWidth: '180px', height: 'auto' }} />
-                <Typography variant='h6' style={{ flexGrow: 1 }}>Registry</Typography>
+                <Typography variant='h6' style={{ flexGrow: 1 }}>OEC Registry</Typography>
+                <div style={{ marginRight: '5px' }}>
+                <Typography variant='h6'>Message Bus:</Typography>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Connected</Typography>
+                {this.state.brokerState === true ? <img src={namur_normal_0} alt="Namur" height='25px' width='25px' /> : <img src={namur_failure_1} alt="Namur" height='25px' width='25px' />}
+                </div>
+                </div>
                 <Checkbox
                   icon={<BrightnessHigh />}
                   checkedIcon={<Brightness3 />}
                   checked={this.state.darkActivated}
-                  style={{ right: '1%' }}
+                  style={{ right: '1%', marginLeft: '10px' }}
                   onChange={() => { this.toggleTheme() }}
                 />
               </Toolbar>
@@ -464,6 +478,19 @@ class OI4Base extends React.Component {
   }
 
   // UPDATE-FUNCTIONS OF ASSETS AND RESOURCES //
+
+  updateBrokerState() {
+    this.fetch.get('/brokerState')
+    .then(data => {
+      const newValue = (data === 'true');
+      this.setState({ brokerState: newValue });
+    })
+    .catch(err => {
+      console.log(err);
+      reject(err);
+    });
+  }
+
   /**
    * Updates the conformity of the specified asset via the Registry API
    * @param {string} fullTopic - The full topic pointing to the asset
