@@ -39,10 +39,10 @@ export class BaseApplication {
       arrMatrix.push(subArr);
     }
 
-    this.weatherData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { Temperature: 99, Humidity: '99' }}], new Date(), this.weatherDataGUID);
-    this.hostData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { cpuLoad: '0', freeMemory: 0 }}], new Date(), this.hostDataGUID);
-    this.arrayData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { myArr: boolArr }}], new Date(), this.arrayDataGUID);
-    this.matrixData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { myMatrix: arrMatrix }}], new Date(), this.matrixDataGUID);
+    this.weatherData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { Temperature: 99, Humidity: '99' }, dswid: 1000 }], new Date(), this.weatherDataGUID);
+    this.hostData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { cpuLoad: '0', freeMemory: 0 }, dswid: 1000 }], new Date(), this.hostDataGUID);
+    this.arrayData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { myArr: boolArr }, dswid: 1000 }], new Date(), this.arrayDataGUID);
+    this.matrixData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: { myMatrix: arrMatrix }, dswid: 1000 }], new Date(), this.matrixDataGUID);
   }
 
   // Base-Application! Just pump out different sets of data
@@ -149,7 +149,7 @@ export class BaseApplication {
     this.weatherData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: {
       Temperature: newTemp,
       Humidity: newHumidity,
-    }}], new Date(), this.weatherDataGUID); /*tslint:disable-line*/
+    }, dswid: 1000 }], new Date(), this.weatherDataGUID); /*tslint:disable-line*/
   }
 
   updateHostData() {
@@ -158,7 +158,7 @@ export class BaseApplication {
     this.hostData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: {
       cpuLoad: newLoad,
       freeMemory: newMem,
-    }}], new Date(), this.hostDataGUID); /*tslint:disable-line*/
+    }, dswid: 1000 }], new Date(), this.hostDataGUID); /*tslint:disable-line*/
   }
 
   updateArrayData() {
@@ -168,6 +168,6 @@ export class BaseApplication {
     }
     this.arrayData = this.messageBuilder.buildOPCUANetworkMessage([{ payload: {
       myArr: boolArr,
-    }}], new Date(), this.arrayDataGUID); /*tslint:disable-line*/
+    }, dswid: 1000 }], new Date(), this.arrayDataGUID); /*tslint:disable-line*/
   }
 }
