@@ -512,7 +512,7 @@ export class Registry extends EventEmitter {
           };
           try {
             payload = {
-              poi: '',
+              poi: assets[device].oi4Id,
               payload: assets[device].resources.mam,
               dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
             }
@@ -530,9 +530,9 @@ export class Registry extends EventEmitter {
     } else {
       try {
         const mamPayloadArr: IOPCUAPayload[] =[{
-          poi: '',
+          poi: assets[tag].oi4Id,
           payload: assets[tag].resources.mam,
-          dswid: Object.keys(assets).indexOf(assets[tag].oi4Id),
+          dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[tag].oi4Id)}`, 10),
         }]
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[tag].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
       } catch {
