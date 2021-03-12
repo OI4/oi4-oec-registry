@@ -260,6 +260,7 @@ export class Registry extends EventEmitter {
         parsedPayload.lastMessage = new Date().toISOString();
         this.assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
+        if (topicAppId === this.oi4Id) return;
         await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids.mam)));
         this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESyslogEventFilter.debug);
       }
@@ -289,10 +290,15 @@ export class Registry extends EventEmitter {
         case 'get': {
           switch (topicResource) {
             case 'mam': {
-              this.logger.log('Someone requested a mam with our oi4Id', ESyslogEventFilter.debug);
+              this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
               if (topicTag.includes('Registry')) break; // This request should be handled in the service component
               this.sendOutMam(topicTag);
               break;
+            }
+            case 'health': {
+              this.logger.log('Someonerequested a health with our oi4Id as appId', ESyslogEventFilter.debug);
+              if (topicTag.includes('Registry')) break; // This request should be handled in the service component
+              this.sendOutHealth(topicTag);
             }
             default: {
               break;
@@ -322,12 +328,13 @@ export class Registry extends EventEmitter {
       switch (topicMethod) {
         case 'get': {
           switch (topicResource) {
-            case 'mam': {
-              if (topicServiceType === 'Registry') {
-                this.sendOutMam(topicTag);
-              }
-              break;
-            }
+            // The following is commented out, because why would we send out mams on behalf of other apps?
+            // case 'mam': {
+            //   if (topicServiceType === 'Registry') {
+            //     this.sendOutMam(topicTag);
+            //   }
+            //   break;
+            // }
             default: {
               break;
             }
@@ -530,6 +537,56 @@ export class Registry extends EventEmitter {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[tag].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
       } catch {
         this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
+      }
+
+    }
+  }
+
+    /**
+   * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
+   * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
+   */
+  async sendOutHealth(tag: string) {
+    const apps = this.applications as IDeviceLookup;
+    const devices = this.devices as IDeviceLookup;
+    const assets: IDeviceLookup = Object.assign({}, apps, devices);
+    if (tag === '') {
+      this.logger.log(`Sending all known Healths...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
+      let index: number = 0;
+      const healthPayloadArr: IOPCUAPayload[] = [];
+      for (const device of Object.keys(assets)) {
+        if (assets[device].available) {
+          let payload: IOPCUAPayload = {
+            payload: {},
+            dswid: 0,
+          };
+          try {
+            payload = {
+              poi: assets[device].oi4Id,
+              payload: assets[device].resources.health,
+              dswid: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
+            }
+          } catch {
+            this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
+          }
+          healthPayloadArr.push(payload);
+          this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
+        } else {
+          this.logger.log(`Not sending registered health of ${assets[device].resources.mam.ProductInstanceUri} because it is not available`);
+        }
+        index++;
+      }
+      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+    } else {
+      try {
+        const healthPayloadArr: IOPCUAPayload[] =[{
+          poi: assets[tag].oi4Id,
+          payload: assets[tag].resources.health,
+          dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[tag].oi4Id)}`, 10),
+        }]
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[tag].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+      } catch {
+        this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
       }
 
     }
