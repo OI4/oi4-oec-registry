@@ -88,35 +88,6 @@ class ExpansionTable extends React.Component {
    */
   render() {
     const { classes } = this.props;
-    // TODO: This was a bit hard to get back into, maybe it can be simplified
-    // Filter assetList to be displayed
-    const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
-      .filter((key) => {
-        if (this.state.filterWord === '') {
-          return true;
-        }
-        for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
-          if (items === 'Manufacturer') {
-            try {
-              if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
-                return true;
-              }
-            } catch {
-              return true;
-            }
-          }
-          if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') { // No try-catch like above necessary, because we already check for string type
-            if (this.props.assetLookup[key].resources.mam[items].includes(this.state.filterWord)) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }) // Filter only keeps the oi4Ids of the assets passing through it
-      .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
-        obj[key] = this.props.assetLookup[key];
-        return obj;
-      }, {});
     return (
       <>
         <ExpansionPanel>
@@ -156,7 +127,7 @@ class ExpansionTable extends React.Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {Object.keys(filteredAssets).map((oi4Id, idx) => (
+                {Object.keys(this.filterAssets()).map((oi4Id, idx) => (
                   <React.Fragment key={`AssetTable-${oi4Id}-${idx}`}>
                     {/* {console.log((parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString())}
                     {console.log(oi4Id)} */}
@@ -274,6 +245,39 @@ class ExpansionTable extends React.Component {
     );
   }
 
+  filterAssets() {
+    // TODO: This was a bit hard to get back into, maybe it can be simplified
+    // Filter assetList to be displayed
+    const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
+      .filter((key) => {
+        if (this.state.filterWord === '') {
+          return true;
+        }
+        for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
+          if (items === 'Manufacturer') {
+            try {
+              if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
+                return true;
+              }
+            } catch {
+              return true;
+            }
+          }
+          if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') { // No try-catch like above necessary, because we already check for string type
+            if (this.props.assetLookup[key].resources.mam[items].includes(this.state.filterWord)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }) // Filter only keeps the oi4Ids of the assets passing through it
+      .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
+        obj[key] = this.props.assetLookup[key];
+        return obj;
+      }, {});
+      return filteredAssets;
+  }
+
   /**
    * Checks whether the resource is available in the lookup and returns it
    * @param {string} oi4Id - The oi4Id that si to be looked up
@@ -362,7 +366,6 @@ class ExpansionTable extends React.Component {
   displayLocalEvents(eventArray) {
     const newArray = [];
     for (const items of eventArray) {
-      console.log(items);
       newArray.push({
         level: items.level,
         number: items.number,
@@ -371,7 +374,6 @@ class ExpansionTable extends React.Component {
         details: JSON.stringify(items.details),
       });
     }
-    console.log(newArray);
     if (Array.isArray(eventArray)) {
       if (eventArray.length !== 0) {
         return (
