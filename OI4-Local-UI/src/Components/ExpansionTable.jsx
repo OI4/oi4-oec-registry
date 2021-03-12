@@ -88,6 +88,7 @@ class ExpansionTable extends React.Component {
    */
   render() {
     const { classes } = this.props;
+    // TODO: This was a bit hard to get back into, maybe it can be simplified
     // Filter assetList to be displayed
     const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
       .filter((key) => {
@@ -96,19 +97,23 @@ class ExpansionTable extends React.Component {
         }
         for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
           if (items === 'Manufacturer') {
-            if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
+            try {
+              if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
+                return true;
+              }
+            } catch {
               return true;
             }
           }
-          if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') {
+          if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') { // No try-catch like above necessary, because we already check for string type
             if (this.props.assetLookup[key].resources.mam[items].includes(this.state.filterWord)) {
               return true;
             }
           }
         }
         return false;
-      })
-      .reduce((obj, key) => {
+      }) // Filter only keeps the oi4Ids of the assets passing through it
+      .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
         obj[key] = this.props.assetLookup[key];
         return obj;
       }, {});
