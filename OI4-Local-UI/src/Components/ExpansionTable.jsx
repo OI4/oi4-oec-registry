@@ -52,7 +52,8 @@ const styles = theme => ({
     fontSize: 'calc(5px + 1vmin)',
   },
   tableWrap: {
-    overflow: 'auto',
+    overflowX: 'auto',
+    overflowY: 'hidden',
     flexDirection: 'column', // ExpansionPanelDetail is a flex container!
   },
 });
