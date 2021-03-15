@@ -75,7 +75,7 @@ const webClient = webProxy.webClient;
 
 webClient.get('/registry/application', (deviceReq, deviceResp) => {
   const filteredApps = JSON.parse(JSON.stringify(registry.applications));
-  if (!registry.getConfig().showRegistry) {
+  if (!registry.getConfig().registry.showRegistry.value) {
     delete filteredApps[registry.getOi4Id()];
   }
   deviceResp.send(JSON.stringify(filteredApps));
