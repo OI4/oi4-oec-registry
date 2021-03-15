@@ -28,10 +28,9 @@ import {
 const styles = theme => ({
   paper: {
     padding: theme.spacing(1),
-    marginTop: theme.spacing(2),
-    width: '85%',
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
     overflowX: 'auto',
-    marginBottom: theme.spacing(2),
   },
 });
 
@@ -78,8 +77,8 @@ class ExpansionTableDetail extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-        <Grid container justify='space-evenly'>
-          <Grid item xs={6}>
+        <Grid container justify='space-evenly' spacing={2}>
+          <Grid item xs={5}>
             <h3>Detailed MasterAssetModel:
               <span style={{ marginRight: '1%' }}>
                 <Tooltip title="Copy to clipboard">
@@ -142,8 +141,8 @@ class ExpansionTableDetail extends React.Component {
             <Paper className={classes.paper}>
               {this.detailedHealthViewer(this.props.getResourceObject(this.props.oi4Id, 'health'))}
             </Paper>
+            {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
           </Grid>
-          {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
         </Grid>
     );
   }
@@ -160,12 +159,10 @@ class ExpansionTableDetail extends React.Component {
    */
   displayOrigin(lookupType = 'application', oi4Id, classes) {
     if (lookupType === 'device') {
-      return <div>
-        <h3>Originator:</h3>
+      return <><h3>Originator:</h3>
         <Paper className={classes.paper}>
           {this.props.assetLookup[oi4Id].oi4IdOriginator}
-        </Paper>
-      </div>;
+        </Paper></>;
     }
   }
 
