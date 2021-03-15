@@ -73,7 +73,7 @@ export class Registry extends EventEmitter {
 
     this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESyslogEventFilter.debug, registryClient, this.oi4Id, 'Registry');
-    this.fileLogger = new FileLogger(contState.config.logging.logFileSize.value, true);
+    this.fileLogger = new FileLogger(parseInt(contState.config.logging.logFileSize.value), true);
 
     if (this.testLogger.enabled) {
       setInterval(
