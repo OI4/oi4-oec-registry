@@ -136,7 +136,7 @@ class OI4Base extends React.Component {
         auditTrailLength: 25,
       },
       backendConfig: {
-        auditLevel: 'trace',
+        auditLevel: 'debug',
         showRegistry: true,
         logToFile: 'disabled',
         logFileSize: 250, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
@@ -159,7 +159,7 @@ class OI4Base extends React.Component {
     // Update apps and devices right away
     setTimeout(() => { this.updateApplications() }, 500);
     setTimeout(() => { this.updateDevices() }, 800);
-    setTimeout(() => { this.getBackendConfig() }, 300);
+    setTimeout(async () => { await this.getBackendConfig() }, 300);
 
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
@@ -748,30 +748,44 @@ class OI4Base extends React.Component {
    * Updates the Registry backend with the config by calling the corresponding API
    * @memberof OI4Base
    */
-  setBackendConfig() {
-    const resizedConfig = JSON.parse(JSON.stringify(this.state.backendConfig));
-    resizedConfig.logFileSize = this.state.backendConfig.logFileSize * 1000;
-    this.fetch.put(`/registry/config`, JSON.stringify(resizedConfig))
+  async setBackendConfig() {
+    const regConfData = await this.retrieveBackendConfig();
+    regConfData.logging.auditLevel.value = this.state.backendConfig.auditLevel;
+    regConfData.registry.showRegistry.value = this.state.backendConfig.showRegistry;
+    regConfData.logging.logType.value = this.state.backendConfig.logToFile;
+    regConfData.logging.logFileSize.value = this.state.backendConfig.logFileSize * 1000;
+    regConfData.registry.developmentMode.value = this.state.backendConfig.developmentMode;
+    this.fetch.put(`/registry/config`, JSON.stringify(regConfData))
       .then(data => {
         console.log(data);
       });
+  }
+
+  async retrieveBackendConfig() {
+    try {
+      const data = await this.fetch.get(`/registry/config`);
+      const regConfData = JSON.parse(data); // Format from backend!
+      return regConfData;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
   }
 
   /**
    * Updates the local copy of the backendConfig by getting it from the corresponding API
    * @memberof OI4Base
    */
-  getBackendConfig() {
-    this.fetch.get(`/registry/config`)
-      .then(data => {
-        const regConfData = JSON.parse(data);
-        regConfData.logFileSize = (regConfData.logFileSize) / 1000;
-        this.setState({ backendConfig: regConfData });
-      })
-      .catch(err => {
-        console.log(err);
-        reject(err);
-      });
+  async getBackendConfig() {
+    const regConfData = await this.retrieveBackendConfig();
+    const backendConfig = {
+      auditLevel: regConfData.logging.auditLevel.value,
+      showRegistry: regConfData.registry.showRegistry.value,
+      logToFile: regConfData.logging.logType.value,
+      logFileSize: regConfData.logging.logFileSize.value / 1000, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
+      developmentMode: regConfData.registry.developmentMode.value,
+    };
+    this.setState({ backendConfig: backendConfig });
   }
 
   /**
