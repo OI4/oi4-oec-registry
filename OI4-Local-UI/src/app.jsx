@@ -222,7 +222,7 @@ class OI4Base extends React.Component {
                 <div style={{ marginRight: '5px' }}>
                 <Typography variant='h6'>Message Bus:</Typography>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Connected</Typography>
+                {this.state.brokerState === true ? <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Connected</Typography> : <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Disconnected</Typography>}
                 {this.state.brokerState === true ? <img src={namur_normal_0} alt="Namur" height='25px' width='25px' /> : <img src={namur_failure_1} alt="Namur" height='25px' width='25px' />}
                 </div>
                 </div>
