@@ -751,10 +751,10 @@ class OI4Base extends React.Component {
   async setBackendConfig() {
     const regConfData = await this.retrieveBackendConfig();
     regConfData.logging.auditLevel.value = this.state.backendConfig.auditLevel;
-    regConfData.registry.showRegistry.value = this.state.backendConfig.showRegistry;
+    regConfData.registry.showRegistry.value = this.state.backendConfig.showRegistry.toString();
     regConfData.logging.logType.value = this.state.backendConfig.logToFile;
-    regConfData.logging.logFileSize.value = this.state.backendConfig.logFileSize * 1000;
-    regConfData.registry.developmentMode.value = this.state.backendConfig.developmentMode;
+    regConfData.logging.logFileSize.value = (this.state.backendConfig.logFileSize * 1000).toString();
+    regConfData.registry.developmentMode.value = this.state.backendConfig.developmentMode.toString();
     this.fetch.put(`/registry/config`, JSON.stringify(regConfData))
       .then(data => {
         console.log(data);
@@ -780,10 +780,10 @@ class OI4Base extends React.Component {
     const regConfData = await this.retrieveBackendConfig();
     const backendConfig = {
       auditLevel: regConfData.logging.auditLevel.value,
-      showRegistry: regConfData.registry.showRegistry.value,
+      showRegistry: regConfData.registry.showRegistry.value === 'true',
       logToFile: regConfData.logging.logType.value,
-      logFileSize: regConfData.logging.logFileSize.value / 1000, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
-      developmentMode: regConfData.registry.developmentMode.value,
+      logFileSize: ((parseInt(regConfData.logging.logFileSize.value, 10)) / 1000), // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
+      developmentMode: regConfData.registry.developmentMode.value === 'true',
     };
     this.setState({ backendConfig: backendConfig });
   }
