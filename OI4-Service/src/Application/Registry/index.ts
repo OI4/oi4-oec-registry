@@ -14,6 +14,7 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 // DSCIds
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
 import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus';
+import { ISpecificContainerConfig } from '../../Service/src/Config/IContainerConfig';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 let globIndex = 0;
@@ -28,7 +29,7 @@ export class Registry extends EventEmitter {
   private oi4DeviceWildCard: string;
   private oi4Id: string;
   private queue: SequentialTaskQueue;
-  private config: IRegistryConfig;
+  private logToFileEnabled: string; // TODO: Should be a bool, but we use strings...
   // private static auditList: EAuditLevel[] = Object.values(EAuditLevel);
   private fileCount: number;
   private logHappened: boolean;
@@ -51,18 +52,28 @@ export class Registry extends EventEmitter {
   constructor(registryClient: mqtt.AsyncClient, contState: IContainerState) {
     super();
     this.oi4Id = contState.oi4Id;
-
-    this.config = {
-      logToFile: 'disabled',
-      developmentMode: false,
-      logFileSize: 250000,
-      auditLevel: EAuditLevel.warning,
-      showRegistry: true,
-    }; // TODO: need solid model and good default values for this...
+    this.logToFileEnabled = contState.config.logging.logType.value;
+    // Config section
+    contState.on('newConfig', (oldConfig: ISpecificContainerConfig) => {
+      const newConfig = contState.config;
+      if (newConfig.logging.logType.value === 'enabled') {
+        this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
+      }
+      if (oldConfig.logging.auditLevel.value !== newConfig.logging.auditLevel.value) {
+        this.logger.log(`auditLevel is different, updating from ${oldConfig.logging.auditLevel.value} to ${newConfig.logging.auditLevel.value}`, ESyslogEventFilter.debug);
+        this.updateAuditLevel();
+      }
+      if (oldConfig.logging.logFileSize.value !== newConfig.logging.logFileSize.value) { // fileSize changed!
+        this.logToFileEnabled = 'disabled'; // Temporarily disable logging
+        this.logger.log(`fileSize for File-logging changed! (old: ${oldConfig.logging.logFileSize.value}, new: ${newConfig.logging.logFileSize.value}) Deleting all old files and adjusting file`);
+        this.deleteFiles();
+        this.logToFileEnabled = newConfig.logging.logType.value;
+      }
+    });
 
     this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
     this.testLogger = new Logger(false, 'Registry-TestApp', ESyslogEventFilter.debug, registryClient, this.oi4Id, 'Registry');
-    this.fileLogger = new FileLogger(this.config.logFileSize, true);
+    this.fileLogger = new FileLogger(contState.config.logging.logFileSize.value, true);
 
     if (this.testLogger.enabled) {
       setInterval(
@@ -158,7 +169,7 @@ export class Registry extends EventEmitter {
    * If it's enabled and no logs happened, we can simply return and re-set the timeout (no need to shift since the array should be empty)
    */
   private flushToLogfile() {
-    if (this.config.logToFile === 'enabled') {
+    if (this.logToFileEnabled === 'enabled') {
       if (!this.logHappened) {
         console.log('no logs happened in the past minute... returning...');
         this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
@@ -754,7 +765,7 @@ export class Registry extends EventEmitter {
    * Attention. This clears all saved lists (global + assets)
    */
   async updateAuditLevel() {
-    if (!Object.values(ESyslogEventFilter).includes(this.config.auditLevel as ESyslogEventFilter)) {
+    if (!Object.values(ESyslogEventFilter).includes(this.containerState.config.logging.auditLevel.value as ESyslogEventFilter)) {
       console.log('AuditLevel is not known to Registry');
       return;
     }
@@ -779,12 +790,12 @@ export class Registry extends EventEmitter {
     for (const levels of Object.values(ESyslogEventFilter)) {
       console.log(`Resubbed to syslog category - ${levels}`);
       await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
-      if (levels === this.config.auditLevel) {
+      if (levels === this.containerState.config.logging.auditLevel.value) {
         return; // We matched our configured auditLevel, returning to not sub to redundant info...
       }
     }
 
-    this.logger.level = this.config.auditLevel as ESyslogEventFilter;
+    this.logger.level = this.containerState.config.logging.auditLevel.value as ESyslogEventFilter;
   }
 
   /**
@@ -809,7 +820,7 @@ export class Registry extends EventEmitter {
     if (oi4Id in this.assetLookup) {
       for (const levels of Object.values(ESyslogEventFilter)) {
         await this.ownUnsubscribe(`${this.assetLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
-        if (levels === this.config.auditLevel) {
+        if (levels === this.containerState.config.logging.auditLevel.value) {
           break;
         }
       }
@@ -828,31 +839,17 @@ export class Registry extends EventEmitter {
    * Updates the config of the Registry
    * @param newConfig the new config object
    */
-  async updateConfig(newConfig: IRegistryConfig) {
-    const oldConf: IRegistryConfig = JSON.parse(JSON.stringify(this.config));
-    this.config = JSON.parse(JSON.stringify(newConfig));
-    console.log(newConfig); // Temporary
-    if (newConfig.logToFile === 'enabled') {
-      this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
-    }
-    if (oldConf.auditLevel !== newConfig.auditLevel) {
-      this.logger.log(`auditLevel is different, updating from ${oldConf.auditLevel} to ${newConfig.auditLevel}`, ESyslogEventFilter.debug);
-      this.updateAuditLevel();
-    }
-    if (oldConf.logFileSize !== newConfig.logFileSize) { // fileSize changed!
-      this.config.logToFile = 'disabled'; // Temporarily disable logging
-      this.logger.log(`fileSize for File-logging changed! (old: ${oldConf.logFileSize}, new: ${newConfig.logFileSize}) Deleting all old files and adjusting file`);
-      this.deleteFiles();
-      this.config.logToFile = newConfig.logToFile;
-    }
+  async updateConfig(newConfig: ISpecificContainerConfig) {
+    this.containerState.config = newConfig;
+    this.logger.log(`Sanity-Check: New config as json: ${JSON.stringify(this.containerState.config)}`, ESyslogEventFilter.debug);
   }
 
   /**
    * Retrieves the config of the Registry
    * @returns The config of the registry
    */
-  getConfig(): IRegistryConfig {
-    return this.config;
+  getConfig(): ISpecificContainerConfig {
+    return this.containerState.config;
   }
 
   /**
