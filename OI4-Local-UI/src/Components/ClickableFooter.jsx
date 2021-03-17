@@ -70,7 +70,7 @@ export class ClickableFooter extends React.Component {
         onClose={() => this.setState({ dialogOpen: false })}
         maxWidth='md'
       >
-        <DialogTitle style={{ textAlign: 'center' }}><img src={this.props.bigLogo} alt="OI4Logo2" style={{ maxWidth: '550px', height: 'auto' }} /></DialogTitle>
+        <DialogTitle style={{ textAlign: 'center' }}><img src={this.props.bigLogo} alt="OI4Logo2" style={{ maxWidth: '400px', height: 'auto' }} /></DialogTitle>
         <DialogContent>
           <Divider variant='middle' />
           <Tabs value={this.state.selectedTab} onChange={this.handleChange} centered>
