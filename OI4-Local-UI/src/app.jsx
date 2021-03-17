@@ -232,7 +232,7 @@ class OI4Base extends React.Component {
                   icon={<BrightnessHigh />}
                   checkedIcon={<Brightness3 />}
                   checked={this.state.darkActivated}
-                  style={{ right: '1%', marginLeft: '10px' }}
+                  style={{ marginLeft: '15px' }}
                   onChange={() => { this.toggleTheme() }}
                 />
               </Toolbar>
