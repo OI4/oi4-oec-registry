@@ -537,7 +537,10 @@ export class Registry extends EventEmitter {
         }
         index++;
       }
-      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
+      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(mamPayloadArr, new Date(), dscids.mam, '');
+      for (const networkMessage of paginatedMessageArray) {
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(networkMessage));
+      }
     } else {
       try {
         const mamPayloadArr: IOPCUAPayload[] =[{
@@ -587,7 +590,10 @@ export class Registry extends EventEmitter {
         }
         index++;
       }
-      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(healthPayloadArr, new Date(), dscids.health, '');
+      for (const networkMessage of paginatedMessageArray) {
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(networkMessage));
+      }
     } else {
       try {
         const healthPayloadArr: IOPCUAPayload[] =[{
