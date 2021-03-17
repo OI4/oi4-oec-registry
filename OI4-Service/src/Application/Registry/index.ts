@@ -194,9 +194,9 @@ export class Registry extends EventEmitter {
    */
   private processMqttMessage = async (topic: string, message: Buffer) => {
     const topicArr = topic.split('/');
-    let firstPayload = { Messages: [] };
+    let parsedMessage: IOPCUANetworkMessage;
     try {
-      firstPayload = JSON.parse(message.toString());
+      parsedMessage = JSON.parse(message.toString());
     } catch (e) {
       this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESyslogEventFilter.warning);
       this.logger.log(`Topic: ${topic}`, ESyslogEventFilter.warning);
@@ -205,7 +205,7 @@ export class Registry extends EventEmitter {
     }
     let schemaResult = false;
     try {
-      schemaResult = await this.builder.checkOPCUAJSONValidity(firstPayload);
+      schemaResult = await this.builder.checkOPCUAJSONValidity(parsedMessage);
     } catch (e) {
       if (typeof e === 'string') {
         this.logger.log(e, ESyslogEventFilter.warning);
@@ -228,7 +228,7 @@ export class Registry extends EventEmitter {
     const topicResource = topicArray[7];
     const topicTag = topicArray.splice(8).join('/');
 
-    if (topicMethod === 'pub' && firstPayload.Messages.length === 0) {
+    if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) {
       this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
       return;
     }
@@ -301,17 +301,31 @@ export class Registry extends EventEmitter {
     if (topicAppId === this.oi4Id) {
       switch (topicMethod) {
         case 'get': {
+
+          const payloadType = await this.builder.checkPayloadType(parsedMessage.Messages[0].Payload);
+
+          if (payloadType === 'locale') {
+            this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
+          }
+
+          let page = 0;
+          let perPage = 0;
+
+          if (payloadType === 'pagination') {
+            page = parsedMessage.Messages[0].Payload.page;
+            perPage = parsedMessage.Messages[0].Payload.perPage;
+          }
           switch (topicResource) {
             case 'mam': {
               this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
               if (topicTag.includes('Registry')) break; // This request should be handled in the service component
-              this.sendOutMam(topicTag);
+              this.sendOutMam(topicTag, page, perPage);
               break;
             }
             case 'health': {
-              this.logger.log('Someonerequested a health with our oi4Id as appId', ESyslogEventFilter.debug);
+              this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
               if (topicTag.includes('Registry')) break; // This request should be handled in the service component
-              this.sendOutHealth(topicTag);
+              this.sendOutHealth(topicTag, page, perPage);
             }
             default: {
               break;
@@ -509,7 +523,7 @@ export class Registry extends EventEmitter {
    * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
    * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
    */
-  async sendOutMam(tag: string) {
+  async sendOutMam(tag: string, page: number, perPage: number) {
     const apps = this.applications as IDeviceLookup;
     const devices = this.devices as IDeviceLookup;
     const assets: IDeviceLookup = Object.assign({}, apps, devices);
@@ -539,7 +553,7 @@ export class Registry extends EventEmitter {
         }
         index++;
       }
-      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(mamPayloadArr, new Date(), dscids.mam, '');
+      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(mamPayloadArr, new Date(), dscids.mam, '', page, perPage);
       for (const networkMessage of paginatedMessageArray) {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(networkMessage));
       }
@@ -562,7 +576,7 @@ export class Registry extends EventEmitter {
    * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
    * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
    */
-  async sendOutHealth(tag: string) {
+  async sendOutHealth(tag: string, page: number, perPage: number) {
     const apps = this.applications as IDeviceLookup;
     const devices = this.devices as IDeviceLookup;
     const assets: IDeviceLookup = Object.assign({}, apps, devices);
@@ -592,7 +606,7 @@ export class Registry extends EventEmitter {
         }
         index++;
       }
-      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(healthPayloadArr, new Date(), dscids.health, '');
+      const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(healthPayloadArr, new Date(), dscids.health, '', page, perPage);
       for (const networkMessage of paginatedMessageArray) {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(networkMessage));
       }
