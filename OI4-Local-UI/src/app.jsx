@@ -6,7 +6,8 @@ import React from 'react';
 // import oi4BigLogoLight from './Images/OI4_Logo_complete_color_RGB.png';
 // import oi4BigLogoDark from './Images/OI4_Logo_complete_white_RGB.png';
 import oi4BigLogoLight from './Images/OI4_Badge_Full_Color_Community.png';
-import oi4BigLogoDark from './Images/OI4_Badge_Green_Community.png';
+// import oi4BigLogoDark from './Images/OI4_Badge_Green_Community.png';
+import oi4BigLogoDark from './Images/OI4_Badge_Transparent_Community_Beta.png';
 import oi4SmallLogoLight from './Images/OI4_Signet_color_RGB.png';
 import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
 
