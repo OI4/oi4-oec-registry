@@ -234,7 +234,7 @@ class ExpansionTableDetail extends React.Component {
     } else {
       if (typeof conformityObject === 'object' && conformityObject !== null) {
         return <div>
-          <b>oi4 identifier: </b>{conformityObject.oi4Id}
+          <b>oi4Identifier: </b>{conformityObject.oi4Id}
           {
             Object.keys(conformityObject.resource).map((resources) => {
               let resourceColor = this.props.fontColor;
