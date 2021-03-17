@@ -1,5 +1,5 @@
 import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter, EOpcUaEventFilter, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage, IRegistryConfig, EDeviceType } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage, EDeviceType } from '../Models/IRegistry';
 import EAuditLevel = ESyslogEventFilter;
 import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
@@ -13,7 +13,6 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
-import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus';
 import { ISpecificContainerConfig } from '../../Service/src/Config/IContainerConfig';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
@@ -217,9 +216,13 @@ export class Registry extends EventEmitter {
     }
 
     const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString());
-    const parsedPayload = networkMessage.Messages[0].Payload;
     const baseIdOffset = topicArr.length - 4;
     const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
+
+    let parsedPayload: any = {}; // FIXME: Hotfix, remove the "any" and see where it goes...
+    if (networkMessage.Messages.length !== 0) {
+      parsedPayload = networkMessage.Messages[0].Payload;
+    }
 
     const topicArray = topic.split('/');
     const topicServiceType = topicArray[1];
@@ -364,21 +367,6 @@ export class Registry extends EventEmitter {
       }
     } else {
       switch (topicMethod) {
-        case 'get': {
-          switch (topicResource) {
-            // The following is commented out, because why would we send out mams on behalf of other apps?
-            // case 'mam': {
-            //   if (topicServiceType === 'Registry') {
-            //     this.sendOutMam(topicTag);
-            //   }
-            //   break;
-            // }
-            default: {
-              break;
-            }
-          }
-          break;
-        }
         case 'pub': {
           switch (topicResource) {
             case 'mam': {
@@ -503,7 +491,7 @@ export class Registry extends EventEmitter {
    * @param device The MasterAssetModel of the device
    */
   async addDevice(fullTopic: string, device: IMasterAssetModel) {
-    this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, ESyslogEventFilter.warning);
+    this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, ESyslogEventFilter.informational);
     const topicArr = fullTopic.split('/');
     const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
     const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
