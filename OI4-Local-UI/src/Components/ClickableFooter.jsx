@@ -78,14 +78,14 @@ export class ClickableFooter extends React.Component {
             <Tab label="Expert Configuration" />
           </Tabs>
           <TabPanel value={this.state.selectedTab} index={0}>
-            <Typography variant='h5' style={{ textAlign: 'center' }}>Registry Information</Typography>
+            <Typography variant='h5' style={{ textAlign: 'center' }}>OEC Registry Information</Typography>
             <DialogContent style={{ paddingLeft: '10px', paddingRight: '10px' }}>
               <p>
-                Be aware to start the Open Industry 4.0 Alliance's Registry as the very first application in the runtime.
+                Be aware to start the Open Industry 4.0 Alliance's OEC Registry as the very first application in the runtime.
                 Otherwise, you might miss information from other applications and devices.
               </p>
               <p>
-                The Registry will list all applications and devices, which are communicating in a conform way to Open Industry 4.0 Alliance.
+                The OEC Registry will list all applications and devices, which are communicating in a conform way to Open Industry 4.0 Alliance.
                 It also displays the event trail of all Open Industry 4.0 Alliance events on the message bus.
               </p>
               <p>
@@ -133,8 +133,8 @@ export class ClickableFooter extends React.Component {
                 </li>
                 <li>Backend Configuration
                   <ul>
-                    <li>Enable showing the Registry in the application table</li>
-                    <li>Edit the audit level the Registry will listen to. This will affect what events will be shown in the event table.</li>
+                    <li>Enable showing the OEC Registry in the application table</li>
+                    <li>Edit the audit level the OEC Registry will listen to. This will affect what events will be shown in the event table.</li>
                     <li>Enable logging to file. This can either enable the file-logger or enable it.</li>
                     <li>Edit the logfile size. The logfile size (if logging is enabled) can be adjusted from 500kB to 10MB.</li>
                   </ul>
