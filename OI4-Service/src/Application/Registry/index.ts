@@ -215,10 +215,7 @@ export class Registry extends EventEmitter {
       this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESyslogEventFilter.warning);
       return;
     }
-    if (firstPayload.Messages.length === 0) {
-      this.logger.log('Messages Array empty - check DataSetMessage format', ESyslogEventFilter.warning);
-      return;
-    }
+
     const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString());
     const parsedPayload = networkMessage.Messages[0].Payload;
     const baseIdOffset = topicArr.length - 4;
@@ -230,6 +227,11 @@ export class Registry extends EventEmitter {
     const topicMethod = topicArray[6];
     const topicResource = topicArray[7];
     const topicTag = topicArray.splice(8).join('/');
+
+    if (topicMethod === 'pub' && firstPayload.Messages.length === 0) {
+      this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
+      return;
+    }
 
     if (oi4Id in this.assetLookup) {
       this.assetLookup[oi4Id]['lastMessage'] = new Date().toISOString();
