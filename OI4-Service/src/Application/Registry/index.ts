@@ -347,6 +347,17 @@ export class Registry extends EventEmitter {
           }
           break;
         }
+        case 'set': {
+          switch (topicResource) {
+          case 'config': {
+            await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicTag);
+            break;
+          }
+          default: {
+            break;
+          }
+          }
+        }
         default: {
           break;
         }
@@ -388,6 +399,75 @@ export class Registry extends EventEmitter {
       }
     }
   }
+
+    /**
+   * Update the containerstate with the configObject
+   * @param configObject - the object that is to be passed to the ContainerState
+   * //TODO: Careful! This is pretty hardcoded and unique for the Registry app.
+   * A generic way was once in MessageBus Service component in commits from ~17.03.2021
+   */
+     async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
+      const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
+        for (const configObjects of configObjectArr) {
+          for (const configGroups of Object.keys(configObjects)) {
+            if (configGroups === 'Context') continue;
+            for (const configItems of Object.keys(configObjects[configGroups])) {
+              // Safety-checks and overwrite of values
+              switch(configItems) {
+                case 'auditLevel': {
+                  if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) {
+                    tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
+                  } else {
+                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                  }
+                  break;
+                }
+                case 'logType': {
+                  if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) {
+                    tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
+                  } else {
+                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                  }
+                  break;
+                }
+                case 'logFileSize': {
+                  if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) {
+                    tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
+                  } else {
+                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                  }
+                  break;
+                }
+                case 'developmentMode': {
+                  if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') {
+                    tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
+                  } else {
+                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                  }
+                  break;
+                }
+                case 'showRegistry': {
+                  if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') {
+                    tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
+                  } else {
+                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                  }
+                  break;
+                }
+                default: {
+                  if (configItems === 'name' || configItems === 'description') break;
+                  this.logger.log('Unknown config item...', ESyslogEventFilter.warning);
+                  break;
+                }
+              }
+          }
+        }
+      }
+      this.containerState.config = tempConfig;
+      this.logger.log('Updated config');
+      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
+    }
+  
 
   /**
    * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
