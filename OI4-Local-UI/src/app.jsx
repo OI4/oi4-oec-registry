@@ -174,6 +174,7 @@ class OI4Base extends React.Component {
     // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
     this.activeIntervals.push(setInterval(() => { this.updateGlobalEventTrail() }, 10000));
     this.activeIntervals.push(setInterval(() => { this.updateBrokerState() }, 5000));
+    this.activeIntervals.push(setInterval(async () => { await this.getBackendConfig() }, 10000));
 
     setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
     setTimeout(() => {
