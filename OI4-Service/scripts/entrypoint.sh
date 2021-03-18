@@ -7,6 +7,12 @@ set -x
 # Set initial oi4service pid
 pid_registryui=0
 
+# Default behaviour is with USE_HTTPS true
+if [ "$USE_HTTPS" != "false" ]
+then
+ export USE_HTTPS="true"
+fi
+
 # SIGTERM-handler
 term_handler() {
   # We undeploy first because this process might cease to exist while we wait for stoped server
