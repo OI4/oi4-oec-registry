@@ -3,7 +3,7 @@ import { IOPCUANetworkMessage, IOPCUAMetaData } from '../../Service/src/Models/I
 import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
-import { ESyslogEventFilter } from '../../Service/src/Models/IContainer';
+import { ESyslogEventFilter } from '../../Service/src/Enums/EContainer';
 import { EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Enums/EOPCUA';
 
 export class BaseApplication {
