@@ -46,7 +46,7 @@ jobs:
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
       - name: Build all
-        run: npm run buildAll
+        run: npm run buildAllLinux
       - name: Prepare Docker buildx
         run: npm run docker:prepare
       - name: Docker Login
