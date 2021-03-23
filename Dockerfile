@@ -1,4 +1,4 @@
-FROM node:10-alpine
+FROM node:12-alpine
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
@@ -37,5 +37,5 @@ RUN mkdir -p logs
 COPY ./OI4-Service/bootstrapper ./bootstrapper/
 COPY ./OI4-Service/scripts ./scripts/
 
-EXPOSE 5798 5799
+EXPOSE 4567 5000
 ENTRYPOINT ["scripts/entrypoint.sh"]
