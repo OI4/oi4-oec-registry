@@ -1,6 +1,5 @@
-import { IEventObject, EDeviceHealth, ESubResource, IDataSetClassIds, IContainerState, EPublicationListConfig, ESubscriptionListConfig, EGenericEventFilter, ENamurEventFilter, ESyslogEventFilter, EOpcUaEventFilter, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
+import { IEventObject, IDataSetClassIds, IContainerState, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, EDeviceType } from '../Models/IRegistry';
-import EAuditLevel = ESyslogEventFilter;
 import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -14,9 +13,12 @@ import { SequentialTaskQueue } from 'sequential-task-queue';
 // DSCIds
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
 import { ISpecificContainerConfig } from '../../Service/src/Config/IContainerConfig';
+import { EDeviceHealth, EGenericEventFilter, ENamurEventFilter, EOpcUaEventFilter, EPublicationListConfig, ESubscriptionListConfig, ESyslogEventFilter } from '../../Service/src/Enums/EContainer';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 let globIndex = 0;
+
+import EAuditLevel = ESyslogEventFilter;
 
 export class Registry extends EventEmitter {
   private assetLookup: IDeviceLookup;
@@ -395,6 +397,7 @@ export class Registry extends EventEmitter {
    * A generic way was once in MessageBus Service component in commits from ~17.03.2021
    */
      async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
+       let errorSoFar: boolean = false;
       const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
         for (const configObjects of configObjectArr) {
           for (const configGroups of Object.keys(configObjects)) {
@@ -407,6 +410,7 @@ export class Registry extends EventEmitter {
                     tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                    errorSoFar = true;
                   }
                   break;
                 }
@@ -415,6 +419,7 @@ export class Registry extends EventEmitter {
                     tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                    errorSoFar = true;
                   }
                   break;
                 }
@@ -423,6 +428,7 @@ export class Registry extends EventEmitter {
                     tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                    errorSoFar = true;
                   }
                   break;
                 }
@@ -431,6 +437,7 @@ export class Registry extends EventEmitter {
                     tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                    errorSoFar = true;
                   }
                   break;
                 }
@@ -439,6 +446,7 @@ export class Registry extends EventEmitter {
                     tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                    errorSoFar = true;
                   }
                   break;
                 }
@@ -451,9 +459,13 @@ export class Registry extends EventEmitter {
           }
         }
       }
-      this.containerState.config = tempConfig;
-      this.logger.log('Updated config');
-      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
+      if (!errorSoFar) {
+        this.containerState.config = tempConfig;
+        this.logger.log('Updated config');
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
+      } else {
+        this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
+      }
     }
   
 
