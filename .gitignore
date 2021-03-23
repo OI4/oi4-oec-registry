@@ -1,6 +1,7 @@
 # Root folder
 node_modules
 .vscode
+.idea
 out/**/*
 
 # OI4-Service folder
