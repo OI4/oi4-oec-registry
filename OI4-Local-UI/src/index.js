@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import OI4Base from './app.jsx';
+import OI4Base from './OI4-UI/app.jsx';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(<OI4Base />, document.getElementById('root'));
