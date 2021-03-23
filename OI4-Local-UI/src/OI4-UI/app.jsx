@@ -44,13 +44,13 @@ import {
 
 import _ from 'lodash';
 import { reject } from 'q';
-import { CommonFetch } from './Helper/CommonFetch/index';
+import { CommonFetch } from './Helper/CommonFetch/index.js';
 
 // Import custom components
-import { ClickableFooter } from './Components/ClickableFooter';
-import ExpansionTable from './Components/ExpansionTable';
+import { ClickableFooter } from './Components/ClickableFooter.jsx';
+import ExpansionTable from './Components/ExpansionTable.jsx';
 
-const pjson = require('../package.json');
+const pjson = require('../../package.json');
 
 const darkTheme = createMuiTheme({
   palette: {
@@ -178,6 +178,7 @@ class OI4Base extends React.Component {
 
     setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
     setTimeout(() => {
+      if (this.platform === 'cockpit') return;
       this.toggleTheme();
     },
       100);

@@ -40,7 +40,7 @@ import {
   Close,
 } from '@material-ui/icons';
 
-import ExpansionTableDetail from './ExpansionTableDetail';
+import ExpansionTableDetail from './ExpansionTableDetail.jsx';
 
 const styles = theme => ({
   table: {
