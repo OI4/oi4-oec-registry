@@ -1,8 +1,8 @@
 import { OI4MessageBusProxy } from './Service/src/Proxy/Messagebus/index';
 import { OI4WebProxy } from './Service/src/Proxy/Web/index';
 import { ContainerState } from './Service/src/Container/index';
-import { ESyslogEventFilter } from './Service/src/Models/IContainer';
 import { Logger } from './Service/src/Utilities/Logger/index';
+import { ESyslogEventFilter } from './Service/src/Enums/EContainer';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -42,7 +42,7 @@ const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState);
 const webProxy = new OI4WebProxy(contState);
 const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
-logger.level = ESyslogEventFilter.emergency;
+logger.level = ESyslogEventFilter.debug;
 logger.log(`Testprint for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
 logger.log(`Testprint for level ${ESyslogEventFilter.informational}`, ESyslogEventFilter.informational);
 logger.log(`Testprint for level ${ESyslogEventFilter.notice}`, ESyslogEventFilter.notice);
