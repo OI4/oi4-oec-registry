@@ -15,10 +15,6 @@ fi
 
 # SIGTERM-handler
 term_handler() {
-  # We undeploy first because this process might cease to exist while we wait for stoped server
-  echo "Undeploy..."
-  /usr/OI4-Service/bootstrapper/undeploy-config-ui.sh
-
   echo "Terminating..."
   if [ $pid_registryui -ne 0 ]; then
     kill -SIGTERM "$pid_registryui"
@@ -33,7 +29,7 @@ trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
 # Run deploy script
 echo "Run deploy script"
-/usr/OI4-Service/bootstrapper/deploy-config-ui.sh
+/usr/OI4-Service/scripts/deploy-config-ui.sh
 
 # Run applications as services in the background now
 echo "Starting OI4-Service and LocalUI"
