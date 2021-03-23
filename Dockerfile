@@ -1,4 +1,4 @@
-FROM node:10-alpine
+FROM node:12-alpine
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
@@ -8,22 +8,24 @@ RUN npm config set unsafe-perm true
 
 # -------ADD ENVIRONMENT PATHS
 ENV UI_SRC_PATH=/usr/OI4-Local-UI/build
+ENV COCKPIT_UI_SRC_PATH=/usr/OI4-Service/uiplugin
 
 # -------NOW LOCALUI
 WORKDIR /usr/OI4-Local-UI
 # --- Install serve & http-server to host local build
-RUN npm install http-server
+RUN npm install serve && npm install http-server
 COPY ./OI4-Local-UI/package.json ./
 COPY ./OI4-Local-UI/build ./build/
+
+# -------COCKPIT UI
+WORKDIR /usr/OI4-Service/uiplugin
+COPY ./OI4-Cockpit-UI/package.json ./
+COPY ./OI4-Cockpit-UI/dist ./
 
 # -------OI4-SERVICE
 WORKDIR /usr/OI4-Service
 COPY ./OI4-Service/package.json ./
-# Temporarily copy over node_models when building the container
-# This is due to currently not accounting for @oi4 scoped repos
-# If this is fixed, the line npm install --production can be used again
-COPY ./OI4-Service/node_modules ./node_modules
-#RUN npm install --production
+RUN npm install --production
 
 # COPY Source files
 COPY ./OI4-Service/out ./
@@ -31,10 +33,11 @@ COPY ./OI4-Service/out ./
 # COPY logs directory
 RUN mkdir -p logs
 
-# COPY Scripts
-COPY ./scripts ./scripts/
+# COPY Bootstrapper
+COPY ./OI4-Service/bootstrapper ./bootstrapper/
+COPY ./OI4-Service/scripts ./scripts/
 
-EXPOSE 5798 5799
+EXPOSE 4567 5000
 
 RUN chmod +x "scripts/entrypoint.sh"
 ENTRYPOINT ["scripts/entrypoint.sh"]
