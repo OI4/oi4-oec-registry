@@ -1,5 +1,5 @@
 ## Introduction
-The OI4 Alliance Registry is the first container to start on the bus and monitors onboarding and offboarding assets as well as their audit trail
+The OEC Registry is the first container to start on the bus and monitors onboarding and offboarding assets as well as their audit trail
 
 and their health state. It can be used to do a basic check on the stats of the assets and perform a simple conformity validation check.
 
