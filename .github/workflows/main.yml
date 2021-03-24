@@ -1,0 +1,47 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - '*'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+          # checking-out submodule like this should work, but does not https://github.com/actions/checkout/issues/116
+          #with:
+          #ssh-key: ${{ secrets.SSH_KEY_FOR_SUBMODULE }}
+        #submodules: true
+      - name: Setup access via public/private key.
+        # Below command requires the SSH_KEY_FOR_SUBMODULE to be configured via github repository secrets.
+        # Also the key's public part must be added to the submodule repository deploy keys.
+        # A private/public key pair without password (required in this case) can be generated with ssh-keygen.
+        # This part is used for the git/foobar part in requirements.txt (c.f. https://ehlers.berlin/blog/private-submodules-in-github-ci/)
+        run: |
+          mkdir ~/.ssh
+          echo "${{ secrets.SSH_KEY_FOR_SUBMODULE }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          git submodule update --init --recursive
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.1.2
+        with:
+          # Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.
+          node-version: 12.x
+          # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN
+          registry-url: https://registry.npmjs.org/
+      - name: Install packages for all components
+        run: npm run installAll
+      - name: Build all
+        run: npm run buildAll
