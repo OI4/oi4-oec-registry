@@ -378,7 +378,7 @@ export class Registry extends EventEmitter {
     const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
     for (const configObjects of configObjectArr) {
       for (const configGroups of Object.keys(configObjects)) {
-        if (configGroups === 'Context') continue;
+        if (configGroups === 'context') continue;
         for (const configItems of Object.keys(configObjects[configGroups])) {
           // Safety-checks and overwrite of values
           switch (configItems) {
