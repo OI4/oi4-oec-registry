@@ -295,18 +295,19 @@ export class Registry extends EventEmitter {
           let perPage = 0;
 
           if (parsedMessage.Messages.length !== 0) {
-            payloadType = await this.builder.checkPayloadType(parsedMessage.Messages[0].Payload);
-            if (payloadType === 'locale') {
-              this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
+            for (const messages of parsedMessage.Messages) {
+              payloadType = await this.builder.checkPayloadType(messages.Payload);
+              if (payloadType === 'locale') {
+                this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
+              }
+              if (payloadType === 'pagination') {
+                page = messages.Payload.page;
+                perPage = messages.Payload.perPage;
+              }
+              if (payloadType === 'none') { // Not empty, locale or pagination
+                this.logger.log('Payload must be either empty, locale or pagination type in a /get/ request. Future versions might lead to an abort in message processing', ESyslogEventFilter.informational);
+              }
             }
-            if (payloadType === 'pagination') {
-              page = parsedMessage.Messages[0].Payload.page;
-              perPage = parsedMessage.Messages[0].Payload.perPage;
-            }
-          }
-
-          if (payloadType === 'none') { // Not empty, locale or pagination
-            this.logger.log('Payload must be either empty, locale or pagination type in a /get/ request', ESyslogEventFilter.informational);
           }
           
           switch (topicResource) {
