@@ -211,6 +211,12 @@ export class Registry extends EventEmitter {
     const topicResource = topicArray[7];
     const topicFilter = topicArray.splice(8).join('/');
 
+    // Safety-Check: DataSetClassId
+    if (networkMessage.DataSetClassId !== dscids[topicResource]) {
+      this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${dscids[topicResource]}`, ESyslogEventFilter.warning);
+      return;
+    }
+
     if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) { // In pub, we do not expect empty messages, they always need at least one entry
       this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
       return;
