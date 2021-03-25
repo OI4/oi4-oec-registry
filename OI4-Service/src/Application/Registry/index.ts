@@ -17,6 +17,7 @@ import { EDeviceHealth, EGenericEventFilter, ENamurEventFilter, EOpcUaEventFilte
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 import EAuditLevel = ESyslogEventFilter;
+import { EOPCUAStatusCode } from '../../Service/src/Enums/EOPCUA';
 
 export class Registry extends EventEmitter {
   private assetLookup: IDeviceLookup;
@@ -436,13 +437,23 @@ export class Registry extends EventEmitter {
         }
       }
     }
+    let statusToPublish = 0;
     if (!errorSoFar) {
       this.containerState.config = tempConfig;
       this.logger.log('Updated config');
-      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
     } else {
       this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
+      statusToPublish = EOPCUAStatusCode.Bad;
     }
+    let payload: IOPCUAPayload[] = [];
+    const actualPayload: ISpecificContainerConfig = this.containerState['config'];
+    payload.push({
+      poi: actualPayload.context.name.text.toLowerCase().replace(' ', ''),
+      payload: actualPayload,
+      dswid: CDataSetWriterIdLookup['config'],
+      status: statusToPublish,
+    });
+    await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(payload, new Date(), dscids.config)));
   }
 
   /**
