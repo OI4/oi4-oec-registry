@@ -603,11 +603,11 @@ export class Registry extends EventEmitter {
    * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
    * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
    */
-  async sendOutMam(tag: string, page: number, perPage: number) {
+  async sendOutMam(filter: string, page: number, perPage: number) {
     const apps = this.applications as IDeviceLookup;
     const devices = this.devices as IDeviceLookup;
     const assets: IDeviceLookup = Object.assign({}, apps, devices);
-    if (tag === '') {
+    if (filter === '') {
       this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
       let index: number = 0;
       const mamPayloadArr: IOPCUAPayload[] = [];
@@ -640,11 +640,11 @@ export class Registry extends EventEmitter {
     } else {
       try {
         const mamPayloadArr: IOPCUAPayload[] =[{
-          poi: assets[tag].oi4Id,
-          payload: assets[tag].resources.mam,
-          dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[tag].oi4Id)}`, 10),
+          poi: assets[filter].oi4Id,
+          payload: assets[filter].resources.mam,
+          dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
         }]
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[tag].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
       } catch {
         this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
       }
@@ -656,11 +656,11 @@ export class Registry extends EventEmitter {
    * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
    * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
    */
-  async sendOutHealth(tag: string, page: number, perPage: number) {
+  async sendOutHealth(filter: string, page: number, perPage: number) {
     const apps = this.applications as IDeviceLookup;
     const devices = this.devices as IDeviceLookup;
     const assets: IDeviceLookup = Object.assign({}, apps, devices);
-    if (tag === '') {
+    if (filter === '') {
       this.logger.log(`Sending all known Healths...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
       let index: number = 0;
       const healthPayloadArr: IOPCUAPayload[] = [];
@@ -693,11 +693,11 @@ export class Registry extends EventEmitter {
     } else {
       try {
         const healthPayloadArr: IOPCUAPayload[] =[{
-          poi: assets[tag].oi4Id,
-          payload: assets[tag].resources.health,
-          dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[tag].oi4Id)}`, 10),
+          poi: assets[filter].oi4Id,
+          payload: assets[filter].resources.health,
+          dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
         }]
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[tag].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
       } catch {
         this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
       }
