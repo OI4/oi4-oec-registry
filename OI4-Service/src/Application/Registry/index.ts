@@ -263,7 +263,7 @@ export class Registry extends EventEmitter {
         this.assetLookup[oi4Id].resources.health = parsedPayload;
       } else {
         if (topicAppId === this.oi4Id) return;
-        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids.mam)));
+        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids.mam)));
         this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESyslogEventFilter.debug);
       }
     } else if (topic.includes('/pub/license')) {
@@ -794,7 +794,7 @@ export class Registry extends EventEmitter {
    */
   async updateResourceInDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
   }
@@ -816,7 +816,7 @@ export class Registry extends EventEmitter {
         this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
         return;
       }
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
       this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
       this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
       this.assetLookup[oi4Id].available = false;
@@ -832,7 +832,7 @@ export class Registry extends EventEmitter {
    */
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
   }
