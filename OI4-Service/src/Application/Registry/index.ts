@@ -636,7 +636,7 @@ export class Registry extends EventEmitter {
             dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
           }]
           await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
-        } catch (ex: any) {
+        } catch (ex) {
           this.logger.log(`Error when trying to send a mam with oi4Id-based filter: ${ex}`, ESyslogEventFilter.error);
         }
       } else { // DSWID filter
@@ -647,7 +647,7 @@ export class Registry extends EventEmitter {
             dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
           }]
           await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
-        } catch (ex: any) {
+        } catch (ex) {
           this.logger.log(`Error when trying to send a mam with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
         }
       }
@@ -704,7 +704,7 @@ export class Registry extends EventEmitter {
               dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
             }]
             await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
-          } catch (ex: any) {
+          } catch (ex) {
             this.logger.log(`Error when trying to send health with topic-based filter: ${ex}`, ESyslogEventFilter.error);
           }
         } else { // DSWID filter
@@ -715,7 +715,7 @@ export class Registry extends EventEmitter {
               dswid: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
             }]
             await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
-          } catch (ex: any) {
+          } catch (ex) {
             this.logger.log(`Error when trying to send a health with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
           }
         }
