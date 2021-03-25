@@ -290,20 +290,25 @@ export class Registry extends EventEmitter {
     if (topicAppId === this.oi4Id) {
       switch (topicMethod) {
         case 'get': {
-
-          const payloadType = await this.builder.checkPayloadType(parsedMessage.Messages[0].Payload);
-
-          if (payloadType === 'locale') {
-            this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
-          }
-
+          let payloadType = 'empty';
           let page = 0;
           let perPage = 0;
 
-          if (payloadType === 'pagination') {
-            page = parsedMessage.Messages[0].Payload.page;
-            perPage = parsedMessage.Messages[0].Payload.perPage;
+          if (parsedMessage.Messages.length !== 0) {
+            payloadType = await this.builder.checkPayloadType(parsedMessage.Messages[0].Payload);
+            if (payloadType === 'locale') {
+              this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
+            }
+            if (payloadType === 'pagination') {
+              page = parsedMessage.Messages[0].Payload.page;
+              perPage = parsedMessage.Messages[0].Payload.perPage;
+            }
           }
+
+          if (payloadType === 'none') { // Not empty, locale or pagination
+            this.logger.log('Payload must be either empty, locale or pagination type in a /get/ request', ESyslogEventFilter.informational);
+          }
+          
           switch (topicResource) {
             case 'mam': {
               this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
