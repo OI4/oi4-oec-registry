@@ -231,7 +231,7 @@ export class Registry extends EventEmitter {
     const topicAppId = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
     const topicMethod = topicArray[6];
     const topicResource = topicArray[7];
-    const topicTag = topicArray.splice(8).join('/');
+    const topicFilter = topicArray.splice(8).join('/');
 
     if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) {
       this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
@@ -253,7 +253,7 @@ export class Registry extends EventEmitter {
       }
       this.globalEventList.push({ // So we have space for this payload!
         ...parsedPayload,
-        level: topicTag.split('/')[1],
+        level: topicFilter.split('/')[1],
         timestamp: networkMessage.Messages[0].Timestamp,
         tag: topicAppId,
       });
@@ -323,14 +323,14 @@ export class Registry extends EventEmitter {
           switch (topicResource) {
             case 'mam': {
               this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
-              if (topicTag.includes('Registry')) break; // This request should be handled in the service component
-              this.sendOutMam(topicTag, page, perPage);
+              if (topicFilter.includes('Registry')) break; // This request should be handled in the service component
+              this.sendOutMam(topicFilter, page, perPage);
               break;
             }
             case 'health': {
               this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
-              if (topicTag.includes('Registry')) break; // This request should be handled in the service component
-              this.sendOutHealth(topicTag, page, perPage);
+              if (topicFilter.includes('Registry')) break; // This request should be handled in the service component
+              this.sendOutHealth(topicFilter, page, perPage);
             }
             default: {
               break;
@@ -355,7 +355,7 @@ export class Registry extends EventEmitter {
         case 'set': {
           switch (topicResource) {
           case 'config': {
-            await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicTag);
+            await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicFilter);
             break;
           }
           default: {
