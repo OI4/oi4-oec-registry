@@ -424,7 +424,7 @@ export class Registry extends EventEmitter {
                   break;
                 }
                 case 'logFileSize': {
-                  if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) {
+                  if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) { // Test if logFileSize is a "number"
                     tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
                   } else {
                     this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -638,17 +638,31 @@ export class Registry extends EventEmitter {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(networkMessage));
       }
     } else {
-      try {
-        const mamPayloadArr: IOPCUAPayload[] =[{
-          poi: assets[filter].oi4Id,
-          payload: assets[filter].resources.mam,
-          dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
-        }]
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
-      } catch {
-        this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
+      const dswidFilterStr = filter.substring(1);
+      const dswidFilter = parseInt(dswidFilterStr, 10);
+      if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
+        try {
+          const mamPayloadArr: IOPCUAPayload[] =[{
+            poi: assets[filter].oi4Id,
+            payload: assets[filter].resources.mam,
+            dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
+          }]
+          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
+        } catch (ex: any) {
+          this.logger.log(`Error when trying to send a mam with oi4Id-based filter: ${ex}`, ESyslogEventFilter.error);
+        }
+      } else { // DSWID filter
+        try {
+          const mamPayloadArr: IOPCUAPayload[] =[{
+            poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
+            payload: assets[Object.keys(assets)[dswidFilter]].resources.mam,
+            dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
+          }]
+          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
+        } catch (ex: any) {
+          this.logger.log(`Error when trying to send a mam with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
+        }
       }
-
     }
   }
 
@@ -691,17 +705,34 @@ export class Registry extends EventEmitter {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(networkMessage));
       }
     } else {
-      try {
-        const healthPayloadArr: IOPCUAPayload[] =[{
-          poi: assets[filter].oi4Id,
-          payload: assets[filter].resources.health,
-          dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
-        }]
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
-      } catch {
-        this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
-      }
 
+      {
+        const dswidFilterStr = filter.substring(1);
+        const dswidFilter = parseInt(dswidFilterStr, 10);
+        if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
+        try {
+          const healthPayloadArr: IOPCUAPayload[] =[{
+            poi: assets[filter].oi4Id,
+            payload: assets[filter].resources.health,
+            dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
+          }]
+          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+        } catch (ex: any) {
+          this.logger.log(`Error when trying to send health with topic-based filter: ${ex}`, ESyslogEventFilter.error);
+        }
+        } else { // DSWID filter
+          try {
+            const healthPayloadArr: IOPCUAPayload[] =[{
+              poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
+              payload: assets[Object.keys(assets)[dswidFilter]].resources.health,
+              dswid: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
+            }]
+            await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+          } catch (ex: any) {
+            this.logger.log(`Error when trying to send a health with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
+          }
+        }
+      }
     }
   }
 
