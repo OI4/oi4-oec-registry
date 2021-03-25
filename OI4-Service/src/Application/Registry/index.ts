@@ -1,5 +1,5 @@
 import { IEventObject, IDataSetClassIds, IContainerState, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage, EDeviceType } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage, EDeviceType, IRegistryApp } from '../Models/IRegistry';
 import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -16,8 +16,6 @@ import { ISpecificContainerConfig } from '../../Service/src/Config/IContainerCon
 import { EDeviceHealth, EGenericEventFilter, ENamurEventFilter, EOpcUaEventFilter, EPublicationListConfig, ESubscriptionListConfig, ESyslogEventFilter } from '../../Service/src/Enums/EContainer';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
-let globIndex = 0;
-
 import EAuditLevel = ESyslogEventFilter;
 
 export class Registry extends EventEmitter {
@@ -26,13 +24,10 @@ export class Registry extends EventEmitter {
   private globalEventList: IEventObject[];
   private builder: OPCUABuilder;
   private logger: Logger;
-  private testLogger: Logger;
   private oi4DeviceWildCard: string;
   private oi4Id: string;
   private queue: SequentialTaskQueue;
-  private logToFileEnabled: string; // TODO: Should be a bool, but we use strings...
-  // private static auditList: EAuditLevel[] = Object.values(EAuditLevel);
-  private fileCount: number;
+  private logToFileEnabled: string; // TODO: Should be a bool, but we use strings as enums...
   private logHappened: boolean;
   private containerState: IContainerState;
   private maxAuditTrailElements: number;
@@ -73,17 +68,7 @@ export class Registry extends EventEmitter {
     });
 
     this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
-    this.testLogger = new Logger(false, 'Registry-TestApp', ESyslogEventFilter.debug, registryClient, this.oi4Id, 'Registry');
     this.fileLogger = new FileLogger(parseInt(contState.config.logging.logFileSize.value), true);
-
-    if (this.testLogger.enabled) {
-      setInterval(
-        () => {
-          globIndex = globIndex + 1;
-          this.testLogger.log(globIndex.toString());
-        },
-        100);
-    }
 
     this.queue = new SequentialTaskQueue();
     this.containerState = contState;
@@ -95,12 +80,12 @@ export class Registry extends EventEmitter {
       config: EPublicationListConfig.NONE_0,
       interval: 0,
     });
+
     this.timeoutLookup = {};
     this.secondStageTimeoutLookup = {};
     this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
     this.globalEventList = [];
     this.assetLookup = {};
-    this.fileCount = 4;
     this.maxAuditTrailElements = 100;
     this.logHappened = false;
 
@@ -856,7 +841,6 @@ export class Registry extends EventEmitter {
           return this.assetLookup[oi4Id].resources[resource];
         }
       }
-
     }
     return {
       err: 'Could not get resource from registry',
@@ -892,18 +876,11 @@ export class Registry extends EventEmitter {
     for (const apps of Object.keys(this.assetLookup)) {
       this.assetLookup[apps].eventList = [];
     }
-
     // Then, unsubscribe from old Audit Trail
     for (const levels of Object.values(ESyslogEventFilter)) {
       console.log(`Unsubscribed syslog trail from ${levels}`);
       await this.ownUnsubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
     }
-
-    // Since we do not filter by oi4Id anymore but only by the level, we do not need to unsubscribe from assets!
-    // for (const assets of Object.keys(this.assetLookup)) {
-    //   this.unsubscribeAssetFromAudit(assets);
-    // }
-
     // Then, resubscribe to new Audit Trail
     for (const levels of Object.values(ESyslogEventFilter)) {
       console.log(`Resubbed to syslog category - ${levels}`);
