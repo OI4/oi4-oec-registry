@@ -354,13 +354,13 @@ export class Registry extends EventEmitter {
         }
         case 'set': {
           switch (topicResource) {
-          case 'config': {
-            await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicFilter);
-            break;
-          }
-          default: {
-            break;
-          }
+            case 'config': {
+              await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicFilter);
+              break;
+            }
+            default: {
+              break;
+            }
           }
         }
         default: {
@@ -390,83 +390,83 @@ export class Registry extends EventEmitter {
     }
   }
 
-    /**
-   * Update the containerstate with the configObject
-   * @param configObject - the object that is to be passed to the ContainerState
-   * //TODO: Careful! This is pretty hardcoded and unique for the Registry app.
-   * A generic way was once in MessageBus Service component in commits from ~17.03.2021
-   */
-     async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
-       let errorSoFar: boolean = false;
-      const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
-        for (const configObjects of configObjectArr) {
-          for (const configGroups of Object.keys(configObjects)) {
-            if (configGroups === 'Context') continue;
-            for (const configItems of Object.keys(configObjects[configGroups])) {
-              // Safety-checks and overwrite of values
-              switch(configItems) {
-                case 'auditLevel': {
-                  if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) {
-                    tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
-                  } else {
-                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                    errorSoFar = true;
-                  }
-                  break;
-                }
-                case 'logType': {
-                  if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) {
-                    tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
-                  } else {
-                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                    errorSoFar = true;
-                  }
-                  break;
-                }
-                case 'logFileSize': {
-                  if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) { // Test if logFileSize is a "number"
-                    tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
-                  } else {
-                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                    errorSoFar = true;
-                  }
-                  break;
-                }
-                case 'developmentMode': {
-                  if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') {
-                    tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
-                  } else {
-                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                    errorSoFar = true;
-                  }
-                  break;
-                }
-                case 'showRegistry': {
-                  if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') {
-                    tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
-                  } else {
-                    this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                    errorSoFar = true;
-                  }
-                  break;
-                }
-                default: {
-                  if (configItems === 'name' || configItems === 'description') break;
-                  this.logger.log('Unknown config item...', ESyslogEventFilter.warning);
-                  break;
-                }
+  /**
+ * Update the containerstate with the configObject
+ * @param configObject - the object that is to be passed to the ContainerState
+ * //TODO: Careful! This is pretty hardcoded and unique for the Registry app.
+ * A generic way was once in MessageBus Service component in commits from ~17.03.2021
+ */
+  async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
+    let errorSoFar: boolean = false;
+    const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
+    for (const configObjects of configObjectArr) {
+      for (const configGroups of Object.keys(configObjects)) {
+        if (configGroups === 'Context') continue;
+        for (const configItems of Object.keys(configObjects[configGroups])) {
+          // Safety-checks and overwrite of values
+          switch (configItems) {
+            case 'auditLevel': {
+              if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) {
+                tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
+              } else {
+                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                errorSoFar = true;
               }
+              break;
+            }
+            case 'logType': {
+              if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) {
+                tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
+              } else {
+                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                errorSoFar = true;
+              }
+              break;
+            }
+            case 'logFileSize': {
+              if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) { // Test if logFileSize is a "number"
+                tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
+              } else {
+                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                errorSoFar = true;
+              }
+              break;
+            }
+            case 'developmentMode': {
+              if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') {
+                tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
+              } else {
+                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                errorSoFar = true;
+              }
+              break;
+            }
+            case 'showRegistry': {
+              if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') {
+                tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
+              } else {
+                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
+                errorSoFar = true;
+              }
+              break;
+            }
+            default: {
+              if (configItems === 'name' || configItems === 'description') break;
+              this.logger.log('Unknown config item...', ESyslogEventFilter.warning);
+              break;
+            }
           }
         }
       }
-      if (!errorSoFar) {
-        this.containerState.config = tempConfig;
-        this.logger.log('Updated config');
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
-      } else {
-        this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
-      }
     }
+    if (!errorSoFar) {
+      this.containerState.config = tempConfig;
+      this.logger.log('Updated config');
+      await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/get/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date(), dscids.config)));
+    } else {
+      this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
+    }
+  }
 
   /**
    * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
@@ -581,7 +581,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     await this.registryClient.publish(
       `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-      JSON.stringify(this.builder.buildOPCUANetworkMessage([{payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList']}], new Date(), dscids.publicationList)),
+      JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList'] }], new Date(), dscids.publicationList)),
     );
   }
 
@@ -628,7 +628,7 @@ export class Registry extends EventEmitter {
       const dswidFilter = parseInt(dswidFilterStr, 10);
       if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
         try {
-          const mamPayloadArr: IOPCUAPayload[] =[{
+          const mamPayloadArr: IOPCUAPayload[] = [{
             poi: assets[filter].oi4Id,
             payload: assets[filter].resources.mam,
             dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
@@ -639,7 +639,7 @@ export class Registry extends EventEmitter {
         }
       } else { // DSWID filter
         try {
-          const mamPayloadArr: IOPCUAPayload[] =[{
+          const mamPayloadArr: IOPCUAPayload[] = [{
             poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
             payload: assets[Object.keys(assets)[dswidFilter]].resources.mam,
             dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
@@ -652,10 +652,10 @@ export class Registry extends EventEmitter {
     }
   }
 
-    /**
-   * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
-   * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
-   */
+  /**
+ * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
+ * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
+ */
   async sendOutHealth(filter: string, page: number, perPage: number) {
     const apps = this.applications as IDeviceLookup;
     const devices = this.devices as IDeviceLookup;
@@ -695,19 +695,19 @@ export class Registry extends EventEmitter {
         const dswidFilterStr = filter.substring(1);
         const dswidFilter = parseInt(dswidFilterStr, 10);
         if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
-        try {
-          const healthPayloadArr: IOPCUAPayload[] =[{
-            poi: assets[filter].oi4Id,
-            payload: assets[filter].resources.health,
-            dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
-          }]
-          await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
-        } catch (ex: any) {
-          this.logger.log(`Error when trying to send health with topic-based filter: ${ex}`, ESyslogEventFilter.error);
-        }
+          try {
+            const healthPayloadArr: IOPCUAPayload[] = [{
+              poi: assets[filter].oi4Id,
+              payload: assets[filter].resources.health,
+              dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
+            }]
+            await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+          } catch (ex: any) {
+            this.logger.log(`Error when trying to send health with topic-based filter: ${ex}`, ESyslogEventFilter.error);
+          }
         } else { // DSWID filter
           try {
-            const healthPayloadArr: IOPCUAPayload[] =[{
+            const healthPayloadArr: IOPCUAPayload[] = [{
               poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
               payload: assets[Object.keys(assets)[dswidFilter]].resources.health,
               dswid: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
@@ -740,7 +740,7 @@ export class Registry extends EventEmitter {
       // Publish the new publicationList according to spec
       this.registryClient.publish(
         `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-        JSON.stringify(this.builder.buildOPCUANetworkMessage([{payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList']}], new Date(), dscids.publicationList)),
+        JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList'] }], new Date(), dscids.publicationList)),
       );
       this.logger.log(`Deleted App: ${device}`, ESyslogEventFilter.warning);
     } else {
@@ -765,7 +765,7 @@ export class Registry extends EventEmitter {
     // Publish the new publicationList according to spec
     this.registryClient.publish(
       `oi4/Registry/${this.oi4Id}/pub/publicationList`,
-      JSON.stringify(this.builder.buildOPCUANetworkMessage([{payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList']}], new Date(), dscids.publicationList)),
+      JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: this.containerState.publicationList, dswid: CDataSetWriterIdLookup['publicationList'] }], new Date(), dscids.publicationList)),
     );
     this.assetLookup = {}; // Clear application lookup
   }
@@ -792,7 +792,7 @@ export class Registry extends EventEmitter {
    */
   async updateResourceInDevice(oi4Id: string, resource: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0}], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
     }
   }
@@ -814,7 +814,7 @@ export class Registry extends EventEmitter {
         this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
         return;
       }
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0}], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
       this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
       this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
       this.assetLookup[oi4Id].available = false;
@@ -830,7 +830,7 @@ export class Registry extends EventEmitter {
    */
   async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
     if (oi4Id in this.assetLookup) {
-      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0}], new Date, dscids[resource])));
+      await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([{ payload: {}, dswid: 0 }], new Date, dscids[resource])));
       this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
     }
   }
