@@ -116,7 +116,7 @@ export class Registry extends EventEmitter {
     this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
     this.ownSubscribe('oi4/Registry/+/+/+/+/get/mam/#');
 
-    // setInterval(() => { this.flushToLogfile; }, 60000);
+    // setInterval(() => { this.flushToLogfile; }, 60000); // TODO: Re-enable
   }
 
   /**
@@ -211,12 +211,12 @@ export class Registry extends EventEmitter {
     const topicResource = topicArray[7];
     const topicFilter = topicArray.splice(8).join('/');
 
-    if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) {
+    if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) { // In pub, we do not expect empty messages, they always need at least one entry
       this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
       return;
     }
 
-    if (oi4Id in this.assetLookup) {
+    if (oi4Id in this.assetLookup) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
       this.assetLookup[oi4Id]['lastMessage'] = new Date().toISOString();
     }
 
@@ -373,6 +373,8 @@ export class Registry extends EventEmitter {
  * @param configObject - the object that is to be passed to the ContainerState
  * //TODO: Careful! This is pretty hardcoded and unique for the Registry app.
  * A generic way was once in MessageBus Service component in commits from ~17.03.2021
+ * @param configObjectArr - An array containing Registry-App specific configt objects
+ * @param filter - The filter which was used to set the config
  */
   async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
     let errorSoFar: boolean = false;
@@ -384,7 +386,7 @@ export class Registry extends EventEmitter {
           // Safety-checks and overwrite of values
           switch (configItems) {
             case 'auditLevel': {
-              if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) {
+              if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) { // Test if auditLevel is really part of the enum
                 tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
               } else {
                 this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -393,7 +395,7 @@ export class Registry extends EventEmitter {
               break;
             }
             case 'logType': {
-              if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) {
+              if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) { // Test if logType is part of our "enum"
                 tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
               } else {
                 this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -411,7 +413,7 @@ export class Registry extends EventEmitter {
               break;
             }
             case 'developmentMode': {
-              if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') {
+              if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') { // Test if devMode is a boolean
                 tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
               } else {
                 this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -420,7 +422,7 @@ export class Registry extends EventEmitter {
               break;
             }
             case 'showRegistry': {
-              if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') {
+              if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') { // Test if showReg is a boolean
                 tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
               } else {
                 this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -429,7 +431,7 @@ export class Registry extends EventEmitter {
               break;
             }
             default: {
-              if (configItems === 'name' || configItems === 'description') break;
+              if (configItems === 'name' || configItems === 'description') break; // No need to warn, if we are at name and description
               this.logger.log('Unknown config item...', ESyslogEventFilter.warning);
               break;
             }
