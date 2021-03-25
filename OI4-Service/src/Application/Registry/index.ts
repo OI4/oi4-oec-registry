@@ -1,5 +1,5 @@
 import { IEventObject, IDataSetClassIds, IContainerState, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
-import { IDeviceLookup, IDeviceMessage, EDeviceType, IRegistryApp } from '../Models/IRegistry';
+import { IDeviceLookup, IDeviceMessage, EDeviceType } from '../Models/IRegistry';
 import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from '../../Service/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
@@ -883,35 +883,6 @@ export class Registry extends EventEmitter {
     }
 
     this.logger.level = this.containerState.config.logging.auditLevel.value as ESyslogEventFilter;
-  }
-
-  /**
-   * Unsubscribe the registry from the auditTrail (multiple levels) of a specified asset
-   * @param oi4Id - The oi4Id of the asset
-   */
-  async unsubscribeAssetFromAudit(oi4Id: string) {
-    console.log(`unsubbing all audits from ${oi4Id}`);
-    if (oi4Id in this.assetLookup) {
-      for (const levels of Object.values(ESyslogEventFilter)) {
-        await this.ownUnsubscribe(`${this.assetLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
-      }
-    }
-  }
-
-  /**
-   * Unsubscribe the registry from the auditTrail (multiple levels) of a specified asset
-   * @param oi4Id - The oi4Id of the asset
-   */
-  async resubscribeAssetFromAudit(oi4Id: string) {
-    console.log(`resubbing all audits from ${oi4Id}`);
-    if (oi4Id in this.assetLookup) {
-      for (const levels of Object.values(ESyslogEventFilter)) {
-        await this.ownUnsubscribe(`${this.assetLookup[oi4Id].fullDevicePath}/pub/event/${levels}/${oi4Id}`);
-        if (levels === this.containerState.config.logging.auditLevel.value) {
-          break;
-        }
-      }
-    }
   }
 
   /**
