@@ -467,7 +467,6 @@ export class Registry extends EventEmitter {
         this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
       }
     }
-  
 
   /**
    * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
@@ -560,11 +559,6 @@ export class Registry extends EventEmitter {
       await this.updateResourceInDevice(oi4IdAsset, 'subscriptionList');
       this.assetLookup[oi4IdAsset]['registeredAt'] = new Date().toISOString();
       this.assetLookup[oi4IdAsset]['lastMessage'] = new Date().toISOString();
-      // If too many devices onboard at the same time, the bus will get spammed...
-      // await this.getResourceFromDevice(oi4IdAsset, 'license');
-      // await this.getResourceFromDevice(oi4IdAsset, 'rtLicense');
-      // await this.getResourceFromDevice(oi4IdAsset, 'config');
-      // await this.getResourceFromDevice(oi4IdAsset, 'profile');
 
       const licenseObj = this.assetLookup[oi4IdAsset].resources.license;
       if (licenseObj) {
@@ -575,14 +569,6 @@ export class Registry extends EventEmitter {
     } catch (err) {
       console.log(err);
     }
-    // Subscribe to events - TODO: No longer necessary since we do not have the oi4Id asset in the filter
-    // for (const levels of Registry.auditList) {
-    //   console.log(`subbed local asset ${oi4IdAsset} to ${levels}`);
-    //   this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/event/${levels}/${oi4IdAsset}`);
-    //   if (levels === this.config.auditLevel) {
-    //     break;
-    //   }
-    // }
     // Update own publicationList with new Asset
     this.containerState.addPublication({
       resource: 'mam',
@@ -705,7 +691,6 @@ export class Registry extends EventEmitter {
         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(networkMessage));
       }
     } else {
-
       {
         const dswidFilterStr = filter.substring(1);
         const dswidFilter = parseInt(dswidFilterStr, 10);
