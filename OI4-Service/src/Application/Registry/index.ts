@@ -72,14 +72,6 @@ export class Registry extends EventEmitter {
 
     this.queue = new SequentialTaskQueue();
     this.containerState = contState;
-    this.containerState.addPublication({
-      resource: 'mam',
-      tag: this.oi4Id,
-      DataSetWriterId: 0,
-      oi4Identifier: this.oi4Id,
-      config: EPublicationListConfig.NONE_0,
-      interval: 0,
-    });
 
     this.timeoutLookup = {};
     this.secondStageTimeoutLookup = {};
