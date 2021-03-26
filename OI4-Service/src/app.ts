@@ -73,6 +73,24 @@ busProxy.on('deleteMam', async (deleteId) => {
 // --- WEBCLIENT: Take exposed webClient from webProxy and add custom routes ----
 const webClient = webProxy.webClient;
 
+/**
+ * This endpoint is used to retrieve specific container information for the cockpit plugin.
+ * TODO: Move this to a standalone app executed in cockpit context, this has no place in the registry itself
+ */
+webClient.get('/containerInfo', (contInfoReq, contInfoResp) => {
+contInfoResp.send(JSON.stringify({
+  name: contState.mam.Model.text,
+  version: contState.mam.SoftwareRevision,
+  description: contState.mam.Description.text,
+  dependencies: ["mqtt-broker"],
+  vendor: "Hilscher Gesellschaft f\u00fcr Systemautomation mbH",
+  licensesCockpit: ["HILSCHER netIOT Source Code LICENSE AGREEMENT"],
+  licensesOECRegistryCore: ["MIT"],
+  disclaimer: "see https://www.netiot.com/fileadmin/user_upload/netIOT/en/pdf/Hilscher_Source_Code_License.pdf"
+}));
+});
+
+
 webClient.get('/registry/application', (deviceReq, deviceResp) => {
   const filteredApps = JSON.parse(JSON.stringify(registry.applications));
   if (!registry.getConfig().registry.showRegistry.value) {
