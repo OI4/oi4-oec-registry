@@ -350,7 +350,7 @@ export class Registry extends EventEmitter {
         case 'set': {
           switch (topicResource) {
             case 'config': {
-              await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicFilter);
+              await this.setConfig(parsedMessage.Messages.map((dsm => { return dsm.Payload })), topicFilter, parsedMessage.MessageId);
               break;
             }
             default: {
@@ -393,7 +393,7 @@ export class Registry extends EventEmitter {
  * @param configObjectArr - An array containing Registry-App specific configt objects
  * @param filter - The filter which was used to set the config
  */
-  async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string) {
+  async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string, correlationId: string) {
     let errorSoFar: boolean = false;
     const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
     for (const configObjects of configObjectArr) {
@@ -472,7 +472,7 @@ export class Registry extends EventEmitter {
       dswid: CDataSetWriterIdLookup['config'],
       status: statusToPublish,
     });
-    await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(payload, new Date(), dscids.config)));
+    await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(payload, new Date(), dscids.config, correlationId)));
   }
 
   /**
