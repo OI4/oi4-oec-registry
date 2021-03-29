@@ -27,7 +27,8 @@
     "sequential-task-queue": "^1.2.1",
     "uuid": "^3.4.0",
     "winston": "^3.3.3",
-    "winston-syslog": "^2.4.4"
+    "winston-syslog": "^2.4.4",
+    "@oi4/json-schemas": "^0.12.2"
   },
   "devDependencies": {
     "@types/winston": "^2.4.4",
