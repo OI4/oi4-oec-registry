@@ -309,7 +309,8 @@ export class Registry extends EventEmitter {
                 }
               }
               if (payloadType === 'none') { // Not empty, locale or pagination
-                this.logger.log('Message must be either empty, locale or pagination type in a /get/ request. Future versions might lead to an abort in message processing', ESyslogEventFilter.informational);
+                this.logger.log('Message must be either empty, locale or pagination type in a /get/ request. Aboring get operation.', ESyslogEventFilter.informational);
+                return;
               }
             }
           }
