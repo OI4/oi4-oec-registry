@@ -50,7 +50,7 @@ import { CommonFetch } from './Helper/CommonFetch/index.js';
 import { ClickableFooter } from './Components/ClickableFooter.jsx';
 import ExpansionTable from './Components/ExpansionTable.jsx';
 
-const pjson = require('../../package.json');
+// const pjson = require('../../package.json');
 
 const darkTheme = createMuiTheme({
   palette: {
@@ -153,6 +153,9 @@ class OI4Base extends React.Component {
       brokerState: false,
     };
 
+    this.license = '';
+    this.version = '';
+
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.activeIntervals = [];
@@ -177,6 +180,29 @@ class OI4Base extends React.Component {
     this.activeIntervals.push(setInterval(async () => { await this.getBackendConfig() }, 10000));
 
     setTimeout(() => { this.updateOi4Id() }, 300); // This will retrieve the oi4Id of the registry itself.
+    setTimeout(() => { // Retrieve license and version from backend
+      this.fetch.get('/packageVersion')
+      .then(data => {
+        console.log(data);
+        this.version = data;
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
+        reject(err);
+      });
+
+      this.fetch.get('/packageLicense')
+      .then(data => {
+        console.log(data);
+        this.license = data;
+      })
+      .catch(err => {
+        console.log(err);
+        reject(err);
+        reject(err);
+      });
+    }, 500);
     setTimeout(() => {
       if (this.platform === 'cockpit') return;
       this.toggleTheme();
@@ -300,8 +326,8 @@ class OI4Base extends React.Component {
               handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
               saveToFile={this.saveToFile.bind(this)}
               handleLoadFromFile={this.loadFromFile.bind(this)}
-              license={pjson.license}
-              version={pjson.version}
+              license={this.license}
+              version={this.version}
               bigLogo={this.state.bigLogo}
             />
           </div>
