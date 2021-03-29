@@ -90,6 +90,20 @@ contInfoResp.send(JSON.stringify({
 }));
 });
 
+webClient.get('/mqttSettings', (mqttSettingsReq, mqttSettingsResp) => {
+  mqttSettingsResp.send(JSON.stringify({
+    brokerUri: `mqtts://${process.env.OI4_EDGE_MQTT_BROKER_ADDRESS}:${process.env.OI4_EDGE_MQTT_SECURE_PORT}`,
+    mqttVersion: `MQTT ${busProxy.mqttClient.options.protocolVersion}`,
+    userName: busProxy.mqttClient.options.username?.split('').map(letter => '*'),
+    password: busProxy.mqttClient.options.password?.split('').map(letter => '*'),
+    keepAlive: `${busProxy.mqttClient.options.keepalive} seconds`,
+    connectTimeout: '1 second',
+    cleanSession: busProxy.mqttClient.options.clean,
+    validateCertificate: !busProxy.mqttClient.options.rejectUnauthorized
+  }));
+});
+
+
 
 webClient.get('/registry/application', (deviceReq, deviceResp) => {
   const filteredApps = JSON.parse(JSON.stringify(registry.applications));
