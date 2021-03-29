@@ -3,6 +3,7 @@ import { OI4WebProxy } from './Service/src/Proxy/Web/index';
 import { ContainerState } from './Service/src/Container/index';
 import { Logger } from './Service/src/Utilities/Logger/index';
 import { ESyslogEventFilter } from './Service/src/Enums/EContainer';
+import pjson from '../package.json';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -85,7 +86,7 @@ contInfoResp.send(JSON.stringify({
   dependencies: ["mqtt-broker"],
   vendor: "Hilscher Gesellschaft f\u00fcr Systemautomation mbH",
   licensesCockpit: ["HILSCHER netIOT Source Code LICENSE AGREEMENT"],
-  licensesOECRegistryCore: ["MIT"],
+  licensesOECRegistryCore: [pjson.license],
   disclaimer: "see https://www.netiot.com/fileadmin/user_upload/netIOT/en/pdf/Hilscher_Source_Code_License.pdf"
 }));
 });
