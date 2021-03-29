@@ -109,8 +109,8 @@ webClient.get('/mqttSettings', (mqttSettingsReq, mqttSettingsResp) => {
     password: clientOpts.password?.split('').map((letter: any) => '*').join(''),
     keepAlive: `${clientOpts.keepalive} seconds`,
     connectTimeout: '1 second',
-    cleanSession: clientOpts.clean,
-    validateCertificate: clientOpts.rejectUnauthorized
+    cleanSession: 'false',// clientOpts.clean!.toString(),
+    validateCertificate: 'false',// clientOpts.rejectUnauthorized!.toString()
   }));
 });
 
