@@ -3,6 +3,7 @@ import { OI4WebProxy } from './Service/src/Proxy/Web/index';
 import { ContainerState } from './Service/src/Container/index';
 import { Logger } from './Service/src/Utilities/Logger/index';
 import { ESyslogEventFilter } from './Service/src/Enums/EContainer';
+import { IClientOptions } from 'async-mqtt';
 import pjson from '../package.json';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -91,16 +92,25 @@ contInfoResp.send(JSON.stringify({
 }));
 });
 
+function protocolVersionToString (version: number) {
+  if (version === 3) return '3';
+  if (version === 4) return '3.1';
+  if (version === 5) return '5';
+  return 'unknown'
+}
+
 webClient.get('/mqttSettings', (mqttSettingsReq, mqttSettingsResp) => {
+  // @ts-ignore: Client exists hidden TODO: This is dangerous!
+  const clientOpts = busProxy.mqttClient._client.options as IClientOptions;
   mqttSettingsResp.send(JSON.stringify({
     brokerUri: `mqtts://${process.env.OI4_EDGE_MQTT_BROKER_ADDRESS}:${process.env.OI4_EDGE_MQTT_SECURE_PORT}`,
-    mqttVersion: `MQTT ${busProxy.mqttClient.options.protocolVersion}`,
-    userName: busProxy.mqttClient.options.username?.split('').map(letter => '*'),
-    password: busProxy.mqttClient.options.password?.split('').map(letter => '*'),
-    keepAlive: `${busProxy.mqttClient.options.keepalive} seconds`,
+    mqttVersion: `MQTT ${protocolVersionToString(clientOpts.protocolVersion!)}`,
+    userName: clientOpts.username?.split('').map((letter: any) => '*').join(''),
+    password: clientOpts.password?.split('').map((letter: any) => '*').join(''),
+    keepAlive: `${clientOpts.keepalive} seconds`,
     connectTimeout: '1 second',
-    cleanSession: busProxy.mqttClient.options.clean,
-    validateCertificate: !busProxy.mqttClient.options.rejectUnauthorized
+    cleanSession: clientOpts.clean,
+    validateCertificate: clientOpts.rejectUnauthorized
   }));
 });
 
