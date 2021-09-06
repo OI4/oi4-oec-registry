@@ -164,7 +164,7 @@ class OI4Base extends React.Component {
     setTimeout(() => { this.updateApplications() }, 500);
     setTimeout(() => { this.updateDevices() }, 800);
     setTimeout(async () => { await this.getBackendConfig() }, 300);
-    setTimeout(() => { this.brokerState() }, 500);
+    setTimeout(() => { this.updateBrokerState() }, 500);
 
     /**
      * Setup cyclic intervals for refreshing the data managed by the registry backend.
