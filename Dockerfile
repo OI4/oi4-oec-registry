@@ -35,4 +35,6 @@ RUN mkdir -p logs
 COPY ./scripts ./scripts/
 
 EXPOSE 5798 5799
+
+RUN chmod +x "scripts/entrypoint.sh"
 ENTRYPOINT ["scripts/entrypoint.sh"]
