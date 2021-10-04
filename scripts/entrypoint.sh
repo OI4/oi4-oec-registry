@@ -29,6 +29,7 @@ trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
 # Run deploy script
 echo "Run deploy script"
+chmod +x "/usr/OI4-Service/scripts/deploy-config-ui.sh"
 /usr/OI4-Service/scripts/deploy-config-ui.sh
 
 # Run applications as services in the background now
