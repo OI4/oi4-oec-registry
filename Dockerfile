@@ -1,4 +1,4 @@
-FROM node:12-alpine
+FROM node:10-alpine
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
