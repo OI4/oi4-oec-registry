@@ -13,10 +13,10 @@ packageJsonLoc = readJSON(currentDir);
 packageJsonLoc.version = masterConfig.version;
 fs.writeFileSync(currentDir, `${JSON.stringify(packageJsonLoc, null, 2)}\n`);
 
-// currentDir = `${rootDir}/OI4-Service/src/Service/src/Config/masterAssetModel.json`
-// packageJsonLoc = readJSON(currentDir);
-// packageJsonLoc.SoftwareRevision = masterConfig.version;
-// fs.writeFileSync(currentDir, `${JSON.stringify(packageJsonLoc, null, 2)}`);
+currentDir = `${rootDir}/OI4-Service/src/Service/src/Config/masterAssetModel.json`
+packageJsonLoc = readJSON(currentDir);
+packageJsonLoc.SoftwareRevision = masterConfig.version;
+fs.writeFileSync(currentDir, `${JSON.stringify(packageJsonLoc, null, 2)}`);
 
 currentDir = `${rootDir}/OI4-Service/src/Service/package.json`;
 packageJsonLoc = readJSON(currentDir);
