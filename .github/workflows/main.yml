@@ -53,5 +53,5 @@ jobs:
           npm run installAll
       - name: Build all
         run:
-          [ -f /OI4-Service/src/Service/package.json ] && echo "package.json Found" || echo "package.json Not found"
+          "echo [ -f /OI4-Service/src/Service/package.json ]"
           npm run buildAll
