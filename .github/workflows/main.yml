@@ -33,14 +33,7 @@ jobs:
           mkdir ~/.ssh
           echo "${{ secrets.OI4_REGISTRY_ACTION }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          cd OI4-Service/src/Service
-          git submodule update --init
-          cd ../../..
-          rm ~/.ssh/id_rsa
-          echo "${{ secrets.OI4_REGISTRY_ACTION_VALIDATOR }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          cd OI4-Service/src/Application/ConformityValidator
-          git submodule update --init
+          git submodule update --init --recursive
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
