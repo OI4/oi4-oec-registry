@@ -31,9 +31,16 @@ jobs:
         # This part is used for the git/foobar part in requirements.txt (c.f. https://ehlers.berlin/blog/private-submodules-in-github-ci/)
         run: |
           mkdir ~/.ssh
-          echo "${{ secrets.SSH_KEY_FOR_SUBMODULE }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.OI4_REGISTRY_ACTION }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          git submodule update --init --recursive
+          cd OI4-Service/src/Service
+          git submodule update --init
+          cd ../../..
+          rm ~/.ssh/id_rsa
+          echo "${{ secrets.OI4_REGISTRY_ACTION_VALIDATOR }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cd OI4-Service/src/Application/ConformityValidator
+          git submodule update --init
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
