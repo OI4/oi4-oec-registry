@@ -31,11 +31,13 @@ jobs:
         # This part is used for the git/foobar part in requirements.txt (c.f. https://ehlers.berlin/blog/private-submodules-in-github-ci/)
         run: |
           mkdir ~/.ssh
+          echo "Checking out submodule oi4-service-node"
           echo "${{ secrets.OI4_REGISTRY_ACTION }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           cd OI4-Service/src/Service
           git submodule update --init
           cd ../../..
+          echo "oi4-conformity-validator-base"
           rm ~/.ssh/id_rsa
           echo "${{ secrets.OI4_REGISTRY_ACTION_VALIDATOR }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
