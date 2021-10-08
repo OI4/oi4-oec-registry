@@ -44,4 +44,4 @@ jobs:
       - name: Install packages for all components
         run: npm run installAll
       - name: Build all
-        run: npm run buildAllLinux
+        run: npm run buildAll
