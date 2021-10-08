@@ -19,11 +19,7 @@ COPY ./OI4-Local-UI/build ./build/
 # -------OI4-SERVICE
 WORKDIR /usr/OI4-Service
 COPY ./OI4-Service/package.json ./
-# Temporarily copy over node_models when building the container
-# This is due to currently not accounting for @oi4 scoped repos
-# If this is fixed, the line npm install --production can be used again
-COPY ./OI4-Service/node_modules ./node_modules
-#RUN npm install --production
+RUN npm install --production
 
 # COPY Source files
 COPY ./OI4-Service/out ./
@@ -35,6 +31,5 @@ RUN mkdir -p logs
 COPY ./scripts ./scripts/
 
 EXPOSE 5798 5799
-
 RUN chmod +x "scripts/entrypoint.sh"
 ENTRYPOINT ["scripts/entrypoint.sh"]
