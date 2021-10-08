@@ -53,14 +53,5 @@ jobs:
           npm run installAll
       - name: Build all
         run:
-          mkdir ~/.ssh
-          echo "Checking out submodule oi4-service-node"
-          echo "${{ secrets.OI4_REGISTRY_ACTION }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git submodule update OI4-Service/src/Service
-          echo "oi4-conformity-validator-base"
-          rm ~/.ssh/id_rsa
-          echo "${{ secrets.OI4_REGISTRY_ACTION_VALIDATOR }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git submodule update OI4-Service/src/Application/ConformityValidator
+          [ -f /OI4-Service/src/Service/package.json ] && echo "package.json Found" || echo "package.json Not found"
           npm run buildAll
