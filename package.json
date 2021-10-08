@@ -14,7 +14,7 @@
     "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t ghcr.io/oi4/oi4-registry:${npm_package_version} .",
     "docker:build:local": "docker build -t oi4/oi4-registry:${npm_package_version} -t oi4/oi4-registry:latest .",
     "serveLocalUI": "cd ./OI4-Local-UI && serve build/",
-    "buildAll": "cd ./OI4-Local-UI && npm run build && cd ../OI4-Service && npm run tsc && cd ..",
+    "buildAll": "node ./Helper/UpdateVersion/index && cd ./OI4-Local-UI && npm run build && cd ../OI4-Service && npm run tsc && cd ..",
     "installAll": "cd ./OI4-Local-UI && npm install && cd ../OI4-Service && npm install && cd .."
   },
   "author": "Hilscher",
