@@ -47,7 +47,7 @@ jobs:
       #   uses: mxschmitt/action-tmate@v3
       - name: Build all
         run: npm run buildAll
-      - name: Prepare Docker buildx
+      - name: Prepare Docker build
         run: npm run docker:prepare
       - name: Docker Login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
