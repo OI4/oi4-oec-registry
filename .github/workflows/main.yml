@@ -48,6 +48,8 @@ jobs:
           # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN
           registry-url: https://registry.npmjs.org/
       - name: Install packages for all components
-        run: npm run installAll
+        run:
+          export PACKAGES_AUTH_TOKEN=${{ github.token }}
+          npm run installAll
       - name: Build all
         run: npm run buildAll
