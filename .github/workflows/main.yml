@@ -53,5 +53,4 @@ jobs:
           npm run installAll
       - name: Build all
         run:
-          echo [ -f /OI4-Service/src/Service/package.json ]
           npm run buildAll
