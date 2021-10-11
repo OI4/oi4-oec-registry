@@ -1,8 +1,6 @@
 [submodule "packages/oi4-service-node"]
 	path = packages/oi4-service-node
 	url = git@github.com:OI4/oi4-service-node.git
-	branch = development
 [submodule "packages/oi4-conformity-validator"]
 	path = packages/oi4-conformity-validator
 	url = git@github.com:OI4/oi4-conformity-validator-base.git
-	branch = development
