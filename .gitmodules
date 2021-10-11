@@ -4,3 +4,9 @@
 [submodule "OI4-Service/src/Application/ConformityValidator"]
 	path = OI4-Service/src/Application/ConformityValidator
 	url = git@github.com:OI4/oi4-conformity-validator-base.git
+[submodule "packages/oi4-service-node"]
+	path = packages/oi4-service-node
+	url = git@github.com:OI4/oi4-service-node.git
+[submodule "packages/oi4-conformity-validator"]
+	path = packages/oi4-conformity-validator
+	url = git@github.com:OI4/oi4-conformity-validator-base.git

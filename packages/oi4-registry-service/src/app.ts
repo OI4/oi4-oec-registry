@@ -1,8 +1,8 @@
-import { OI4MessageBusProxy } from './Service/src/Proxy/Messagebus/index';
-import { OI4WebProxy } from './Service/src/Proxy/Web/index';
-import { ContainerState } from './Service/src/Container/index';
-import { Logger } from './Service/src/Utilities/Logger/index';
-import { ESyslogEventFilter } from './Service/src/Enums/EContainer';
+import { OI4MessageBusProxy } from 'oi4-service-node/src/Proxy/Messagebus';
+import { OI4WebProxy } from 'oi4-service-node/src/Proxy/Web';
+import { ContainerState } from 'oi4-service-node/src/Container';
+import { Logger } from 'oi4-service-node/src/Utilities/Logger';
+import { ESyslogEventFilter } from 'oi4-service-node/src/Enums/EContainer';
 import { IClientOptions } from 'async-mqtt';
 import pjson from '../package.json';
 import dotenv from 'dotenv';
@@ -57,8 +57,8 @@ logger.level = ESyslogEventFilter.warning;
 
 // -------- Registry Application
 import { Registry } from './Application/Registry';
-import { IConformity } from './Application/ConformityValidator/Models/IConformityValidator';
-import { ConformityValidator } from './Application/ConformityValidator';
+import { IConformity } from 'oi4-conformity-validator/Models/IConformityValidator';
+import { ConformityValidator } from 'oi4-conformity-validator';
 const registry = new Registry(busProxy.mqttClient, contState);
 
 /**

@@ -6,9 +6,9 @@ import {
   IContainerConfig,
   IContainerProfile,
   IContainerLicenseText,
-} from '../../Service/src/Models/IContainer';
-import { IMasterAssetModel } from '../../Service/src/Models/IOPCUA';
-import { IConformity } from '../ConformityValidator/Models/IConformityValidator';
+} from 'oi4-service-node/src/Models/IContainer';
+import { IMasterAssetModel } from 'oi4-service-node/src/Models/IOPCUA';
+import { IConformity } from 'oi4-conformity-validator/Models/IConformityValidator';
 
 /**
  * This interface is proprietary and only used between registry backend and frontend.
