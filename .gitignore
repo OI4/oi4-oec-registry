@@ -28,3 +28,4 @@ OI4-Cockpit-UI/dist/**/*
 *.iml
 /.idea/
 .npmrc
+/packages/oi4-service-node/.idea/
