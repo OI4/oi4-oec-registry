@@ -1,10 +1,10 @@
-import { OI4MessageBusProxy } from '../../Service/src/Proxy/Messagebus/index';
-import { IOPCUANetworkMessage, IOPCUAMetaData } from '../../Service/src/Models/IOPCUA';
-import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder';
+import { OI4MessageBusProxy } from 'oi4-service-node/src/Proxy/Messagebus';
+import { IOPCUANetworkMessage, IOPCUAMetaData } from 'oi4-service-node/src/Models/IOPCUA';
+import { OPCUABuilder } from 'oi4-service-node/src/Utilities/OPCUABuilder';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
-import { ESyslogEventFilter } from '../../Service/src/Enums/EContainer';
-import { EOPCUABuiltInType, EOPCUAValueRank } from '../../Service/src/Enums/EOPCUA';
+import { ESyslogEventFilter } from 'oi4-service-node/src/Enums/EContainer';
+import { EOPCUABuiltInType, EOPCUAValueRank } from 'oi4-service-node/src/Enums/EOPCUA';
 
 export class BaseApplication {
   private msgProxy: OI4MessageBusProxy;

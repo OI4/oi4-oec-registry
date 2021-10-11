@@ -1,23 +1,23 @@
-import { IEventObject, IDataSetClassIds, IContainerState, CDataSetWriterIdLookup } from '../../Service/src/Models/IContainer';
+import { IEventObject, IDataSetClassIds, IContainerState, CDataSetWriterIdLookup } from 'oi4-service-node/src/Models/IContainer';
 import { IDeviceLookup, IDeviceMessage, EDeviceType } from '../Models/IRegistry';
-import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from '../../Service/src/Models/IOPCUA';
+import { IMasterAssetModel, IOPCUANetworkMessage, IOPCUAPayload } from 'oi4-service-node/src/Models/IOPCUA';
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import { EventEmitter } from 'events';
-import { OPCUABuilder } from '../../Service/src/Utilities/OPCUABuilder/index';
-import { FileLogger } from '../../Service/src/Utilities/FileLogger/index';
-import { ConformityValidator } from '../ConformityValidator';
-import { Logger } from '../../Service/src/Utilities/Logger';
-import { IConformity } from '../ConformityValidator/Models/IConformityValidator';
+import { OPCUABuilder } from 'oi4-service-node/src/Utilities/OPCUABuilder';
+import { FileLogger } from 'oi4-service-node/src/Utilities/FileLogger';
+import { ConformityValidator } from 'oi4-conformity-validator';
+import { Logger } from 'oi4-service-node/src/Utilities/Logger';
+import { IConformity } from 'oi4-conformity-validator/Models/IConformityValidator';
 import { SequentialTaskQueue } from 'sequential-task-queue';
 
 // DSCIds
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
-import { ISpecificContainerConfig } from '../../Service/src/Config/IContainerConfig';
-import { EDeviceHealth, EGenericEventFilter, ENamurEventFilter, EOpcUaEventFilter, EPublicationListConfig, ESubscriptionListConfig, ESyslogEventFilter } from '../../Service/src/Enums/EContainer';
+import { ISpecificContainerConfig } from 'oi4-service-node/src/Config/IContainerConfig';
+import { EDeviceHealth, EGenericEventFilter, ENamurEventFilter, EOpcUaEventFilter, EPublicationListConfig, ESubscriptionListConfig, ESyslogEventFilter } from 'oi4-service-node/src/Enums/EContainer';
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 import EAuditLevel = ESyslogEventFilter;
-import { EOPCUAStatusCode } from '../../Service/src/Enums/EOPCUA';
+import { EOPCUAStatusCode } from 'oi4-service-node/src/Enums/EOPCUA';
 
 export class Registry extends EventEmitter {
   private assetLookup: IDeviceLookup;
@@ -314,7 +314,7 @@ export class Registry extends EventEmitter {
               }
             }
           }
-          
+
           switch (topicResource) {
             case 'mam': {
               this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);

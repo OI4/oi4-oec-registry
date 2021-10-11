@@ -29,12 +29,12 @@ trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
 # Run deploy script
 echo "Run deploy script"
-chmod +x "/usr/OI4-Service/scripts/deploy-config-ui.sh"
+chmod +x "/usr/oi4-registry-service/scripts/deploy-config-ui.sh"
 /usr/OI4-Service/scripts/deploy-config-ui.sh
 
 # Run applications as services in the background now
-echo "Starting OI4-Service and LocalUI"
-exec node ./src/app.js & cd ../OI4-Local-UI
+echo "Starting OI4-Registry-Service and LocalUI"
+exec node ./src/app.js & cd ../oi4-local-ui
 
 # Conditional entry: Unsecure Frontend / Secure frontend
 if [ "$USE_HTTPS" = "true" ];
@@ -47,7 +47,7 @@ then
 	else
 		echo "$FILE does not exist! creating own certificate..."
     mkdir -p /usr/local/share/oi4registry/cert
-		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/oi4registry/cert/key.pem -out /usr/local/share/oi4registry/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
+		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/oi4registry/cert/key.pem -out /usr/local/share/oi4registry/cert/cert.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
 	fi
 	exec npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5798 build &
 else

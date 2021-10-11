@@ -2,6 +2,7 @@ node_modules/**/*
 .vscode
 npm-debug.log
 
-OI4-Cockpit-UI/node_modules/**/*
-OI4-Local-UI/node_modules/**/*
-OI4-Registry/node_modules/**/*
+packages/oi4-conformity-validator/node_modules/**/*
+packages/oi4-local-ui/node_modules/**/*
+packages/oi4-registry-service/node_modules/**/*
+packages/oi4-service-node/node_modules/**/*
