@@ -17,6 +17,7 @@ export interface IDeviceMessage {
   resources: IResourceObject;
   fullDevicePath: string;
   oi4Id: string;
+  oi4Request: string;
   eventList: IEventObject[];
   oi4IdOriginator: string;
   lastMessage: string;

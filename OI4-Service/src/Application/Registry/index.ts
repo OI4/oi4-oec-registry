@@ -267,13 +267,26 @@ export class Registry extends EventEmitter {
           this.timeoutLookup[oi4Id] = timeout;
         }
 
-        this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
+        // On the self call on Registry 2 messages are sent whereas the second one contains undefined values. //TODO: maybe look for the reasoning for this
+        if(topicServiceType !== 'Registry') {
+            for(let i = 0; i < networkMessage.Messages.length; i++) {
+            this.logger.log(`Setting health of ${networkMessage.Messages[i].POI} to: ${JSON.stringify(networkMessage.Messages[i].Payload.health)}`);
+            networkMessage.Messages[i].Payload.lastMessage = new Date().toISOString();
+            let requestedRessource: any = networkMessage.Messages[i].POI;       
+            this.assetLookup[requestedRessource].resources.health = networkMessage.Messages[i].Payload;
+          }
+        } else {
+        this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload.health)}`);
         parsedPayload.lastMessage = new Date().toISOString();
         this.assetLookup[oi4Id].resources.health = parsedPayload;
+        }
+        
       } else {
         if (topicAppId === this.oi4Id) return;
-        await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids.mam)));
-        this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESyslogEventFilter.debug);
+        for(let i = 0; i < networkMessage.Messages.length; i++) {
+          await this.registryClient.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${networkMessage.Messages[i].POI}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids.mam)));
+          this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${networkMessage.Messages[i].POI}`, ESyslogEventFilter.debug);
+        }
       }
     } else if (topic.includes('/pub/license')) {
       if (oi4Id in this.assetLookup) {
@@ -547,6 +560,7 @@ export class Registry extends EventEmitter {
     const fullDevice: IDeviceMessage = {
       oi4IdOriginator,
       oi4Id: oi4IdAsset,
+      oi4Request: oi4IdAsset,
       eventList: [],
       lastMessage: '',
       registeredAt: '',
