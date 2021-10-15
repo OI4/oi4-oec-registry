@@ -196,7 +196,16 @@ export class Registry extends EventEmitter {
     }
 
     const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString());
-    const baseIdOffset = topicArr.length - 4;
+    //const baseIdOffset = topicArr.length - 4;
+    let baseIdOffset = topicArr.length - 4;
+    // check if received message is a summary message:
+    // second to last elem would be a method qualifier, last elem indicates the resource e.g. /pub/health
+    // TODO: properly handle summary message - this is a hotfix only to enable application detection
+    const isSummaryMessage = ["pub", "get", "set", "del"].includes(topicArr[topicArr.length - 2])
+    if (isSummaryMessage) {
+      baseIdOffset -= 2; // ignore the last two elements when extracting the oi4Identifier
+    }
+    // if we received an implicit mam with multiple messages (ending with /pub/mam) our message will now be of size 7 instead of 9
     const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
 
     let parsedPayload: any = {}; // FIXME: Hotfix, remove the "any" and see where it goes...
@@ -336,8 +345,10 @@ export class Registry extends EventEmitter {
         case 'pub': {
           switch (topicResource) {
             case 'mam': {
-              if (topicArr.length > 9) {
-                this.addToRegistry({ topic, message: parsedPayload });
+              if (topicArr.length > 7) {
+                for (let i = 0; i < networkMessage.Messages.length; i++) {
+                  this.addToRegistry({ topic, message: networkMessage.Messages[i].Payload });
+                }
               }
               break;
             }
@@ -367,8 +378,11 @@ export class Registry extends EventEmitter {
         case 'pub': {
           switch (topicResource) {
             case 'mam': {
-              if (topicArr.length > 9) {
-                this.addToRegistry({ topic, message: parsedPayload });
+              if (topicArr.length > 7) {
+                // adds a new table for every explicitly parsed payload message on this topic
+                for (let i = 0; i < networkMessage.Messages.length; i++) {
+                  this.addToRegistry({ topic, message: networkMessage.Messages[i].Payload });
+                }
               }
               break;
             }
@@ -481,8 +495,10 @@ export class Registry extends EventEmitter {
    * @param mqttObj The full mqtt message containing a potential addition to the registry
    */
   async addToRegistry(mqttObj: any) {
-    const topicArr = mqttObj.topic.split('/');
-    const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    // const topicArr = mqttObj.topic.split('/');
+    const topicArr = mqttObj.message.ProductInstanceUri.split('/');
+    // const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    const assetId = `${topicArr[0]}/${topicArr[1]}/${topicArr[2]}/${topicArr[3]}/`;
     if (this.getApplication(assetId) || this.getDevice(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
       this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
       if (this.assetLookup[assetId].available) {
@@ -512,16 +528,17 @@ export class Registry extends EventEmitter {
     this.logger.log(`----------- ADDING DEVICE ----------:  ${fullTopic}`, ESyslogEventFilter.informational);
     const topicArr = fullTopic.split('/');
     const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
-    const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    // const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    const oi4IdAsset = device.ProductInstanceUri;
 
-    if (this.getApplication(oi4IdAsset) || this.getDevice(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+     if (this.getApplication(oi4IdAsset) || this.getDevice(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
       this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
       if (this.assetLookup[oi4IdAsset].available) {
         this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, ESyslogEventFilter.warning);
         return;
       }
       this.logger.log(`Device ${oi4IdAsset} was unavailable before and is now back! Re-Registering`, ESyslogEventFilter.warning);
-    }
+    } 
     const conf = await this.conformityValidator.checkConformity(`oi4/${topicArr[1]}/${oi4IdOriginator}`, oi4IdAsset);
     if (Object.keys(device).length === 0) {
       this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
@@ -640,6 +657,7 @@ export class Registry extends EventEmitter {
             payload: assets[filter].resources.mam,
             dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
           }]
+          // hier wird oi4Id explizit angehängt!?
           await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
         } catch (ex) {
           this.logger.log(`Error when trying to send a mam with oi4Id-based filter: ${ex}`, ESyslogEventFilter.error);
