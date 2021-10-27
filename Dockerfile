@@ -19,8 +19,11 @@ COPY ./packages/oi4-local-ui/build ./build/
 # -------OI4-SERVICE
 WORKDIR /usr/oi4-registry-service
 COPY packages/oi4-registry-service/package.json ./
-# RUN npm install --production
-COPY ./packages/oi4-registry-service/node_modules ./node_modules
+# Temporarily copy over node_models when building the container
+# This is due to currently not accounting for @oi4 scoped repos
+# If this is fixed, the line npm install --production can be used again
+COPY ./OI4-Service/node_modules ./node_modules
+#RUN npm install --production
 
 # COPY Source files
 COPY packages/oi4-registry-service/out ./

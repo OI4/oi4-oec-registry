@@ -2,7 +2,6 @@
   "name": "oi4registry",
   "version": "0.12.2",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
-  "main": "index.js",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "BSD-3-Clause",
   "private": true,
