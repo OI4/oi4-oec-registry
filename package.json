@@ -1,6 +1,6 @@
 {
   "name": "oi4registry",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "A Registry that keeps track of all oi4 compatible members \u001b[D\u001b[A\u001b[Bmessagebus",
   "main": "index.js",
   "dependencies": {
