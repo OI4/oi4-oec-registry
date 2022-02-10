@@ -1,11 +1,19 @@
 {
-  "name": "oi4-service",
-  "version": "0.12.1",
+  "name": "oi4-registry-service",
+  "version": "0.12.2",
   "description": "Acts as the application in a running OI4 container",
   "main": "index.js",
+  "author": "Open Industry 4.0 Alliance - Community",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:OI4/oi4-registry.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc",
+    "build": "tsc",
     "start": "node out/src/app.js"
   },
   "keywords": [
@@ -14,9 +22,8 @@
     "industry",
     "industry4.0"
   ],
-  "author": "BM",
-  "license": "MIT",
   "dependencies": {
+    "@types/ws": "^8.2.0",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.5.0",
     "cors": "^2.8.5",
@@ -26,17 +33,16 @@
     "sequential-task-queue": "^1.2.1",
     "uuid": "^3.4.0",
     "winston": "^3.3.3",
-    "winston-syslog": "^2.4.4",
-    "@oi4/json-schemas": "^0.12.2"
+    "winston-syslog": "^2.4.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.6",
-    "@types/winston": "^2.4.4",
-    "@types/winston-syslog": "^2.0.3",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.6",
     "@types/node": "^12.12.37",
     "@types/uuid": "^3.4.9",
+    "@types/winston": "^2.4.4",
+    "@types/winston-syslog": "^2.0.3",
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
     "typescript": "^3.8.3",

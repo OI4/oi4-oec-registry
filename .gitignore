@@ -6,10 +6,10 @@ out/**/*
 .DS_Store
 
 # OI4-Service folder
-OI4-Service/node_modules/**/*
-OI4-Service/out/**/*
-OI4-Service/.env
-OI4-Service/.npmrc
+oi4-registry-service/node_modules/**/*
+oi4-registry-service/out/**/*
+oi4-registry-service/.env
+oi4-registry-service/.npmrc
 
 # OI4-Local-UI folder
 OI4-Local-UI/node_modules/**/*
@@ -28,3 +28,4 @@ OI4-Cockpit-UI/dist/**/*
 *.iml
 /.idea/
 .npmrc
+/packages/oi4-service-node/.idea/
