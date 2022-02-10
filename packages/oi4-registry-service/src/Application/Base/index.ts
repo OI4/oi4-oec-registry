@@ -1,10 +1,10 @@
-import { OI4MessageBusProxy } from 'oi4-service-node/src/Proxy/Messagebus';
-import { IOPCUANetworkMessage, IOPCUAMetaData } from 'oi4-service-node/src/Models/IOPCUA';
-import { OPCUABuilder } from 'oi4-service-node/src/Utilities/OPCUABuilder';
+import {OI4MessageBusProxy} from '@oi4/oi4-oec-service-node';
+import { IOPCUANetworkMessage, IOPCUAMetaData } from '@oi4/oi4-oec-service-opcua-model';
+import { OPCUABuilder } from '@oi4/oi4-oec-service-opcua-model';
 
 import uuid from 'uuid/v4'; /*tslint:disable-line*/
-import { ESyslogEventFilter } from 'oi4-service-node/src/Enums/EContainer';
-import { EOPCUABuiltInType, EOPCUAValueRank } from 'oi4-service-node/src/Enums/EOPCUA';
+import { ESyslogEventFilter } from '@oi4/oi4-oec-service-model';
+import { EOPCUABuiltInType, EOPCUAValueRank } from '@oi4/oi4-oec-service-opcua-model';
 
 export class BaseApplication {
   private msgProxy: OI4MessageBusProxy;
@@ -12,14 +12,15 @@ export class BaseApplication {
   private weatherData: IOPCUANetworkMessage;
   private hostData: IOPCUANetworkMessage;
   private arrayData: IOPCUANetworkMessage;
-  private matrixData: IOPCUANetworkMessage;
-  private weatherDataGUID: string;
-  private hostDataGUID: string;
-  private arrayDataGUID: string;
-  private matrixDataGUID: string;
+  private readonly matrixData: IOPCUANetworkMessage;
+  private readonly weatherDataGUID: string;
+  private readonly hostDataGUID: string;
+  private readonly arrayDataGUID: string;
+  private readonly matrixDataGUID: string;
 
   constructor(proxy: OI4MessageBusProxy) {
     this.msgProxy = proxy;
+    // @ts-ignore: TODO: not assignable message...fix it
     this.messageBuilder = proxy.builder;
     this.weatherDataGUID = uuid();
     this.hostDataGUID = uuid();
@@ -107,28 +108,24 @@ export class BaseApplication {
       'weatherMetaData',
       'The MetaData of Weather',
       weatherMetaDataProperties,
-      new Date(),
       this.weatherDataGUID,
     );
     const hostMetaData: IOPCUAMetaData = this.messageBuilder.buildOPCUAMetaDataMessage(
       'hostMetaData',
       'The MetaData of Host',
       hostMetaDataProperties,
-      new Date(),
       this.hostDataGUID,
     );
     const arrayMetaData: IOPCUAMetaData = this.messageBuilder.buildOPCUAMetaDataMessage(
       'arrayMetaData',
       'The MetaData of Array',
       arrayDataProperties,
-      new Date(),
       this.arrayDataGUID,
     );
     const matrixMetaData: IOPCUAMetaData = this.messageBuilder.buildOPCUAMetaDataMessage(
       'matrixMetaData',
       'The MetaData of Matrix',
       matrixDataProperties,
-      new Date(),
       this.matrixDataGUID,
     );
     this.msgProxy.containerState.addDataSet('weatherData', this.weatherData, weatherMetaData);
