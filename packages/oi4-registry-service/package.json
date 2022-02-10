@@ -23,7 +23,6 @@
     "industry4.0"
   ],
   "dependencies": {
-    "@oi4/json-schemas": "^0.12.2",
     "@types/ws": "^8.2.0",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.5.0",
