@@ -24,22 +24,6 @@ jobs:
           #with:
           #ssh-key: ${{ secrets.SSH_KEY_FOR_SUBMODULE }}
         #submodules: true
-      - name: Setup access via public/private key.
-        # Below command requires the SSH_KEY_FOR_SUBMODULE to be configured via github repository secrets.
-        # Also the key's public part must be added to the submodule repository deploy keys.
-        # A private/public key pair without password (required in this case) can be generated with ssh-keygen.
-        # This part is used for the git/foobar part in requirements.txt (c.f. https://ehlers.berlin/blog/private-submodules-in-github-ci/)
-        run: |
-          mkdir ~/.ssh
-          echo "Checking out submodule oi4-service-node"
-          echo "${{ secrets.OI4_REGISTRY_ACTION }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git submodule update OI4-Service/src/Service
-          echo "oi4-conformity-validator-base"
-          rm ~/.ssh/id_rsa
-          echo "${{ secrets.OI4_REGISTRY_ACTION_VALIDATOR }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git submodule update OI4-Service/src/Application/ConformityValidator
       - name: Setup Node.js environment
         uses: actions/setup-node@v3.0.0
         with:
@@ -50,8 +34,8 @@ jobs:
       - name: Install packages for all components
         run: |
           export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
-          npm run installAll
+          yarn run install
       - name: Build all
         run: |
           export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
-          npm run buildAll
+          yarn run build
