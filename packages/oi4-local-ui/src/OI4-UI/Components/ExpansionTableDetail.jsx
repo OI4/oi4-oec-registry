@@ -83,33 +83,33 @@ class ExpansionTableDetail extends React.Component {
               <span style={{ marginRight: '1%' }}>
                 <Tooltip title="Copy to clipboard">
                   <IconButton
-                    size='small'
-                    color='default'
-                    onClick={() => {
-                      navigator.clipboard.writeText(JSON.stringify(this.props.asset.resources.mam, null, 2)).then(() => {
-                        this.setState({ copySnackOpen: true });
-                      });
-                    }}
+                      size='small'
+                      color='default'
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(this.props.asset.resources.mam, null, 2)).then(() => {
+                          this.setState({ copySnackOpen: true });
+                        });
+                      }}
                   >
                     <FileCopy />
                   </IconButton>
                 </Tooltip>
                 <Snackbar
-                  open={this.state.copySnackOpen}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                  }}
-                  onClose={() => { this.setState({ copySnackOpen: false }) }}
-                  autoHideDuration={5000}
-                  message='Saved MAM to clipboard'
-                  action={
-                    <>
-                    <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                      <Close fontSize='small' />
-                    </IconButton>
-                    </>
-                  }
+                    open={this.state.copySnackOpen}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'center',
+                    }}
+                    onClose={() => { this.setState({ copySnackOpen: false }) }}
+                    autoHideDuration={5000}
+                    message='Saved MAM to clipboard'
+                    action={
+                      <>
+                        <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                          <Close fontSize='small' />
+                        </IconButton>
+                      </>
+                    }
                 />
               </span>
             </h3>
@@ -118,18 +118,18 @@ class ExpansionTableDetail extends React.Component {
             </Paper>
           </Grid>
           {this.props.expertMode ? <Grid item xs>
-            <h3>Detailed Profile (Debugging):</h3>
-            <Paper className={classes.paper}>
-              {this.ownJsonViewer(this.props.asset.resources.profile)}
-            </Paper>
-          </Grid>
-          : null}
+                <h3>Detailed Profile (Debugging):</h3>
+                <Paper className={classes.paper}>
+                  {this.ownJsonViewer(this.props.asset.resources.profile)}
+                </Paper>
+              </Grid>
+              : null}
           <Grid item xs>
             <h3>Conformity Validation:
               <Tooltip title='Refresh conformity'>
                 <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>
-                <Refresh />
-              </IconButton>
+                  <Refresh />
+                </IconButton>
               </Tooltip>
             </h3>
             <Paper className={classes.paper}>

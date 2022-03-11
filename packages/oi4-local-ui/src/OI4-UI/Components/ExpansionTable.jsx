@@ -90,119 +90,119 @@ class ExpansionTable extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-      <>
-        <ExpansionPanel>
-          <ExpansionPanelSummary expandIcon={<ExpandMore />}>
-            <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
-            <TextField
-              id='filterText'
-              value={this.state.filterWord}
-              onChange={this.handleFilterChange.bind(this)}
-              onClick={(ev) => ev.stopPropagation()}
-              onFocus={(ev) => ev.stopPropagation()}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              placeholder='Filtertext'
-              style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
-              color='secondary'
-            />
-          </ExpansionPanelSummary>
-          <ExpansionPanelDetails className={classes.tableWrap}>
-            <Table className={classes.table}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Manufacturer</TableCell>
-                  <TableCell>Model</TableCell>
-                  <TableCell>DeviceClass</TableCell>
-                  <TableCell>SerialNumber</TableCell>
-                  <TableCell align="right">Health</TableCell>
-                  <TableCell align="right">Last Message</TableCell>
-                  <TableCell align="right">Conformity</TableCell>
-                  <TableCell align="right">Expand</TableCell>
-                  {this.props.expertMode ? <TableCell align='right'>Delete</TableCell> : null}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Object.keys(this.filterAssets()).map((oi4Id, idx) => (
-                  <React.Fragment key={`AssetTable-${oi4Id}-${idx}`}>
-                    {/* {console.log((parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString())}
+        <>
+          <ExpansionPanel>
+            <ExpansionPanelSummary expandIcon={<ExpandMore />}>
+              <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
+              <TextField
+                  id='filterText'
+                  value={this.state.filterWord}
+                  onChange={this.handleFilterChange.bind(this)}
+                  onClick={(ev) => ev.stopPropagation()}
+                  onFocus={(ev) => ev.stopPropagation()}
+                  InputProps={{
+                    endAdornment: (
+                        <InputAdornment position='end'>
+                          <Search />
+                        </InputAdornment>
+                    ),
+                  }}
+                  placeholder='Filtertext'
+                  style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
+                  color='secondary'
+              />
+            </ExpansionPanelSummary>
+            <ExpansionPanelDetails className={classes.tableWrap}>
+              <Table className={classes.table}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Manufacturer</TableCell>
+                    <TableCell>Model</TableCell>
+                    <TableCell>DeviceClass</TableCell>
+                    <TableCell>SerialNumber</TableCell>
+                    <TableCell align="right">Health</TableCell>
+                    <TableCell align="right">Last Message</TableCell>
+                    <TableCell align="right">Conformity</TableCell>
+                    <TableCell align="right">Expand</TableCell>
+                    {this.props.expertMode ? <TableCell align='right'>Delete</TableCell> : null}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.keys(this.filterAssets()).map((oi4Id, idx) => (
+                      <React.Fragment key={`AssetTable-${oi4Id}-${idx}`}>
+                        {/* {console.log((parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString())}
                     {console.log(oi4Id)} */}
-                    <TableRow
-                      key={`AssetTable-${oi4Id}-${idx}`}
-                      hoverstyle={{ cursor: "pointer" }}
-                      style={{ opacity: (parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString() }}
-                    // FIXME: A bit hacky: we get a bool from availability. Opacity over 1.0 does not hurt, so we add 0.5 to it. false(0) will result in 0.5
-                    // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
-                    // (nodejs type inference) then parse it to float, add it together and convert it to a string
-                    >
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.text}</TableCell>
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.text}</TableCell>
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
-                      <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
-                      <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
-                      <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
-                      <TableCell align="right">
-                        <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          size='small'
-                          color='default'
-                          onClick={() => {
-                            const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
-                            if (oi4Id in expandedLookupCopy) {
-                              expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
-                            } else {
-                              expandedLookupCopy[oi4Id] = true;
-                            }
-                            this.setState({ expandedLookup: expandedLookupCopy });
-                          }}
+                        <TableRow
+                            key={`AssetTable-${oi4Id}-${idx}`}
+                            hoverstyle={{ cursor: "pointer" }}
+                            style={{ opacity: (parseFloat(+(this.props.assetLookup[oi4Id].available)) + 0.5).toString() }}
+                            // FIXME: A bit hacky: we get a bool from availability. Opacity over 1.0 does not hurt, so we add 0.5 to it. false(0) will result in 0.5
+                            // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
+                            // (nodejs type inference) then parse it to float, add it together and convert it to a string
                         >
-                          {this.displayTableExpansion(oi4Id)}
-                        </IconButton>
-                      </TableCell>
-                      {this.props.expertMode ? <TableCell align="right">
-                        <IconButton
-                          size='small'
-                          color='default'
-                          onClick={(evt) => {
-                            evt.preventDefault();
-                            this.props.clearAsset(oi4Id);
-                          }}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </TableCell> : null}
-                    </TableRow>
-                    <TableRow key={`AssetTableDetail-${oi4Id}-${idx}`}>
-                      <TableCell colSpan={8}>
-                        <Collapse
-                          className={classes.tableInside}
-                          in={this.state.expandedLookup[oi4Id]}
-                          timeout='auto'
-                          unmountOnExit
-                        >
-                          <Grid container>
-                            <Grid item xs={12}>
-                              <ExpansionTableDetail
-                                asset={this.props.assetLookup[oi4Id]}
-                                conformityLookup={this.props.conformityLookup}
-                                expertMode={this.props.expertMode}
-                                oi4Id={oi4Id}
-                                assetLookup={this.props.assetLookup}
-                                updateConformity={this.updateConformity.bind(this)}
-                                getResourceObject={this.getResourceObject.bind(this)}
-                                lookupType={this.props.lookupType}
-                                fontColor={this.props.fontColor}
-                                updatingConformity={this.props.updatingConformity}
-                              />
-                            </Grid>
-                            {/* <Grid item xs={12}>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
+                          <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
+                          <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
+                          <TableCell align="right">
+                            <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                                size='small'
+                                color='default'
+                                onClick={() => {
+                                  const expandedLookupCopy = JSON.parse(JSON.stringify(this.state.expandedLookup));
+                                  if (oi4Id in expandedLookupCopy) {
+                                    expandedLookupCopy[oi4Id] = !(expandedLookupCopy[oi4Id]);
+                                  } else {
+                                    expandedLookupCopy[oi4Id] = true;
+                                  }
+                                  this.setState({ expandedLookup: expandedLookupCopy });
+                                }}
+                            >
+                              {this.displayTableExpansion(oi4Id)}
+                            </IconButton>
+                          </TableCell>
+                          {this.props.expertMode ? <TableCell align="right">
+                            <IconButton
+                                size='small'
+                                color='default'
+                                onClick={(evt) => {
+                                  evt.preventDefault();
+                                  this.props.clearAsset(oi4Id);
+                                }}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </TableCell> : null}
+                        </TableRow>
+                        <TableRow key={`AssetTableDetail-${oi4Id}-${idx}`}>
+                          <TableCell colSpan={8}>
+                            <Collapse
+                                className={classes.tableInside}
+                                in={this.state.expandedLookup[oi4Id]}
+                                timeout='auto'
+                                unmountOnExit
+                            >
+                              <Grid container>
+                                <Grid item xs={12}>
+                                  <ExpansionTableDetail
+                                      asset={this.props.assetLookup[oi4Id]}
+                                      conformityLookup={this.props.conformityLookup}
+                                      expertMode={this.props.expertMode}
+                                      oi4Id={oi4Id}
+                                      assetLookup={this.props.assetLookup}
+                                      updateConformity={this.updateConformity.bind(this)}
+                                      getResourceObject={this.getResourceObject.bind(this)}
+                                      lookupType={this.props.lookupType}
+                                      fontColor={this.props.fontColor}
+                                      updatingConformity={this.props.updatingConformity}
+                                  />
+                                </Grid>
+                                {/* <Grid item xs={12}>
                               <h3>{`Last ${this.props.assetLookup[oi4Id].eventList.length} Events:`}</h3>
                               <TextField
                                 id='filterText'
@@ -222,27 +222,27 @@ class ExpansionTable extends React.Component {
                                 color='secondary'
                               />
                             </Grid> */}
-                            <Grid item xs={12}>
-                              {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList.filter((item) => {
-                                if (this.state.filterWordEvent === '') return true;
-                                if (item.Tag.includes(this.state.filterWordEvent)) return true;
-                                if (item.description.includes(this.state.filterWordEvent)) return true;
-                                if (item.number.toString().includes(this.state.filterWordEvent)) return true;
-                                if (JSON.stringify(item.payload).includes(this.state.filterWordEvent)) return true;
-                                return false;
-                              }))}
-                            </Grid>
-                          </Grid>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </ExpansionPanelDetails>
-        </ExpansionPanel>
-      </>
+                                <Grid item xs={12}>
+                                  {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList.filter((item) => {
+                                    if (this.state.filterWordEvent === '') return true;
+                                    if (item.Tag.includes(this.state.filterWordEvent)) return true;
+                                    if (item.description.includes(this.state.filterWordEvent)) return true;
+                                    if (item.number.toString().includes(this.state.filterWordEvent)) return true;
+                                    if (JSON.stringify(item.payload).includes(this.state.filterWordEvent)) return true;
+                                    return false;
+                                  }))}
+                                </Grid>
+                              </Grid>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </ExpansionPanelDetails>
+          </ExpansionPanel>
+        </>
     );
   }
 
@@ -250,33 +250,33 @@ class ExpansionTable extends React.Component {
     // TODO: This was a bit hard to get back into, maybe it can be simplified
     // Filter assetList to be displayed
     const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
-      .filter((key) => {
-        if (this.state.filterWord === '') {
-          return true;
-        }
-        for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
-          if (items === 'Manufacturer') {
-            try {
-              if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
+        .filter((key) => {
+          if (this.state.filterWord === '') {
+            return true;
+          }
+          for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
+            if (items === 'Manufacturer') {
+              try {
+                if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
+                  return true;
+                }
+              } catch {
                 return true;
               }
-            } catch {
-              return true;
+            }
+            if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') { // No try-catch like above necessary, because we already check for string type
+              if (this.props.assetLookup[key].resources.mam[items].includes(this.state.filterWord)) {
+                return true;
+              }
             }
           }
-          if (typeof this.props.assetLookup[key].resources.mam[items] === 'string') { // No try-catch like above necessary, because we already check for string type
-            if (this.props.assetLookup[key].resources.mam[items].includes(this.state.filterWord)) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }) // Filter only keeps the oi4Ids of the assets passing through it
-      .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
-        obj[key] = this.props.assetLookup[key];
-        return obj;
-      }, {});
-      return filteredAssets;
+          return false;
+        }) // Filter only keeps the oi4Ids of the assets passing through it
+        .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
+          obj[key] = this.props.assetLookup[key];
+          return obj;
+        }, {});
+    return filteredAssets;
   }
 
   /**
@@ -378,51 +378,51 @@ class ExpansionTable extends React.Component {
     if (Array.isArray(eventArray)) {
       if (eventArray.length !== 0) {
         return (
-          <MaterialTable
-            columns={[
-              { title: "Level", field: "level", width: '8%', cellStyle: { wordBreak: 'break-all' } },
-              { title: "Number", field: "number", width: '8%', cellStyle: { wordBreak: 'break-all' } },
-              { title: "Category", field: "category", width: '13%', cellStyle: { wordBreak: 'break-all' } },
-              { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
-              { title: 'Details', field: 'details', cellStyle: { wordBreak: 'break-all' } }
-            ]}
-            style={{ minWidth: '100%' }}
-            data={newArray}
-            title={<span>{`Last ${eventArray.length} Events:`}
-              <span style={{ marginRight: '1%' }}>
+            <MaterialTable
+                columns={[
+                  { title: "Level", field: "level", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+                  { title: "Number", field: "number", width: '8%', cellStyle: { wordBreak: 'break-all' } },
+                  { title: "Category", field: "category", width: '13%', cellStyle: { wordBreak: 'break-all' } },
+                  { title: "Description", field: "description", width: '0px', cellStyle: { wordBreak: 'break-all' } },
+                  { title: 'Details', field: 'details', cellStyle: { wordBreak: 'break-all' } }
+                ]}
+                style={{ minWidth: '100%' }}
+                data={newArray}
+                title={<span>{`Last ${eventArray.length} Events:`}
+                  <span style={{ marginRight: '1%' }}>
                 <Tooltip title="Copy to clipboard">
                   <IconButton
-                    size='small'
-                    color='default'
-                    onClick={() => {
-                      navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                        this.setState({ copySnackOpen: true });
-                      });
-                    }}
+                      size='small'
+                      color='default'
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
+                          this.setState({ copySnackOpen: true });
+                        });
+                      }}
                   >
                     <FileCopy />
                   </IconButton>
                 </Tooltip>
                 <Snackbar
-                  open={this.state.copySnackOpen}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                  }}
-                  onClose={() => { this.setState({ copySnackOpen: false }) }}
-                  autoHideDuration={4000}
-                  message='Saved Local Events to clipboard'
-                  action={
-                    <>
-                      <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                        <Close fontSize='small' />
-                      </IconButton>
-                    </>
-                  }
+                    open={this.state.copySnackOpen}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'center',
+                    }}
+                    onClose={() => { this.setState({ copySnackOpen: false }) }}
+                    autoHideDuration={4000}
+                    message='Saved Local Events to clipboard'
+                    action={
+                      <>
+                        <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
+                          <Close fontSize='small' />
+                        </IconButton>
+                      </>
+                    }
                 />
               </span>
             </span>}
-          />);
+            />);
       } else {
         return <h3>No items in audit trail...</h3>;
       }

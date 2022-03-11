@@ -1,4 +1,4 @@
-FROM node:10-alpine
+FROM node:17-alpine
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
@@ -12,7 +12,7 @@ ENV UI_SRC_PATH=/usr/oi4-local-ui/build
 # -------NOW LOCALUI
 WORKDIR /usr/oi4-local-ui
 # --- Install serve & http-server to host local build
-RUN npm install http-server
+RUN npm install http-server@14.1.0
 COPY ./packages/oi4-local-ui/package.json ./
 COPY ./packages/oi4-local-ui/build ./build/
 
@@ -22,11 +22,12 @@ COPY packages/oi4-registry-service/package.json ./
 # Temporarily copy over node_models when building the container
 # This is due to currently not accounting for @oi4 scoped repos
 # If this is fixed, the line npm install --production can be used again
-COPY ./OI4-Service/node_modules ./node_modules
-#RUN npm install --production
+COPY ./node_modules/@oi4 ./node_modules/@oi4
+RUN npm install --production
+COPY ./node_modules/@oi4 ./node_modules/@oi4
 
 # COPY Source files
-COPY packages/oi4-registry-service/out ./
+COPY packages/oi4-registry-service/dist ./src
 
 # COPY logs directory
 RUN mkdir -p logs

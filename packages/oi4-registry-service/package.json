@@ -1,51 +1,68 @@
 {
-  "name": "oi4-registry-service",
-  "version": "0.12.2",
+  "name": "@oi4/oi4-registry-service",
+  "version": "0.12.3",
   "description": "Acts as the application in a running OI4 container",
-  "main": "index.js",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "BSD-3-Clause",
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:OI4/oi4-registry.git"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": "tsc",
-    "build": "tsc",
-    "start": "node out/src/app.js"
-  },
+  "private": false,
   "keywords": [
     "oi4",
     "open",
     "industry",
     "industry4.0"
   ],
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:OI4/oi4-registry.git"
+  },
   "dependencies": {
-    "@types/ws": "^8.2.0",
-    "ajv": "^6.12.6",
-    "async-mqtt": "^2.5.0",
+    "@types/ws": "^8.5.2",
+    "ajv": "^8.10.0",
+    "async-mqtt": "^2.6.2",
+    "dotenv": "^16.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "glossy": "^0.1.7",
     "sequential-task-queue": "^1.2.1",
-    "uuid": "^3.4.0",
-    "winston": "^3.3.3",
-    "winston-syslog": "^2.4.4"
+    "uuid": "^8.3.2",
+    "winston": "^3.6.0",
+    "winston-syslog": "^2.5.0"
   },
+
   "devDependencies": {
-    "@types/cors": "^2.8.6",
-    "@types/dotenv": "^6.1.1",
-    "@types/express": "^4.17.6",
-    "@types/node": "^12.12.37",
-    "@types/uuid": "^3.4.9",
+    "@oi4/json-schemas": "^0.12.0",
+    "@oi4/oi4-oec-service-conformity-validator": "^0.12.3",
+    "@oi4/oi4-oec-service-logger": "^0.12.3",
+    "@oi4/oi4-oec-service-model": "^0.12.3",
+    "@oi4/oi4-oec-service-node": "0.12.3",
+    "@oi4/oi4-oec-service-opcua-model": "^0.12.3",
+    "@types/cors": "^2.8.12",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.13",
+    "@types/node": "^15.12.2",
     "@types/winston": "^2.4.4",
-    "@types/winston-syslog": "^2.0.3",
+    "@types/winston-syslog": "^2.4.0",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "@types/lodash": "^4.14.179",
+    "@types/uuid": "^8.3.2",
+    "lodash": "^4.17.21",
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
-    "typescript": "^3.8.3",
-    "typescript-tslint-plugin": "^0.5.5"
+    "typescript": "^4.6.2",
+    "typescript-tslint-plugin": "^1.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "clean": "rm -rf ./dist && rm -rf tsconfig.tsbuildinfo",
+    "build": "yarn run clean && tsc -b tsconfig.json",
+    "start": "node dist/app.js"
   }
 }

@@ -3,11 +3,13 @@ import {Logger} from '@oi4/oi4-oec-service-logger';
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IClientOptions} from 'async-mqtt';
-import pjson from '../package.json';
+// @ts-ignore
+import pJson from '../package.json';
 import dotenv from 'dotenv';
 import path from 'path';
 // -------- Registry Application
 import {Registry} from './Application/Registry';
+import {MqttSettings} from "@oi4/oi4-oec-service-node/src/Proxy/Messagebus/MqttSettings";
 
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
 function checkForValidEnvironment() {
@@ -40,9 +42,17 @@ if (checkForValidEnvironment()) {
 }
 checkForDefaultEnvironment();
 
+const mqttSettings: MqttSettings = {
+    host: process.env.OI4_EDGE_MQTT_BROKER_ADDRESS as string,
+    port: parseInt(process.env.OI4_EDGE_MQTT_SECURE_PORT as string, 10),
+    clientId: `${process.env.OI4_EDGE_APPLICATION_INSTANCE_NAME as string}_OECRegistry`,
+    useUnsecureBroker: process.env.USE_UNSECURE_BROKER as string === 'true',
+    username: process.env.OI4_EDGE_MQTT_USERNAME as string,
+    password: process.env.OI4_EDGE_MQTT_PASSWORD as string,
+};
 
 const contState = new ContainerState();
-const busProxy = new OI4MessageBusProxy(contState);
+const busProxy = new OI4MessageBusProxy(contState, mqttSettings);
 const webProxy = new OI4WebProxy(contState);
 const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESyslogEventFilter.debug;
@@ -85,7 +95,7 @@ webClient.get('/containerInfo', (contInfoReq, contInfoResp) => {
         dependencies: ["mqtt-broker"],
         vendor: "Hilscher Gesellschaft f\u00fcr Systemautomation mbH",
         licensesCockpit: ["HILSCHER netIOT Source Code LICENSE AGREEMENT"],
-        licensesOECRegistryCore: [pjson.license],
+        licensesOECRegistryCore: [pJson.license],
         disclaimer: "see https://www.netiot.com/fileadmin/user_upload/netIOT/en/pdf/Hilscher_Source_Code_License.pdf"
     }));
 });

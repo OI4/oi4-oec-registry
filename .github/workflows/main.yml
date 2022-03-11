@@ -41,10 +41,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           git submodule update OI4-Service/src/Application/ConformityValidator
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.1.2
+        uses: actions/setup-node@v3.0.0
         with:
           # Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.
-          node-version: 12.x
+          node-version: 16.x
           # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN
           registry-url: https://registry.npmjs.org/
       - name: Install packages for all components

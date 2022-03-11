@@ -8,6 +8,17 @@ and their health state. It can be used to do a basic check on the stats of the a
 
 ![firefox_glIWnXYIXJ](https://user-images.githubusercontent.com/55870966/88534811-24dd7e00-d009-11ea-8699-b6267e277cb8.png)
 
+## Getting started
+
+tl;dr
+```
+- Set environment variable for GitHub package repo (PAT) with, e.g. export PACKAGES_AUTH_TOKEN=123
+- yarn install
+- yarn build
+- (one time) yarn run docker:prepare
+- yarn run docker:build:local
+```
+
 ## Wiki
 Most of the previous entries of this README were moved to the Wiki portion of the Repository ([Click](https://github.com/OI4/oi4-registry/wiki))
 

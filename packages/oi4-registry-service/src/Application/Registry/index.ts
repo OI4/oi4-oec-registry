@@ -1,7 +1,6 @@
 import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 // DSCIds
 import dataSetClassIds = require('../../Config/Constants/dataSetClassIds.json'); /*tslint:disable-line*/
-import EAuditLevel = ESyslogEventFilter;
 import {EventEmitter} from 'events';
 import {SequentialTaskQueue} from 'sequential-task-queue';
 import {
@@ -418,7 +417,7 @@ export class Registry extends EventEmitter {
                     // Safety-checks and overwrite of values
                     switch (configItems) {
                         case 'auditLevel': {
-                            if (Object.values(EAuditLevel).includes(configObjects['logging']['auditLevel'].value as EAuditLevel)) { // Test if auditLevel is really part of the enum
+                            if (Object.values(ESyslogEventFilter).includes(configObjects['logging']['auditLevel'].value as ESyslogEventFilter)) { // Test if auditLevel is really part of the enum
                                 tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
                             } else {
                                 this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
@@ -476,7 +475,7 @@ export class Registry extends EventEmitter {
             this.containerState.config = tempConfig;
             this.logger.log('Updated config');
         } else {
-            this.logger.log('One or more config items failed the safety check', EAuditLevel.warning);
+            this.logger.log('One or more config items failed the safety check', ESyslogEventFilter.warning);
             statusToPublish = EOPCUAStatusCode.Bad;
         }
         let payload: IOPCUAPayload[] = [];

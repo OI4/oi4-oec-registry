@@ -27,6 +27,11 @@ term_handler() {
 echo "Setup SIGTERM trap"
 trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
+# Prepare settings for deploy script
+if [[ -z "${SERVICE_ENDPOINT_PORT}" ]]; then
+  export SERVICE_ENDPOINT_PORT=5799
+fi
+
 # Run deploy script
 echo "Run deploy script"
 chmod +x "/usr/oi4-registry-service/scripts/deploy-config-ui.sh"

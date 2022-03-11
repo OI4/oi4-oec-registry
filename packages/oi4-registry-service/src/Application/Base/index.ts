@@ -2,7 +2,7 @@ import {OI4MessageBusProxy} from '@oi4/oi4-oec-service-node';
 import { IOPCUANetworkMessage, IOPCUAMetaData } from '@oi4/oi4-oec-service-opcua-model';
 import { OPCUABuilder } from '@oi4/oi4-oec-service-opcua-model';
 
-import uuid from 'uuid/v4'; /*tslint:disable-line*/
+import { v4 as uuid } from 'uuid'; /*tslint:disable-line*/
 import { ESyslogEventFilter } from '@oi4/oi4-oec-service-model';
 import { EOPCUABuiltInType, EOPCUAValueRank } from '@oi4/oi4-oec-service-opcua-model';
 
