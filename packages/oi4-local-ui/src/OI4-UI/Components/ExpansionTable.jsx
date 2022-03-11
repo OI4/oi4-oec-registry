@@ -254,7 +254,7 @@ class ExpansionTable extends React.Component {
           if (this.state.filterWord === '') {
             return true;
           }
-          for (const items of Object.keys(this.props.assetLookup[key].resources.mam)) {
+          Object.keys(this.props.assetLookup[key].resources.mam).forEach(items => {
             if (items === 'Manufacturer') {
               try {
                 if (this.props.assetLookup[key].resources.mam[items].text.includes(this.state.filterWord)) {
@@ -269,7 +269,7 @@ class ExpansionTable extends React.Component {
                 return true;
               }
             }
-          }
+          });
           return false;
         }) // Filter only keeps the oi4Ids of the assets passing through it
         .reduce((obj, key) => { // Reduce creates an array with actual assets from the oi4Ids
@@ -366,7 +366,7 @@ class ExpansionTable extends React.Component {
    */
   displayLocalEvents(eventArray) {
     const newArray = [];
-    for (const items of eventArray) {
+    eventArray.forEach(items => {
       newArray.push({
         level: items.level,
         number: items.number,
@@ -374,7 +374,7 @@ class ExpansionTable extends React.Component {
         category: items.category,
         details: JSON.stringify(items.details),
       });
-    }
+    });
     if (Array.isArray(eventArray)) {
       if (eventArray.length !== 0) {
         return (

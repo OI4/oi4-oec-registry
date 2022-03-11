@@ -262,9 +262,7 @@ class OI4Base extends React.Component {
     }
 
     componentWillUnmount() {
-        for (const intervals of this.activeIntervals) {
-            clearInterval(intervals);
-        }
+        this.activeIntervals.forEach(element => clearInterval(element));
     }
 
     handleFilterChange(ev) {
@@ -451,7 +449,7 @@ class OI4Base extends React.Component {
      */
     displayGlobalEvents(eventArray) {
         const newArray = [];
-        for (const items of eventArray) {
+        eventArray.forEach(items => {
             newArray.push({
                 level: items.level,
                 number: items.number,
@@ -459,7 +457,7 @@ class OI4Base extends React.Component {
                 category: items.category,
                 details: JSON.stringify(items.details),
             });
-        }
+        });
         if (Array.isArray(eventArray)) {
             // return <>
             //   <Table>
@@ -643,14 +641,14 @@ class OI4Base extends React.Component {
                 const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
                 const listOfDevices = JSON.parse(JSON.stringify(this.state.listOfDevices));
                 let wasUpdated = false;
-                for (const oi4Id of Object.keys(jsonData)) {
+                Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
                     jsonData[oi4Id].eventList = [];
-                    for (const audits of this.reverse(this.state.globalEventTrail)) {
+                    this.reverse(this.state.globalEventTrail).forEach(audits => {
                         if (audits.Tag === oi4Id) {
                             jsonData[oi4Id].eventList.push(audits);
                         }
-                    }
+                    });
                     jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
 
                     // Update conformity
@@ -663,7 +661,7 @@ class OI4Base extends React.Component {
                         listOfDevices.push(oi4Id);
                         wasUpdated = true;
                     }
-                }
+                });
                 if (wasUpdated) {
                     this.setState({ listOfDevices: listOfDevices }); // FIXME: Potentially dangerous
                 }
@@ -684,21 +682,21 @@ class OI4Base extends React.Component {
             .then(data => {
                 const jsonData = JSON.parse(data);
                 const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
-                for (const oi4Id of Object.keys(jsonData)) {
+                Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
                     jsonData[oi4Id].eventList = [];
-                    for (const audits of this.reverse(this.state.globalEventTrail)) {
+                    this.reverse(this.state.globalEventTrail).forEach(audits => {
                         if (audits.tag === oi4Id) {
                             jsonData[oi4Id].eventList.push(audits);
                         }
-                    }
+                    });
                     jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
 
                     if (oi4Id in confLookupLoc) {
                         delete confLookupLoc[oi4Id];
                     }
                     confLookupLoc[oi4Id] = jsonData[oi4Id].conformityObject;
-                }
+                });
                 this.setState({
                     applicationLookup: jsonData,
                     listOfApps: Object.keys(jsonData),
@@ -716,7 +714,7 @@ class OI4Base extends React.Component {
      * @param {string} resource - the requested resource
      */
     updateRegistryResource(resource) {
-        for (const oi4Id of Object.keys(this.state.applicationLookup)) {
+        Object.keys(this.state.applicationLookup).forEach(oi4Id => {
             // Check, if we can even get the resource (through conformity lookup)
             if (typeof this.state.conformityLookup[oi4Id] === 'object' && this.state.conformityLookup[oi4Id] !== null) {
                 if (resource === 'eventList' || resource === 'lastMessage') {
@@ -762,7 +760,7 @@ class OI4Base extends React.Component {
                         });
                 }
             }
-        }
+        });
     }
 
     // DELETION //
