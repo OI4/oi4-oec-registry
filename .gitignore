@@ -1,17 +1,10 @@
-# Root folder
-node_modules
+**/node_modules
+**/build
+**/dist
 .idea
 out/**/*
 .DS_Store
-.env
-
-# OI4-Service folder
-oi4-registry-service/out/**/*
-oi4-registry-service/.npmrc
-
-# OI4-Local-UI folder
-oi4-registry-service/dist/**/*
-oi4-registry-service/build/**/*
+**/.env
 
 # VS Code
 .vscode
