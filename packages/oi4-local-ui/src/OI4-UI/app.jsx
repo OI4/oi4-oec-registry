@@ -644,7 +644,8 @@ class OI4Base extends React.Component {
                 Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
                     jsonData[oi4Id].eventList = [];
-                    this.reverse(this.state.globalEventTrail).forEach(audits => {
+                    // since this.state.globalEventTrail is only an array-like object, we need to iterate over its items by calling forEach indirectly using call
+                    Array.prototype.forEach.call(this.reverse(this.state.globalEventTrail), audits => {
                         if (audits.Tag === oi4Id) {
                             jsonData[oi4Id].eventList.push(audits);
                         }
@@ -685,13 +686,13 @@ class OI4Base extends React.Component {
                 Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
                     jsonData[oi4Id].eventList = [];
-                    this.reverse(this.state.globalEventTrail).forEach(audits => {
+                    // since this.state.globalEventTrail is only an array-like object, we need to iterate over its items by calling forEach indirectly using call
+                    Array.prototype.forEach.call(this.reverse(this.state.globalEventTrail), audits => {
                         if (audits.tag === oi4Id) {
                             jsonData[oi4Id].eventList.push(audits);
                         }
                     });
                     jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
-
                     if (oi4Id in confLookupLoc) {
                         delete confLookupLoc[oi4Id];
                     }
