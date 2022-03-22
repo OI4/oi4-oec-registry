@@ -11,6 +11,11 @@ import path from 'path';
 import {Registry} from './Application/Registry';
 import {MqttSettings} from "@oi4/oi4-oec-service-node/src/Proxy/Messagebus/MqttSettings";
 
+import express from 'express';
+
+import swaggerUi from "swagger-ui-express";
+// import swaggerDocument from '../public/api/openapi.json';
+
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
 function checkForValidEnvironment() {
     return (!process.env.OI4_EDGE_MQTT_BROKER_ADDRESS ||
@@ -53,7 +58,9 @@ const mqttSettings: MqttSettings = {
 
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState, mqttSettings);
-const webProxy = new OI4WebProxy(contState);
+const port = 5799;
+const webProxy = new OI4WebProxy(contState, port);
+
 const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESyslogEventFilter.debug;
 logger.log(`Testprint for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
@@ -82,6 +89,17 @@ busProxy.on('deleteMam', async (deleteId) => {
 
 // --- WEBCLIENT: Take exposed webClient from webProxy and add custom routes ----
 const webClient = webProxy.webClient;
+
+webClient.use(express.static('public'));
+const options = {
+    swaggerOptions: {
+        url: "/api/openapi.json",
+    },
+    // url: `https://127.0.0.1:${port}/api/openapi.json`,
+    customCss: '.swagger-ui .topbar { display: none }'
+};
+
+webClient.use('/api', swaggerUi.serveFiles(null, options), swaggerUi.setup(null, options));
 
 /**
  * This endpoint is used to retrieve specific container information for the cockpit plugin.

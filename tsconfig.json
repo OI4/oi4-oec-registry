@@ -69,7 +69,8 @@
     "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
     "useUnknownInCatchVariables": false,
     /* With the flag useUnknownInCatchVariables enabled, then you do not need the additional syntax (: unknown) nor a linter rule to try enforce this behavior. */
-    "noLib": false
+    "noLib": false,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*"

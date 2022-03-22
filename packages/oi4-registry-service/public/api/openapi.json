@@ -1,0 +1,276 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Open Industry 4.0 Alliance - Open Edge Computing Registry",
+    "version": "0.12.3",
+    "license": {
+      "name": "BSD-3-Clause",
+      "url": "https://opensource.org/licenses/BSD-3-Clause"
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containerInfo": {
+      "get": {
+        "description": "Returns information related to docker container",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/packageVersion": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/packageLicense": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brokerState": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rtLicense": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mam": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/:tagName": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata/:tagName": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}
