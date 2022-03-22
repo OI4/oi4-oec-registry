@@ -18,7 +18,6 @@ COPY ./packages/oi4-local-ui/build ./build/
 
 # -------OI4-SERVICE
 WORKDIR /usr/oi4-registry-service
-COPY packages/oi4-registry-service/public ./public/
 COPY packages/oi4-registry-service/package.json ./
 # Temporarily copy over node_models when building the container
 # This is due to currently not accounting for @oi4 scoped repos
