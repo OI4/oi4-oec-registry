@@ -57,7 +57,7 @@ const mqttSettings: MqttSettings = {
 
 const contState = new ContainerState();
 const busProxy = new OI4MessageBusProxy(contState, mqttSettings);
-const port = 5799;
+const port = parseInt((process.env.OI4_EDGE_APPLICATION_PORT as string || '5799'), 10);
 const webProxy = new OI4WebProxy(contState, port);
 
 const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
@@ -98,23 +98,6 @@ const options = {
 };
 
 webClient.use('/api', swaggerUi.serveFiles(null, options), swaggerUi.setup(null, options));
-
-/**
- * This endpoint is used to retrieve specific container information for the cockpit plugin.
- * TODO: Move this to a standalone app executed in cockpit context, this has no place in the registry itself
- */
-webClient.get('/containerInfo', (contInfoReq, contInfoResp) => {
-    contInfoResp.send(JSON.stringify({
-        name: contState.mam.Model.text,
-        version: contState.mam.SoftwareRevision,
-        description: contState.mam.Description.text,
-        dependencies: ["mqtt-broker"],
-        vendor: "Hilscher Gesellschaft f\u00fcr Systemautomation mbH",
-        licensesCockpit: ["HILSCHER netIOT Source Code LICENSE AGREEMENT"],
-        licensesOECRegistryCore: [pJson.license],
-        disclaimer: "see https://www.netiot.com/fileadmin/user_upload/netIOT/en/pdf/Hilscher_Source_Code_License.pdf"
-    }));
-});
 
 function protocolVersionToString(version: number) {
     if (version === 3) return '3';

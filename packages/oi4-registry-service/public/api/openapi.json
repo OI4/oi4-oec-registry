@@ -11,28 +11,36 @@
   "paths": {
     "/": {
       "get": {
-        "description": "Lorem ipsum",
+        "summary": "OI4 Identifier",
+        "description": "Get the OI4 Identifier of the OI4 Registry",
+        "tags": ["Container"],
         "responses": {
           "200": {
-            "description": "Information of the docker container",
+            "description": "OI4 Identifier",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
         }
       }
     },
-    "/containerInfo": {
+    "/packageVersion": {
       "get": {
-        "description": "Returns information related to docker container",
+        "summary": "OI4 Registry version",
+        "description": "Actual version of the OI4 Registry",
+        "tags": ["Container"],
         "responses": {
           "200": {
-            "description": "Information of the docker container",
+            "description": "Version",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -42,6 +50,9 @@
     "/config": {
       "get": {
         "description": "Lorem ipsum",
+        "tags": [
+          "Configuration"
+        ],
         "responses": {
           "200": {
             "description": "Information of the docker container",
@@ -55,21 +66,9 @@
       },
       "put": {
         "description": "Lorem ipsum",
-        "responses": {
-          "200": {
-            "description": "Information of the docker container",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/packageVersion": {
-      "get": {
-        "description": "Lorem ipsum",
+        "tags": [
+          "Configuration"
+        ],
         "responses": {
           "200": {
             "description": "Information of the docker container",
@@ -270,7 +269,223 @@
           }
         }
       }
+    },
+    "/mqttSettings": {
+      "get": {
+        "summary": "Get MQTT settings",
+        "description": "Retrieve the MQTT connection settings used by the OI4 registry",
+        "responses": {
+          "200": {
+            "description": "MQTT settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/mqttSettingsResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/application": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/device": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/assets": {
+      "delete": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/assets/:oi4Id": {
+      "delete": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/logs": {
+      "delete": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/config": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/${resources}/:oi4Id": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registry/event/:noOfElements": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformity/:originator/:oi4Id": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fullConformity/:originator/:oi4Id": {
+      "get": {
+        "description": "Lorem ipsum",
+        "responses": {
+          "200": {
+            "description": "Information of the docker container",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
-  "components": {}
+  "components": {
+    "schemas": {
+      "mqttSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "brokerUri": {
+            "type": "string"
+          },
+          "mqttVersion": {
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "keepAlive": {
+            "type": "string"
+          },
+          "connectionTimeout": {
+            "type": "string"
+          },
+          "cleanSession": {
+            "type": "boolean"
+          },
+          "validateCertificate": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
 }
