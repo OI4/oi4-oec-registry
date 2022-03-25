@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@types/ws": "^8.5.2",
-    "ajv": "^8.10.0",
+    "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
