@@ -13,7 +13,7 @@ import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 /**
  * This interface is proprietary and only used between registry backend and frontend.
  */
-export interface IDeviceMessage {
+export interface IAsset {
     resources: IResourceObject;
     fullDevicePath: string;
     oi4Id: string;
@@ -23,10 +23,10 @@ export interface IDeviceMessage {
     registeredAt: string;
     conformityObject: IConformity;
     available: boolean;
-    deviceType: EDeviceType;
+    assetType: EAssetType;
 }
 
-export enum EDeviceType {
+export enum EAssetType {
     device = 0,
     application = 1,
 }
@@ -43,28 +43,20 @@ export interface IResourceObject {
     licenseText?: IContainerLicenseText;
 }
 
-export interface IDeviceLookup {
-    [key: string]: IDeviceMessage;
+export interface IAssetLookup {
+    [key: string]: IAsset;
 }
 
-interface IDeviceRTLicense {
+interface IAssetRTLicense {
     expiryDate: string;
     licensee: string;
 }
 
-interface IDeviceData {
+interface IAssetData {
     health: string;
-    config: IDeviceConfig;
+    config: IAssetConfig;
 }
 
-interface IDeviceConfig {
+interface IAssetConfig {
     updateInterval: number;
-}
-
-export interface IRegistryConfig {
-    developmentMode: boolean;
-    logFileSize: number;
-    auditLevel: string;
-    showRegistry: boolean;
-    logToFile: string; // TODO: ENUM with either enabled, disabled or endpoint
 }

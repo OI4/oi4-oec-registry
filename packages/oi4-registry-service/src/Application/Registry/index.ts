@@ -27,12 +27,12 @@ import {
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {EDeviceType, IDeviceLookup, IDeviceMessage} from '../Models/IRegistry';
+import {EAssetType, IAssetLookup, IAsset} from '../Models/IRegistry';
 
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
 export class Registry extends EventEmitter {
-    private assetLookup: IDeviceLookup;
+    private assetLookup: IAssetLookup;
     private registryClient: mqtt.AsyncClient;
     private globalEventList: IEventObject[];
     private builder: OPCUABuilder;
@@ -497,7 +497,7 @@ export class Registry extends EventEmitter {
     async addToRegistry(mqttObj: any) {
         const topicArr = mqttObj.topic.split('/');
         const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-        if (this.getApplication(assetId) || this.getDevice(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+        if (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
             if (this.assetLookup[assetId].available) {
                 this.logger.log(`Device ${assetId} was available before, no need to re-add`, ESyslogEventFilter.warning);
@@ -528,7 +528,7 @@ export class Registry extends EventEmitter {
         const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
         const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
 
-        if (this.getApplication(oi4IdAsset) || this.getDevice(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+        if (this.getAsset(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
             if (this.assetLookup[oi4IdAsset].available) {
                 this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, ESyslogEventFilter.warning);
@@ -541,7 +541,7 @@ export class Registry extends EventEmitter {
             this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
             return;
         }
-        const fullDevice: IDeviceMessage = {
+        const fullDevice: IAsset = {
             oi4IdOriginator,
             oi4Id: oi4IdAsset,
             eventList: [],
@@ -553,15 +553,15 @@ export class Registry extends EventEmitter {
             fullDevicePath: `oi4/${topicArr[1]}/${oi4IdOriginator}`,
             conformityObject: conf,
             available: true,
-            deviceType: EDeviceType.application,
+            assetType: EAssetType.application,
         };
         console.log(device);
         if (device.HardwareRevision === '') {
             this.logger.log('___Adding Application___', ESyslogEventFilter.debug);
-            fullDevice.deviceType = EDeviceType.application;
+            fullDevice.assetType = EAssetType.application;
         } else {
             this.logger.log('___Adding Device___', ESyslogEventFilter.debug);
-            fullDevice.deviceType = EDeviceType.device;
+            fullDevice.assetType = EAssetType.device;
         }
 
         this.assetLookup[oi4IdAsset] = fullDevice;
@@ -614,9 +614,9 @@ export class Registry extends EventEmitter {
      * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
      */
     async sendOutMam(filter: string, page: number, perPage: number) {
-        const apps = this.applications as IDeviceLookup;
-        const devices = this.devices as IDeviceLookup;
-        const assets: IDeviceLookup = Object.assign({}, apps, devices);
+        const apps = this.applications as IAssetLookup;
+        const devices = this.devices as IAssetLookup;
+        const assets: IAssetLookup = Object.assign({}, apps, devices);
         if (filter === '') {
             this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
             let index: number = 0;
@@ -681,9 +681,9 @@ export class Registry extends EventEmitter {
      * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
      */
     async sendOutHealth(filter: string, page: number, perPage: number) {
-        const apps = this.applications as IDeviceLookup;
-        const devices = this.devices as IDeviceLookup;
-        const assets: IDeviceLookup = Object.assign({}, apps, devices);
+        const apps = this.applications as IAssetLookup;
+        const devices = this.devices as IAssetLookup;
+        const assets: IAssetLookup = Object.assign({}, apps, devices);
         if (filter === '') {
             this.logger.log(`Sending all known Healths...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
             let index: number = 0;
@@ -873,7 +873,7 @@ export class Registry extends EventEmitter {
     getResourceFromLookup(oi4Id: string, resource: string) {
         // TODO: Resource intensive, we should push to the error object only if we actually have an error
         // FIXME: Better yet, don't separate between device and application lookup
-        const oi4ToObjectList: IDeviceMessage[] = [];
+        const oi4ToObjectList: IAsset[] = [];
         if (oi4Id in this.assetLookup) {
             oi4ToObjectList.push(this.assetLookup[oi4Id]);
             if (resource === 'lastMessage' || resource === 'eventList') {
@@ -970,7 +970,7 @@ export class Registry extends EventEmitter {
     get applications() {
         return Object.keys(this.assetLookup)
             .filter((key) => {
-                if (this.assetLookup[key].deviceType === EDeviceType.application) return true;
+                if (this.assetLookup[key].assetType === EAssetType.application) return true;
                 return false;
             })
             .reduce(
@@ -988,7 +988,7 @@ export class Registry extends EventEmitter {
     get devices() {
         return Object.keys(this.assetLookup)
             .filter((key) => {
-                if (this.assetLookup[key].deviceType === EDeviceType.device) return true;
+                if (this.assetLookup[key].assetType === EAssetType.device) return true;
                 return false;
             })
             .reduce(
@@ -1000,18 +1000,19 @@ export class Registry extends EventEmitter {
     }
 
     /**
-     * Getter for globalEventList
-     * @returns {IEventObject[]} The global event list of the Registry
+     * Gets the global event list. 
+     * @returns The global event list.
      */
-    get eventTrail() {
+    get eventTrail() : IEventObject[] {
         return this.globalEventList;
     }
 
     /**
-     * Retrieve the global event trail up to a specified amount of elements
+     * Retrieve the global event list up to a specified amount of elements.
      * @param noOfElements - The amount of elements that is to be retrieved
+     * @returns The global event list up to the specified amout of elements 
      */
-    public getEventTrail(noOfElements: number) {
+    public getEventTrail(noOfElements: number) : IEventObject[] {
         if (this.globalEventList.length <= noOfElements) {
             return this.globalEventList;
         } // else
@@ -1019,10 +1020,11 @@ export class Registry extends EventEmitter {
     }
 
     /**
-     * Retrieves a single application-asset by its oi4Id
+     * Retrieves a single asset by its oi4Id
      * @param oi4Id The oi4Id of the asset that is to be retrieved
+     * @returns The asset
      */
-    getApplication(oi4Id: string) {
+    getAsset(oi4Id: string) : IAsset | undefined {
         if (oi4Id in this.assetLookup) {
             return this.assetLookup[oi4Id];
         }
@@ -1031,17 +1033,7 @@ export class Registry extends EventEmitter {
     /**
      * Retrieves the oi4Id of the registry
      */
-    getOi4Id() {
+    getOi4Id() : string {
         return this.oi4Id;
-    }
-
-    /**
-     * Retrieves a single device-asset by its oi4Id
-     * @param oi4Id The oi4Id of the asset that is to be retrieved
-     */
-    getDevice(oi4Id: string) {
-        if (oi4Id in this.assetLookup) { // TODO: there are no more devices / apps, only assets!!!
-            return this.assetLookup[oi4Id];
-        }
     }
 }
