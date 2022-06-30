@@ -1,8 +1,6 @@
 import {
     IContainerConfig,
     IContainerHealth,
-    IContainerLicense,
-    IContainerLicenseText,
     IContainerProfile,
     IContainerRTLicense,
     IEventObject,
@@ -30,6 +28,30 @@ export enum EAssetType {
     device = 0,
     application = 1,
 }
+
+// TODO cfz use from service-model /scr/model/Resources.ts -->
+
+export interface IComponentObject {
+    component: string;
+    licAuthors: string[];
+    licAddText: string;
+  }
+  
+
+export interface ILicenseObject {
+    licenseId: string;
+    components: IComponentObject[];
+  }
+  
+export interface IContainerLicense {
+    licenses: ILicenseObject[];
+}
+
+export interface IContainerLicenseText {
+    [key: string]: string;
+  }
+ 
+// <-- TODO cfz
 
 export interface IResourceObject {
     [key: string]: any;

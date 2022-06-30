@@ -1,15 +1,16 @@
-import {ContainerState, OI4MessageBusProxy, OI4WebProxy} from '@oi4/oi4-oec-service-node';
+import {OI4ApplicationResources, OI4ApplicationFactory, OI4Application} from '@oi4/oi4-oec-service-node';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IClientOptions} from 'async-mqtt';
+import { RegistryWebClient } from './Application/RestApi/RegistryWebClient';
+
 // @ts-ignore
 import pJson from '../package.json';
 import dotenv from 'dotenv';
 import path from 'path';
 // -------- Registry Application
 import {Registry} from './Application/Registry';
-import {MqttSettings} from "@oi4/oi4-oec-service-node/src/Proxy/Messagebus/MqttSettings";
 
 import express from 'express';
 
@@ -46,19 +47,12 @@ if (checkForValidEnvironment()) {
 }
 checkForDefaultEnvironment();
 
-const mqttSettings: MqttSettings = {
-    host: process.env.OI4_EDGE_MQTT_BROKER_ADDRESS as string,
-    port: parseInt(process.env.OI4_EDGE_MQTT_SECURE_PORT as string, 10),
-    clientId: `${process.env.OI4_EDGE_APPLICATION_INSTANCE_NAME as string}_OECRegistry`,
-    useUnsecureBroker: process.env.USE_UNSECURE_BROKER as string === 'true',
-    username: process.env.OI4_EDGE_MQTT_USERNAME as string,
-    password: process.env.OI4_EDGE_MQTT_PASSWORD as string,
-};
 
-const contState = new ContainerState();
-const busProxy = new OI4MessageBusProxy(contState, mqttSettings);
+const applicationResources = new OI4ApplicationResources();
+const applicationFactory = new OI4ApplicationFactory(applicationResources);
+const busProxy = applicationFactory.createOI4Application();
 const port = parseInt((process.env.OI4_EDGE_APPLICATION_PORT as string || '5799'), 10);
-const webProxy = new OI4WebProxy(contState, port);
+const webProxy = new RegistryWebClient(applicationResources, port);
 
 const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, busProxy.mqttClient, busProxy.oi4Id, busProxy.serviceType);
 logger.level = ESyslogEventFilter.debug;
@@ -73,18 +67,7 @@ logger.log(`Testprint for level ${ESyslogEventFilter.emergency}`, ESyslogEventFi
 logger.level = ESyslogEventFilter.warning;
 
 // @ts-ignore: TODO: not assignable message...fix it
-const registry = new Registry(busProxy.mqttClient, contState);
-
-/**
- * Deletes a Mam from the registry (TODO: this is not specified yet and only used for debug purposes)
- */
-busProxy.on('deleteMam', async (deleteId) => {
-    try {
-        await registry.removeDevice(deleteId);
-    } catch (delErr) {
-        logger.log('App.ts: Del-Error');
-    }
-});
+const registry = new Registry(busProxy.mqttClient, applicationResources);
 
 // --- WEBCLIENT: Take exposed webClient from webProxy and add custom routes ----
 const webClient = webProxy.webClient;
@@ -134,6 +117,7 @@ webClient.get('/registry/device', (deviceReq, deviceResp) => {
     deviceResp.send(JSON.stringify(registry.devices));
 });
 
+// TODO cfz remove function that allows deletion of an asset
 webClient.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
     const oi4Id = deviceReq.params.oi4Id;
     console.log(`Trying to remove asset with Id: ${oi4Id}`);
@@ -146,6 +130,7 @@ webClient.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
     deviceResp.sendStatus(200);
 });
 
+// TODO cfz remove function that allows deletion of all assets
 webClient.delete('/registry/assets', async (deviceReq, deviceResp) => {
     try {
         await registry.clearRegistry();

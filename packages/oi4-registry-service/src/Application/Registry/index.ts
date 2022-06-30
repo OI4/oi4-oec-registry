@@ -12,7 +12,7 @@ import {
     EPublicationListConfig,
     ESubscriptionListConfig,
     ESyslogEventFilter,
-    IContainerState,
+    IOI4ApplicationResources,
     IDataSetClassIds,
     IEventObject,
     ISpecificContainerConfig
@@ -42,7 +42,7 @@ export class Registry extends EventEmitter {
     private queue: SequentialTaskQueue;
     private logToFileEnabled: string; // TODO: Should be a bool, but we use strings as enums...
     private logHappened: boolean;
-    private readonly containerState: IContainerState;
+    private readonly applicationResources: IOI4ApplicationResources;
     private readonly maxAuditTrailElements: number;
     private fileLogger: FileLogger;
 
@@ -56,15 +56,15 @@ export class Registry extends EventEmitter {
     /**
      * The constructor of the Registry
      * @param registryClient The global mqtt client used to avoid multiple client connections inside the container
-     * @param contState The containerState of the OI4-Service holding information about the oi4Id etc.
+     * @param appResources The containerState of the OI4-Service holding information about the oi4Id etc.
      */
-    constructor(registryClient: mqtt.AsyncClient, contState: IContainerState) {
+    constructor(registryClient: mqtt.AsyncClient, appResources: IOI4ApplicationResources) {
         super();
-        this.oi4Id = contState.oi4Id;
-        this.logToFileEnabled = contState.config.logging.logType.value;
+        this.oi4Id = appResources.oi4Id;
+        this.logToFileEnabled = appResources.config.logging.logType.value;
         // Config section
-        contState.on('newConfig', (oldConfig: ISpecificContainerConfig) => {
-            const newConfig = contState.config;
+        appResources.on('newConfig', (oldConfig: ISpecificContainerConfig) => {
+            const newConfig = appResources.config;
             if (newConfig.logging.logType.value === 'enabled') {
                 this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
             }
@@ -81,10 +81,10 @@ export class Registry extends EventEmitter {
         });
         // @ts-ignore: TODO: not assignable message...fix it
         this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
-        this.fileLogger = new FileLogger(parseInt(contState.config.logging.logFileSize.value));
+        this.fileLogger = new FileLogger(parseInt(appResources.config.logging.logFileSize.value));
 
         this.queue = new SequentialTaskQueue();
-        this.containerState = contState;
+        this.applicationResources = appResources;
 
         this.timeoutLookup = {};
         this.secondStageTimeoutLookup = {};
@@ -136,7 +136,7 @@ export class Registry extends EventEmitter {
      * @param topic - The topic that should be subscribed to
      */
     private async ownSubscribe(topic: string) {
-        this.containerState.addSubscription({
+        this.applicationResources.addSubscription({
             topicPath: topic,
             config: ESubscriptionListConfig.NONE_0,
             interval: 0,
@@ -150,7 +150,7 @@ export class Registry extends EventEmitter {
      */
     private async ownUnsubscribe(topic: string) {
         // Remove from subscriptionList
-        this.containerState.removeSubscriptionByTopic(topic);
+        this.applicationResources.removeSubscriptionByTopic(topic);
         return await this.registryClient.unsubscribe(topic);
     }
 
@@ -179,6 +179,7 @@ export class Registry extends EventEmitter {
         }
     }
 
+    // TODO cfz: See also MqttMessageProcessor in oi4-oec-service-node/src/Utilities/Helpers/
     /**
      * The main update callback for incoming registry-related mqtt messages
      * If an incoming message matches a registered asset, the values of that resource are taken from the payload and updated in the registry
@@ -409,7 +410,7 @@ export class Registry extends EventEmitter {
      */
     async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string, correlationId: string) {
         let errorSoFar: boolean = false;
-        const tempConfig = JSON.parse(JSON.stringify(this.containerState.config));
+        const tempConfig = JSON.parse(JSON.stringify(this.applicationResources.config));
         for (const configObjects of configObjectArr) {
             for (const configGroups of Object.keys(configObjects)) {
                 if (configGroups === 'context') continue;
@@ -472,14 +473,14 @@ export class Registry extends EventEmitter {
         }
         let statusToPublish = 0;
         if (!errorSoFar) {
-            this.containerState.config = tempConfig;
+            this.applicationResources.config = tempConfig;
             this.logger.log('Updated config');
         } else {
             this.logger.log('One or more config items failed the safety check', ESyslogEventFilter.warning);
             statusToPublish = EOPCUAStatusCode.Bad;
         }
         let payload: IOPCUAPayload[] = [];
-        const actualPayload: ISpecificContainerConfig = this.containerState['config'];
+        const actualPayload: ISpecificContainerConfig = this.applicationResources['config'];
         payload.push({
             poi: actualPayload.context.name.text.toLowerCase().replace(' ', ''),
             payload: actualPayload,
@@ -591,7 +592,7 @@ export class Registry extends EventEmitter {
             console.log(err);
         }
         // Update own publicationList with new Asset
-        this.containerState.addPublication({
+        this.applicationResources.addPublication({
             resource: 'mam',
             tag: oi4IdAsset,
             oi4Identifier: oi4IdAsset,
@@ -603,7 +604,7 @@ export class Registry extends EventEmitter {
         await this.registryClient.publish(
             `oi4/Registry/${this.oi4Id}/pub/publicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                payload: this.containerState.publicationList,
+                payload: this.applicationResources.publicationList,
                 dswid: CDataSetWriterIdLookup['publicationList']
             }], new Date(), dscids.publicationList)),
         );
@@ -760,12 +761,12 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/profile/${device}`);
             delete this.assetLookup[device];
             // Remove from publicationList
-            this.containerState.removePublicationByTag(device);
+            this.applicationResources.removePublicationByTag(device);
             // Publish the new publicationList according to spec
             this.registryClient.publish(
                 `oi4/Registry/${this.oi4Id}/pub/publicationList`,
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                    payload: this.containerState.publicationList,
+                    payload: this.applicationResources.publicationList,
                     dswid: CDataSetWriterIdLookup['publicationList']
                 }], new Date(), dscids.publicationList)),
             );
@@ -787,13 +788,13 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/config/${assets}`);
             this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/profile/${assets}`);
             // Remove from publicationList
-            this.containerState.removePublicationByTag(assets);
+            this.applicationResources.removePublicationByTag(assets);
         }
         // Publish the new publicationList according to spec
         this.registryClient.publish(
             `oi4/Registry/${this.oi4Id}/pub/publicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                payload: this.containerState.publicationList,
+                payload: this.applicationResources.publicationList,
                 dswid: CDataSetWriterIdLookup['publicationList']
             }], new Date(), dscids.publicationList)),
         );
@@ -912,7 +913,7 @@ export class Registry extends EventEmitter {
      * Attention. This clears all saved lists (global + assets)
      */
     async updateAuditLevel() {
-        if (!Object.values(ESyslogEventFilter).includes(this.containerState.config.logging.auditLevel.value as ESyslogEventFilter)) {
+        if (!Object.values(ESyslogEventFilter).includes(this.applicationResources.config.logging.auditLevel.value as ESyslogEventFilter)) {
             console.log('AuditLevel is not known to Registry');
             return;
         }
@@ -930,12 +931,12 @@ export class Registry extends EventEmitter {
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
             await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
-            if (levels === this.containerState.config.logging.auditLevel.value) {
+            if (levels === this.applicationResources.config.logging.auditLevel.value) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }
         }
 
-        this.logger.level = this.containerState.config.logging.auditLevel.value as ESyslogEventFilter;
+        this.logger.level = this.applicationResources.config.logging.auditLevel.value as ESyslogEventFilter;
     }
 
     /**
@@ -951,8 +952,8 @@ export class Registry extends EventEmitter {
      * @param newConfig the new config object
      */
     async updateConfig(newConfig: ISpecificContainerConfig) {
-        this.containerState.config = newConfig;
-        this.logger.log(`Sanity-Check: New config as json: ${JSON.stringify(this.containerState.config)}`, ESyslogEventFilter.debug);
+        this.applicationResources.config = newConfig;
+        this.logger.log(`Sanity-Check: New config as json: ${JSON.stringify(this.applicationResources.config)}`, ESyslogEventFilter.debug);
     }
 
     /**
@@ -960,7 +961,7 @@ export class Registry extends EventEmitter {
      * @returns The config of the registry
      */
     getConfig(): ISpecificContainerConfig {
-        return this.containerState.config;
+        return this.applicationResources.config;
     }
 
     /**
