@@ -551,7 +551,7 @@ export class Registry extends EventEmitter {
             resources: {
                 mam: device,
             },
-            fullDevicePath: `oi4/${topicArr[1]}/${oi4IdOriginator}`,
+            topicPreamble: `oi4/${topicArr[1]}/${oi4IdOriginator}`,
             conformityObject: conf,
             available: true,
             assetType: EAssetType.application,
@@ -568,12 +568,12 @@ export class Registry extends EventEmitter {
         this.assetLookup[oi4IdAsset] = fullDevice;
 
         // Subscribe to all changes regarding this application
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/health/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/license/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/rtLicense/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/licenseText/#`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/config/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].fullDevicePath}/pub/profile/${oi4IdAsset}`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/health/${oi4IdAsset}`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/license/${oi4IdAsset}`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/rtLicense/${oi4IdAsset}`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/licenseText/#`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/config/${oi4IdAsset}`);
+        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/profile/${oi4IdAsset}`);
         // Try to get them at least once!
         try {
             await this.updateResourceInDevice(oi4IdAsset, 'health');
@@ -752,13 +752,13 @@ export class Registry extends EventEmitter {
      */
     removeDevice(device: string) {
         if (device in this.assetLookup) {
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/event/+/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/health/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/license/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/rtLicense/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/config/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].fullDevicePath}/pub/profile/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/event/+/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/health/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/license/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/rtLicense/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/licenseText/#`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/config/${device}`);
+            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/profile/${device}`);
             delete this.assetLookup[device];
             // Remove from publicationList
             this.applicationResources.removePublicationByTag(device);
@@ -781,12 +781,12 @@ export class Registry extends EventEmitter {
      */
     clearRegistry() {
         for (const assets of Object.keys(this.assetLookup)) { // Unsubscribe topics of every asset
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/health/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/license/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/rtLicense/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/config/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].fullDevicePath}/pub/profile/${assets}`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/health/${assets}`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/license/${assets}`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/rtLicense/${assets}`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/licenseText/#`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/config/${assets}`);
+            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/profile/${assets}`);
             // Remove from publicationList
             this.applicationResources.removePublicationByTag(assets);
         }
@@ -810,7 +810,7 @@ export class Registry extends EventEmitter {
         this.logger.log(`Checking conformity for ${oi4Id}`);
         let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
         if (oi4Id in this.assetLookup) {
-            conformityObject = await this.conformityValidator.checkConformity(this.assetLookup[oi4Id].fullDevicePath, this.assetLookup[oi4Id].oi4Id, resourceList);
+            conformityObject = await this.conformityValidator.checkConformity(this.assetLookup[oi4Id].topicPreamble, this.assetLookup[oi4Id].oi4Id, resourceList);
             this.assetLookup[oi4Id].conformityObject = conformityObject;
         }
         return conformityObject;
@@ -823,8 +823,8 @@ export class Registry extends EventEmitter {
      */
     async updateResourceInDevice(oi4Id: string, resource: string) {
         if (oi4Id in this.assetLookup) {
-            await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
-            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`);
+            await this.registryClient.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
+            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`);
         }
     }
 
@@ -845,9 +845,9 @@ export class Registry extends EventEmitter {
                 this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
                 return;
             }
-            await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
+            await this.registryClient.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
             this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, 'health'), 65000); // Set new timeout, if we don't receive a health back...
-            this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
+            this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
             this.assetLookup[oi4Id].available = false;
         }
     }
@@ -861,8 +861,8 @@ export class Registry extends EventEmitter {
      */
     async getLicenseTextFromDevice(oi4Id: string, resource: string, license: string) {
         if (oi4Id in this.assetLookup) {
-            await this.registryClient.publish(`${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
-            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].fullDevicePath}/get/${resource}/${license}`);
+            await this.registryClient.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${license}`, JSON.stringify(this.builder.buildOPCUANetworkMessage([], new Date, dscids[resource])));
+            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${license}`);
         }
     }
 

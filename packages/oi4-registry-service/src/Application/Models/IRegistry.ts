@@ -13,7 +13,11 @@ import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
  */
 export interface IAsset {
     resources: IResourceObject;
-    fullDevicePath: string;
+
+    /**
+     * The MQTT topic that identifies this asset. Has the format "oi4/<serviceType>/<Oi4Identifier>".
+     */
+    topicPreamble: string;
     oi4Id: string;
     eventList: IEventObject[];
     oi4IdOriginator: string;

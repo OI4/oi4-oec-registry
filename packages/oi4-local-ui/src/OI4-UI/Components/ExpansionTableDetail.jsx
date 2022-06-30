@@ -127,7 +127,7 @@ class ExpansionTableDetail extends React.Component {
           <Grid item xs>
             <h3>Conformity Validation:
               <Tooltip title='Refresh conformity'>
-                <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>
+                <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.topicPreamble, this.props.oi4Id) }}>
                   <Refresh />
                 </IconButton>
               </Tooltip>
