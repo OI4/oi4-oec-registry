@@ -1,9 +1,10 @@
 import {
     IContainerConfig,
-    IContainerHealth,
-    IContainerProfile,
-    IContainerRTLicense,
-    IEventObject,
+    Health,
+    Profile,
+    License,
+    RTLicense,
+    LicenseText
 } from '@oi4/oi4-oec-service-model';
 import {IMasterAssetModel} from '@oi4/oi4-oec-service-opcua-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
@@ -28,45 +29,33 @@ export interface IAsset {
     assetType: EAssetType;
 }
 
+// TODO cfz (should be part of oi4-service) --> 
+export interface IEventObject {
+    number: number;
+    description?: string;
+    category: string;
+    details: any;
+    level?: string; // NOT OI4 Conform and just for us
+    timestamp: string; // NOT OI4 Conform and just for us
+    tag: string; // Oi4Id of log originator
+  }
+// <-- TODO cfz
+
 export enum EAssetType {
     device = 0,
     application = 1,
 }
 
-// TODO cfz use from service-model /scr/model/Resources.ts -->
-
-export interface IComponentObject {
-    component: string;
-    licAuthors: string[];
-    licAddText: string;
-  }
-  
-
-export interface ILicenseObject {
-    licenseId: string;
-    components: IComponentObject[];
-  }
-  
-export interface IContainerLicense {
-    licenses: ILicenseObject[];
-}
-
-export interface IContainerLicenseText {
-    [key: string]: string;
-  }
- 
-// <-- TODO cfz
-
 export interface IResourceObject {
     [key: string]: any;
 
     mam: IMasterAssetModel;
-    health?: IContainerHealth;
-    rtLicense?: IContainerRTLicense;
-    license?: IContainerLicense;
+    health?: Health;
+    rtLicense?: RTLicense;
+    license?: License;
     config?: IContainerConfig;
-    profile?: IContainerProfile;
-    licenseText?: IContainerLicenseText;
+    profile?: Profile;
+    licenseText?: LicenseText;
 }
 
 export interface IAssetLookup {

@@ -158,7 +158,8 @@ class RegistryWebClient extends EventEmitter {
     }
 
     updateConfig(configObject: ISpecificContainerConfig) {
-        this.containerState.config.registry.developmentMode.value
+        // TODO cfz: Whats the purpose of the below line?
+        // this.containerState.config.registry.developmentMode.value
         this.containerState.config = configObject;
     }
 

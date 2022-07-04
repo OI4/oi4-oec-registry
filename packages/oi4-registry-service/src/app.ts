@@ -38,6 +38,8 @@ function checkForDefaultEnvironment() {
     if (!process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE) process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE = '262144';
 }
 
+/* --> TODO cfz remove environment variables (or use them for backward compatibility)
+
 if (checkForValidEnvironment()) {
     dotenv.config({path: path.join(__dirname, '.env')});
     if (checkForValidEnvironment()) {
@@ -46,7 +48,7 @@ if (checkForValidEnvironment()) {
     }
 }
 checkForDefaultEnvironment();
-
+<-- */
 
 const applicationResources = new OI4ApplicationResources();
 const applicationFactory = new OI4ApplicationFactory(applicationResources);

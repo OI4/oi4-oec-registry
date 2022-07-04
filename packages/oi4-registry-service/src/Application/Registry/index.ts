@@ -14,20 +14,21 @@ import {
     ESyslogEventFilter,
     IOI4ApplicationResources,
     IDataSetClassIds,
-    IEventObject,
-    ISpecificContainerConfig
+    ISpecificContainerConfig,
+    Health,
+    PublicationList
 } from '@oi4/oi4-oec-service-model';
 import {
     EOPCUAStatusCode,
     IMasterAssetModel,
     IOPCUANetworkMessage,
-    IOPCUAPayload,
+    IOPCUADataSetMessage,
     OPCUABuilder
 } from '@oi4/oi4-oec-service-opcua-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {FileLogger} from '@oi4/oi4-oec-service-node';
+import {FileLogger, OI4ApplicationResources} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {EAssetType, IAssetLookup, IAsset} from '../Models/IRegistry';
+import {EAssetType, IAssetLookup, IAsset, IEventObject} from '../Models/IRegistry';
 
 const dscids: IDataSetClassIds = <IDataSetClassIds>dataSetClassIds;
 
@@ -42,7 +43,7 @@ export class Registry extends EventEmitter {
     private queue: SequentialTaskQueue;
     private logToFileEnabled: string; // TODO: Should be a bool, but we use strings as enums...
     private logHappened: boolean;
-    private readonly applicationResources: IOI4ApplicationResources;
+    private readonly applicationResources: OI4ApplicationResources;
     private readonly maxAuditTrailElements: number;
     private fileLogger: FileLogger;
 
@@ -61,10 +62,11 @@ export class Registry extends EventEmitter {
     constructor(registryClient: mqtt.AsyncClient, appResources: IOI4ApplicationResources) {
         super();
         this.oi4Id = appResources.oi4Id;
-        this.logToFileEnabled = appResources.config.logging.logType.value;
+        const specificConfig = appResources.config as ISpecificContainerConfig; // TODO cfz verify that cast is ok 
+        this.logToFileEnabled = specificConfig.logging.logType.value;
         // Config section
         appResources.on('newConfig', (oldConfig: ISpecificContainerConfig) => {
-            const newConfig = appResources.config;
+            const newConfig = specificConfig;
             if (newConfig.logging.logType.value === 'enabled') {
                 this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
             }
@@ -81,10 +83,10 @@ export class Registry extends EventEmitter {
         });
         // @ts-ignore: TODO: not assignable message...fix it
         this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
-        this.fileLogger = new FileLogger(parseInt(appResources.config.logging.logFileSize.value));
+        this.fileLogger = new FileLogger(parseInt(specificConfig.logging.logFileSize.value));
 
         this.queue = new SequentialTaskQueue();
-        this.applicationResources = appResources;
+        this.applicationResources = <OI4ApplicationResources>appResources;
 
         this.timeoutLookup = {};
         this.secondStageTimeoutLookup = {};
@@ -96,7 +98,7 @@ export class Registry extends EventEmitter {
 
         this.builder = new OPCUABuilder(this.oi4Id, 'Registry'); // TODO: Better system for oi4Id!
 
-        this.conformityValidator = new ConformityValidator(this.oi4Id); // TODO: Better system for oi4Id!
+        this.conformityValidator = new ConformityValidator(this.oi4Id, registryClient); // TODO: Better system for oi4Id!
 
         // Take registryClient from parameter Registry-MQTT-Client
         this.registryClient = registryClient;
@@ -331,13 +333,13 @@ export class Registry extends EventEmitter {
                     switch (topicResource) {
                         case 'mam': {
                             this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
-                            if (topicFilter.includes('Registry')) break; // This request should be handled in the service component
+                            if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
                             this.sendOutMam(topicFilter, page, perPage);
                             break;
                         }
                         case 'health': {
                             this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
-                            if (topicFilter.includes('Registry')) break; // This request should be handled in the service component
+                            if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
                             this.sendOutHealth(topicFilter, page, perPage);
                         }
                         default: {
@@ -479,15 +481,16 @@ export class Registry extends EventEmitter {
             this.logger.log('One or more config items failed the safety check', ESyslogEventFilter.warning);
             statusToPublish = EOPCUAStatusCode.Bad;
         }
-        let payload: IOPCUAPayload[] = [];
-        const actualPayload: ISpecificContainerConfig = this.applicationResources['config'];
+        let payload: IOPCUADataSetMessage[] = [];
+        const actualPayload: ISpecificContainerConfig = this.applicationResources['config'] as ISpecificContainerConfig; // TODO cfz cast
         payload.push({
-            poi: actualPayload.context.name.text.toLowerCase().replace(' ', ''),
-            payload: actualPayload,
-            dswid: CDataSetWriterIdLookup['config'],
-            status: statusToPublish,
+            filter: actualPayload.context.name.text.toLowerCase().replace(' ', ''),
+            Payload: actualPayload,
+            DataSetWriterId: CDataSetWriterIdLookup['config'],
+            subResource: this.oi4Id,
+            Status: statusToPublish,
         });
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(payload, new Date(), dscids.config, correlationId)));
+        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${this.oi4Id}/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(payload, new Date(), dscids.config, correlationId)));
     }
 
     /**
@@ -584,9 +587,7 @@ export class Registry extends EventEmitter {
 
             const licenseObj = this.assetLookup[oi4IdAsset].resources.license;
             if (licenseObj) {
-                for (const licenses of licenseObj.licenses) {
-                    await this.getLicenseTextFromDevice(oi4IdAsset, 'licenseText', licenses.licenseId);
-                }
+                await this.getLicenseTextFromDevice(oi4IdAsset, 'licenseText', licenseObj.licenseId);
             }
         } catch (err) {
             console.log(err);
@@ -599,13 +600,14 @@ export class Registry extends EventEmitter {
             DataSetWriterId: 0,
             config: EPublicationListConfig.NONE_0,
             interval: 0,
-        });
+        } as PublicationList);
         // Publish the new publicationList according to spec
         await this.registryClient.publish(
             `oi4/Registry/${this.oi4Id}/pub/publicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                payload: this.applicationResources.publicationList,
-                dswid: CDataSetWriterIdLookup['publicationList']
+                Payload: this.applicationResources.publicationList,
+                DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                subResource: this.oi4Id
             }], new Date(), dscids.publicationList)),
         );
     }
@@ -621,18 +623,19 @@ export class Registry extends EventEmitter {
         if (filter === '') {
             this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
             let index: number = 0;
-            const mamPayloadArr: IOPCUAPayload[] = [];
+            const mamPayloadArr: IOPCUADataSetMessage[] = [];
             for (const device of Object.keys(assets)) {
                 if (assets[device].available) {
-                    let payload: IOPCUAPayload = {
-                        payload: {},
-                        dswid: 0,
+                    let payload: IOPCUADataSetMessage = {
+                        Payload: {},
+                        DataSetWriterId: 0,
+                        subResource: '',
                     };
                     try {
                         payload = {
-                            poi: assets[device].oi4Id,
-                            payload: assets[device].resources.mam,
-                            dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
+                            subResource: assets[device].oi4Id,
+                            Payload: assets[device].resources.mam,
+                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
                         }
                     } catch {
                         this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
@@ -649,14 +652,17 @@ export class Registry extends EventEmitter {
                 await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(networkMessage));
             }
         } else {
+
+            // TODO cfz: Filtering of Mam really necessary? According the spec the mam do not make use of filter -->
+
             const dswidFilterStr = filter.substring(1);
             const dswidFilter = parseInt(dswidFilterStr, 10);
             if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
                 try {
-                    const mamPayloadArr: IOPCUAPayload[] = [{
-                        poi: assets[filter].oi4Id,
-                        payload: assets[filter].resources.mam,
-                        dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
+                    const mamPayloadArr: IOPCUADataSetMessage[] = [{
+                        subResource: assets[filter].oi4Id,
+                        Payload: assets[filter].resources.mam,
+                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
                     }]
                     await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
                 } catch (ex) {
@@ -664,16 +670,18 @@ export class Registry extends EventEmitter {
                 }
             } else { // DSWID filter
                 try {
-                    const mamPayloadArr: IOPCUAPayload[] = [{
-                        poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
-                        payload: assets[Object.keys(assets)[dswidFilter]].resources.mam,
-                        dswid: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
+                    const mamPayloadArr: IOPCUADataSetMessage[] = [{
+                        subResource: assets[Object.keys(assets)[dswidFilter]].oi4Id,
+                        Payload: assets[Object.keys(assets)[dswidFilter]].resources.mam,
+                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
                     }]
-                    await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
+                    await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${mamPayloadArr[0].subResource}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), dscids.mam)));
                 } catch (ex) {
                     this.logger.log(`Error when trying to send a mam with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
                 }
             }
+
+            // <-- TODO cfz
         }
     }
 
@@ -688,18 +696,19 @@ export class Registry extends EventEmitter {
         if (filter === '') {
             this.logger.log(`Sending all known Healths...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
             let index: number = 0;
-            const healthPayloadArr: IOPCUAPayload[] = [];
+            const healthPayloadArr: IOPCUADataSetMessage[] = [];
             for (const device of Object.keys(assets)) {
                 if (assets[device].available) {
-                    let payload: IOPCUAPayload = {
-                        payload: {},
-                        dswid: 0,
+                    let payload: IOPCUADataSetMessage = {
+                        Payload: {},
+                        DataSetWriterId: 0,
+                        subResource: ''
                     };
                     try {
                         payload = {
-                            poi: assets[device].oi4Id,
-                            payload: assets[device].resources.health,
-                            dswid: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
+                            subResource: assets[device].oi4Id,
+                            Payload: assets[device].resources.health,
+                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
                         }
                     } catch {
                         this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
@@ -717,14 +726,16 @@ export class Registry extends EventEmitter {
             }
         } else {
             {
+                // TODO cfz: Remove filter logic -->
+
                 const dswidFilterStr = filter.substring(1);
                 const dswidFilter = parseInt(dswidFilterStr, 10);
                 if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
                     try {
-                        const healthPayloadArr: IOPCUAPayload[] = [{
-                            poi: assets[filter].oi4Id,
-                            payload: assets[filter].resources.health,
-                            dswid: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
+                        const healthPayloadArr: IOPCUADataSetMessage[] = [{
+                            subResource: assets[filter].oi4Id,
+                            Payload: assets[filter].resources.health,
+                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
                         }]
                         await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
                     } catch (ex) {
@@ -732,16 +743,18 @@ export class Registry extends EventEmitter {
                     }
                 } else { // DSWID filter
                     try {
-                        const healthPayloadArr: IOPCUAPayload[] = [{
-                            poi: assets[Object.keys(assets)[dswidFilter]].oi4Id,
-                            payload: assets[Object.keys(assets)[dswidFilter]].resources.health,
-                            dswid: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
+                        const healthPayloadArr: IOPCUADataSetMessage[] = [{
+                            subResource: assets[Object.keys(assets)[dswidFilter]].oi4Id,
+                            Payload: assets[Object.keys(assets)[dswidFilter]].resources.health,
+                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
                         }]
-                        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${filter}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
+                        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/health/${healthPayloadArr[0].subResource}`, JSON.stringify(this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), dscids.health)));
                     } catch (ex) {
                         this.logger.log(`Error when trying to send a health with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
                     }
                 }
+
+                // <-- TODO cfz
             }
         }
     }
@@ -766,8 +779,9 @@ export class Registry extends EventEmitter {
             this.registryClient.publish(
                 `oi4/Registry/${this.oi4Id}/pub/publicationList`,
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                    payload: this.applicationResources.publicationList,
-                    dswid: CDataSetWriterIdLookup['publicationList']
+                    Payload: this.applicationResources.publicationList,
+                    DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                    subResource: this.oi4Id,
                 }], new Date(), dscids.publicationList)),
             );
             this.logger.log(`Deleted App: ${device}`, ESyslogEventFilter.warning);
@@ -794,8 +808,9 @@ export class Registry extends EventEmitter {
         this.registryClient.publish(
             `oi4/Registry/${this.oi4Id}/pub/publicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                payload: this.applicationResources.publicationList,
-                dswid: CDataSetWriterIdLookup['publicationList']
+                Payload: this.applicationResources.publicationList,
+                DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                subResource: this.oi4Id
             }], new Date(), dscids.publicationList)),
         );
         this.assetLookup = {}; // Clear application lookup
@@ -837,10 +852,7 @@ export class Registry extends EventEmitter {
         if (oi4Id in this.assetLookup) {
             if (!this.assetLookup[oi4Id].available) {
                 if (typeof this.assetLookup[oi4Id].resources.health !== 'undefined') {
-                    this.assetLookup[oi4Id].resources.health = {
-                        health: EDeviceHealth.FAILURE_1,
-                        healthScore: 0,
-                    };
+                    this.assetLookup[oi4Id].resources.health = new Health(EDeviceHealth.FAILURE_1, 0);
                 }
                 this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
                 return;
@@ -913,7 +925,7 @@ export class Registry extends EventEmitter {
      * Attention. This clears all saved lists (global + assets)
      */
     async updateAuditLevel() {
-        if (!Object.values(ESyslogEventFilter).includes(this.applicationResources.config.logging.auditLevel.value as ESyslogEventFilter)) {
+        if (!Object.values(ESyslogEventFilter).includes(this.getConfig().logging.auditLevel.value as ESyslogEventFilter)) {
             console.log('AuditLevel is not known to Registry');
             return;
         }
@@ -931,12 +943,12 @@ export class Registry extends EventEmitter {
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
             await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
-            if (levels === this.applicationResources.config.logging.auditLevel.value) {
+            if (levels === this.getConfig().logging.auditLevel.value) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }
         }
 
-        this.logger.level = this.applicationResources.config.logging.auditLevel.value as ESyslogEventFilter;
+        this.logger.level = this.getConfig().logging.auditLevel.value as ESyslogEventFilter;
     }
 
     /**
@@ -961,7 +973,7 @@ export class Registry extends EventEmitter {
      * @returns The config of the registry
      */
     getConfig(): ISpecificContainerConfig {
-        return this.applicationResources.config;
+        return this.applicationResources.config as ISpecificContainerConfig; // TODO cfz ensure that always the specific container config is loaded
     }
 
     /**
