@@ -210,7 +210,7 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString());
+        const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString()); // TODO cfz performance: message is already parsed above 
         const baseIdOffset = topicArr.length - 4;
         const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
 
