@@ -89,9 +89,11 @@ class RegistryWebClient extends EventEmitter {
             packageLicenseResp.send(pJson.license);
         });
 
+        /* TODO cfz fix this: brokerState is a boolean -->
         this.client.get('/brokerState', (_brokerReq, brokerResp) => {
             brokerResp.send(this.containerState.brokerState);
         });
+        <-- */
 
         this.client.get('/health', (_healthReq, healthResp) => {
             healthResp.send(JSON.stringify(this.containerState.health));

@@ -9,14 +9,15 @@ import {
     EGenericEventFilter,
     ENamurEventFilter,
     EOpcUaEventFilter,
-    EPublicationListConfig,
-    ESubscriptionListConfig,
+    PublicationListConfig,
+    SubscriptionListConfig,
     ESyslogEventFilter,
     IOI4ApplicationResources,
     IDataSetClassIds,
     ISpecificContainerConfig,
     Health,
-    PublicationList
+    PublicationList,
+    SubscriptionList
 } from '@oi4/oi4-oec-service-model';
 import {
     EOPCUAStatusCode,
@@ -138,11 +139,13 @@ export class Registry extends EventEmitter {
      * @param topic - The topic that should be subscribed to
      */
     private async ownSubscribe(topic: string) {
-        this.applicationResources.addSubscription({
-            topicPath: topic,
-            config: ESubscriptionListConfig.NONE_0,
-            interval: 0,
-        });
+
+        const subscription = new SubscriptionList();
+        subscription.topicPath = topic;
+        subscription.config = SubscriptionListConfig.NONE_0;
+        subscription.interval = 0;
+
+        this.applicationResources.addSubscription(subscription);
         return await this.registryClient.subscribe(topic);
     }
 
@@ -152,8 +155,21 @@ export class Registry extends EventEmitter {
      */
     private async ownUnsubscribe(topic: string) {
         // Remove from subscriptionList
-        this.applicationResources.removeSubscriptionByTopic(topic);
+        this.removeSubscriptionByTopic(topic);
         return await this.registryClient.unsubscribe(topic);
+    }
+
+    private removeSubscriptionByTopic(topic: string): void
+    {
+        // TODO cfz find a better way to remove the subscription list 
+        
+        for (let i=0; i < this.applicationResources.subscriptionList.length; i++)
+        {
+            if (this.applicationResources.subscriptionList[i].topicPath == topic)
+            {
+                this.applicationResources.subscriptionList.splice(i--, 1)
+            }
+        }
     }
 
     /**
@@ -593,14 +609,15 @@ export class Registry extends EventEmitter {
             console.log(err);
         }
         // Update own publicationList with new Asset
-        this.applicationResources.addPublication({
-            resource: 'mam',
-            tag: oi4IdAsset,
-            oi4Identifier: oi4IdAsset,
-            DataSetWriterId: 0,
-            config: EPublicationListConfig.NONE_0,
-            interval: 0,
-        } as PublicationList);
+        const publicationList = new PublicationList();
+        publicationList.resource = 'mam';
+        publicationList.oi4Identifier = oi4IdAsset;
+        publicationList.DataSetWriterId = 0;
+        publicationList.config = PublicationListConfig.NONE_0;
+        publicationList.interval = 0;
+        publicationList.subResource = oi4IdAsset;
+
+        this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
         await this.registryClient.publish(
             `oi4/Registry/${this.oi4Id}/pub/publicationList`,
@@ -759,6 +776,20 @@ export class Registry extends EventEmitter {
         }
     }
 
+    private removePublicationBySubResource(subResource: string): void
+    {
+        // TODO cfz find a better way to remove the publication list 
+        
+        for (let i=0; i < this.applicationResources.subscriptionList.length; i++)
+        {
+            if (this.applicationResources.publicationList[i].subResource == subResource)
+            {
+                this.applicationResources.publicationList.splice(i--, 1)
+            }
+        }
+    }
+
+
     /**
      * Removes an asset from the assetLookup
      * @param device - the oi4Id of the device that is to be removed
@@ -774,7 +805,7 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/profile/${device}`);
             delete this.assetLookup[device];
             // Remove from publicationList
-            this.applicationResources.removePublicationByTag(device);
+            this.removePublicationBySubResource(device);
             // Publish the new publicationList according to spec
             this.registryClient.publish(
                 `oi4/Registry/${this.oi4Id}/pub/publicationList`,
@@ -802,7 +833,7 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/config/${assets}`);
             this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/profile/${assets}`);
             // Remove from publicationList
-            this.applicationResources.removePublicationByTag(assets);
+            this.removePublicationBySubResource(assets);
         }
         // Publish the new publicationList according to spec
         this.registryClient.publish(
