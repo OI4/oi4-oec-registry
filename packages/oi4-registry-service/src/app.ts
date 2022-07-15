@@ -1,6 +1,6 @@
 import {OI4ApplicationResources, OI4ApplicationFactory, OI4Application} from '@oi4/oi4-oec-service-node';
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
+import {ESyslogEventFilter, Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IClientOptions} from 'async-mqtt';
 import { RegistryWebClient } from './Application/RestApi/RegistryWebClient';
@@ -202,9 +202,8 @@ webClient.get('/conformity/:originator/:oi4Id', async (conformityReq, conformity
 
 webClient.get('/fullConformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
     let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
-    const fullResourceList = ['health', 'data', 'mam', 'profile', 'metadata', 'config', 'event', 'license', 'rtLicense', 'licenseText'];
     try {
-        conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, fullResourceList);
+        conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, Application.full);
     } catch (err) {
         console.log(`Got error in conformity REST request: ${err}`);
     }

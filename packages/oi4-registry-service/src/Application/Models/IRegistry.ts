@@ -4,7 +4,8 @@ import {
     Profile,
     License,
     RTLicense,
-    LicenseText
+    LicenseText, 
+    EAssetType
 } from '@oi4/oi4-oec-service-model';
 import {IMasterAssetModel} from '@oi4/oi4-oec-service-opcua-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
@@ -41,10 +42,6 @@ export interface IEventObject {
   }
 // <-- TODO cfz
 
-export enum EAssetType {
-    device = 0,
-    application = 1,
-}
 
 export interface IResourceObject {
     [key: string]: any;
