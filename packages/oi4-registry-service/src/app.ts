@@ -1,6 +1,6 @@
-import {OI4ApplicationResources, OI4ApplicationFactory, OI4Application} from '@oi4/oi4-oec-service-node';
+import {OI4ApplicationResources, OI4ApplicationFactory, OI4Application, DEFAULT_MAM_FILE} from '@oi4/oi4-oec-service-node';
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {ESyslogEventFilter, Application} from '@oi4/oi4-oec-service-model';
+import {ESyslogEventFilter, Application, IOI4ApplicationResources, License, LicenseText} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IClientOptions} from 'async-mqtt';
 import { RegistryWebClient } from './Application/RestApi/RegistryWebClient';
@@ -15,6 +15,11 @@ import {Registry} from './Application/Registry';
 import express from 'express';
 
 import swaggerUi from "swagger-ui-express";
+import { exists, existsSync, readFileSync } from 'fs';
+
+const MAM_FILE = DEFAULT_MAM_FILE;
+const LICENSE_FILE = '/etc/oi4/config/license.json';
+const LICENSE_TEXT_FILE = '/etc/oi4/config/licenseText.json'
 
 // Here, we get our configuration from Environment variables. If either of them is not specified, we use a provided .env file
 function checkForValidEnvironment() {
@@ -50,7 +55,28 @@ if (checkForValidEnvironment()) {
 checkForDefaultEnvironment();
 <-- */
 
-const applicationResources = new OI4ApplicationResources();
+function getApplicationResources(): IOI4ApplicationResources {
+    const applicationResources = new OI4ApplicationResources(MAM_FILE);
+
+    if (existsSync(LICENSE_FILE)) {
+        const texts = JSON.parse(readFileSync(LICENSE_FILE, 'utf-8'));
+        for (const text of texts) {
+            const license = License.clone(text);
+            applicationResources.license.push(license);
+        }   
+    }
+
+    if (existsSync(LICENSE_TEXT_FILE)) {
+        const texts = JSON.parse(readFileSync(LICENSE_TEXT_FILE, 'utf8')) as ({licenseId: string; licenseText: string})[];
+        for (const text of texts) {
+            applicationResources.licenseText.set(text.licenseId, new LicenseText(text.licenseText));
+        }
+    }
+
+    return applicationResources;
+}
+
+const applicationResources = getApplicationResources();
 const applicationFactory = new OI4ApplicationFactory(applicationResources);
 const busProxy = applicationFactory.createOI4Application();
 const port = parseInt((process.env.OI4_EDGE_APPLICATION_PORT as string || '5799'), 10);
