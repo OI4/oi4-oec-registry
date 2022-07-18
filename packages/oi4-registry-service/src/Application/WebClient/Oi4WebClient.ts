@@ -8,6 +8,7 @@ import https = require('https');
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {ISpecificContainerConfig, ESyslogEventFilter, IOI4ApplicationResources} from '@oi4/oi4-oec-service-model';
 import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage} from '@oi4/oi4-oec-service-opcua-model';
+import {OI4Application} from '@oi4/oi4-oec-service-node';
 
 
 // @ts-ignore
@@ -16,22 +17,22 @@ import pJson from '../../../package.json';
 
 export class Oi4WebClient extends EventEmitter {
     protected readonly client: express.Application;
-    private logger: Logger;
+    protected readonly logger: Logger;
 
-    public oi4Id: string;
-    public serviceType: string;
-    public containerState: IOI4ApplicationResources;
+    public readonly oi4Id: string;
+    public readonly serviceType: string;
+    public applicationResources: IOI4ApplicationResources;
     public topicPreamble: string;
-    public builder: OPCUABuilder;
+    public readonly builder: OPCUABuilder;
 
-    constructor(container: IOI4ApplicationResources, port = 5799) {
+    constructor(application: OI4Application, port = 5799) {
         super();
 
-        this.oi4Id = container.oi4Id;
-        this.serviceType = container.mam.DeviceClass;
-        this.builder = new OPCUABuilder(this.oi4Id, this.serviceType);
-        this.topicPreamble = `oi4/${this.serviceType}/${this.oi4Id}`;
-        this.containerState = container;
+        this.oi4Id = application.oi4Id;
+        this.serviceType = application.serviceType;
+        this.builder = application.builder;
+        this.topicPreamble = application.topicPreamble;
+        this.applicationResources = application.applicationResources;
 
         this.logger = new Logger(true, 'Registry-WebProxy', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter);
         this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
@@ -90,39 +91,39 @@ export class Oi4WebClient extends EventEmitter {
         });
 
         this.client.get('/health', (_healthReq, healthResp) => {
-            healthResp.send(JSON.stringify(this.containerState.health));
+            healthResp.send(JSON.stringify(this.applicationResources.health));
         });
 
         this.client.get('/config', (_configReq, configResp) => {
-            configResp.send(JSON.stringify(this.containerState.config));
+            configResp.send(JSON.stringify(this.applicationResources.config));
         });
 
         this.client.get('/license', (_licenseReq, licenseResp) => {
-            licenseResp.send(JSON.stringify(this.containerState.license));
+            licenseResp.send(JSON.stringify(this.applicationResources.license));
         });
 
         this.client.get('/rtLicense', (_rtLicenseReq, rtLicenseResp) => {
-            rtLicenseResp.send(JSON.stringify(this.containerState.rtLicense));
+            rtLicenseResp.send(JSON.stringify(this.applicationResources.rtLicense));
         });
 
         this.client.get('/mam', (_mamReq, mamResp) => {
-            mamResp.send(JSON.stringify(this.containerState.mam));
+            mamResp.send(JSON.stringify(this.applicationResources.mam));
         });
 
         this.client.get('/data/:tagName', (dataReq, dataResp) => {
-            dataResp.send(JSON.stringify(this.containerState.dataLookup[dataReq.params.tagName]));
+            dataResp.send(JSON.stringify(this.applicationResources.dataLookup[dataReq.params.tagName]));
         });
 
         this.client.get('/data', (_dataReq, dataResp) => {
-            dataResp.send(JSON.stringify(this.containerState.dataLookup));
+            dataResp.send(JSON.stringify(this.applicationResources.dataLookup));
         });
 
         this.client.get('/metadata/:tagName', (metaDataReq, metaDataResp) => {
-            metaDataResp.send(JSON.stringify(this.containerState.metaDataLookup[metaDataReq.params.tagName]));
+            metaDataResp.send(JSON.stringify(this.applicationResources.metaDataLookup[metaDataReq.params.tagName]));
         });
 
         this.client.get('/metadata', (_metaDataReq, metaDataResp) => {
-            metaDataResp.send(JSON.stringify(this.containerState.metaDataLookup));
+            metaDataResp.send(JSON.stringify(this.applicationResources.metaDataLookup));
         });
 
         // Handle Put Requests
@@ -156,17 +157,17 @@ export class Oi4WebClient extends EventEmitter {
     updateConfig(configObject: ISpecificContainerConfig) {
         // TODO cfz: Whats the purpose of the below line?
         // this.containerState.config.registry.developmentMode.value
-        this.containerState.config = configObject;
+        this.applicationResources.config = configObject;
     }
 
     addMetaData(tagName: string, metadata: IOPCUAMetaData) {
         // This topicObject is also specific to the resource. The data resource will include the TagName!
-        const dataLookup = this.containerState.dataLookup;
+        const dataLookup = this.applicationResources.dataLookup;
         if (tagName === '') {
             return;
         }
         if (!(tagName in dataLookup) && (typeof metadata !== undefined)) {
-            this.containerState.metaDataLookup[tagName] = metadata;
+            this.applicationResources.metaDataLookup[tagName] = metadata;
             this.logger.log(`Added ${tagName} to metaDataLookup via WebAPI`);
         } else {
             this.logger.log(`${tagName} either already exists or does not carry data in payload`);
@@ -176,12 +177,12 @@ export class Oi4WebClient extends EventEmitter {
 
     addData(tagName: string, data: IOPCUANetworkMessage) {
         // This topicObject is also specific to the resource. The data resource will include the TagName!
-        const dataLookup = this.containerState.dataLookup;
+        const dataLookup = this.applicationResources.dataLookup;
         if (tagName === '') {
             return;
         }
         if (!(tagName in dataLookup) && (typeof data !== undefined)) {
-            this.containerState.dataLookup[tagName] = data;
+            this.applicationResources.dataLookup[tagName] = data;
             this.logger.log(`Added ${tagName} to dataLookup via WebAPI`);
         } else {
             this.logger.log(`${tagName} either already exists or does not carry data in payload`);
@@ -189,12 +190,12 @@ export class Oi4WebClient extends EventEmitter {
     }
 
     deleteData(tagName: string) {
-        const dataLookup = this.containerState.dataLookup;
+        const dataLookup = this.applicationResources.dataLookup;
         if (tagName === '') {
             return;
         }
         if (tagName in dataLookup) {
-            delete this.containerState.dataLookup[tagName];
+            delete this.applicationResources.dataLookup[tagName];
             this.logger.log(`Deleted ${tagName} from dataLookup via WebAPI`);
         }
         this.logger.log(`${tagName} does not exist in dataLookup`);

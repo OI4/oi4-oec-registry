@@ -4,8 +4,6 @@ import {Registry} from '../Registry/Registry';
 import {MqttSettings, OI4Application} from '@oi4/oi4-oec-service-node';
 import {Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {LOGGER} from '@oi4/oi4-oec-service-logger';
-
 
 export class RegistryWebClient extends Oi4WebClient {
 
@@ -13,7 +11,7 @@ export class RegistryWebClient extends Oi4WebClient {
 
     constructor(application: OI4Application, registry: Registry, port = 5799)
     {
-        super(application.applicationResources, port);
+        super(application, port);
         this._registry = registry;
 
         this.client.get('/brokerState', (_brokerReq, brokerResp) => {
@@ -104,7 +102,7 @@ export class RegistryWebClient extends Oi4WebClient {
                 try {
                     resourceObject = await registry.getResourceFromLookup(resourceReq.params.oi4Id, resources);
                     if (resourceObject === null || resourceObject === undefined) {
-                        LOGGER.log(`Should never happen, in /registry/resources/:oi4Id ${resources}`);
+                        this.logger.log(`Resource not found in /registry/resources/:oi4Id ${resources}`);
                     }
                 } catch (getResourceErr) {
                     resourceObject = getResourceErr;
