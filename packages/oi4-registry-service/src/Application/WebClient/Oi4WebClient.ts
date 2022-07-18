@@ -14,8 +14,8 @@ import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage} from '@oi4/oi4-oec-s
 import pJson from '../../../package.json';
 
 
-class RegistryWebClient extends EventEmitter {
-    private readonly client: express.Application;
+export class Oi4WebClient extends EventEmitter {
+    protected readonly client: express.Application;
     private logger: Logger;
 
     public oi4Id: string;
@@ -24,7 +24,7 @@ class RegistryWebClient extends EventEmitter {
     public topicPreamble: string;
     public builder: OPCUABuilder;
 
-    constructor(container: IOI4ApplicationResources, port: number = 5799) {
+    constructor(container: IOI4ApplicationResources, port = 5799) {
         super();
 
         this.oi4Id = container.oi4Id;
@@ -88,12 +88,6 @@ class RegistryWebClient extends EventEmitter {
         this.client.get('/packageLicense', (_packageLicenseReq, packageLicenseResp) => {
             packageLicenseResp.send(pJson.license);
         });
-
-        /* TODO cfz fix this: brokerState is a boolean -->
-        this.client.get('/brokerState', (_brokerReq, brokerResp) => {
-            brokerResp.send(this.containerState.brokerState);
-        });
-        <-- */
 
         this.client.get('/health', (_healthReq, healthResp) => {
             healthResp.send(JSON.stringify(this.containerState.health));
@@ -206,5 +200,3 @@ class RegistryWebClient extends EventEmitter {
         this.logger.log(`${tagName} does not exist in dataLookup`);
     }
 }
-
-export {RegistryWebClient};
