@@ -6,7 +6,7 @@ import fs = require('fs');
 import https = require('https');
 
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {ISpecificContainerConfig, ESyslogEventFilter, IOI4ApplicationResources} from '@oi4/oi4-oec-service-model';
+import {ESyslogEventFilter, IOI4ApplicationResources, IContainerConfig} from '@oi4/oi4-oec-service-model';
 import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage} from '@oi4/oi4-oec-service-opcua-model';
 import {OI4Application} from '@oi4/oi4-oec-service-node';
 
@@ -154,9 +154,7 @@ export class Oi4WebClient extends EventEmitter {
         return this.client;
     }
 
-    updateConfig(configObject: ISpecificContainerConfig) {
-        // TODO cfz: Whats the purpose of the below line?
-        // this.containerState.config.registry.developmentMode.value
+    updateConfig(configObject: IContainerConfig): void {
         this.applicationResources.config = configObject;
     }
 

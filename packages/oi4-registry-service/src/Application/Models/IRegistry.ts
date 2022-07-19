@@ -5,7 +5,8 @@ import {
     License,
     RTLicense,
     LicenseText, 
-    EAssetType
+    EAssetType,
+    IEvent
 } from '@oi4/oi4-oec-service-model';
 import {IMasterAssetModel} from '@oi4/oi4-oec-service-opcua-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
@@ -21,7 +22,7 @@ export interface IAsset {
      */
     topicPreamble: string;
     oi4Id: string;
-    eventList: IEventObject[];
+    eventList: IReceivedEvent[];
     oi4IdOriginator: string;
     lastMessage: string;
     registeredAt: string;
@@ -30,17 +31,12 @@ export interface IAsset {
     assetType: EAssetType;
 }
 
-// TODO cfz (should be part of oi4-service) --> 
-export interface IEventObject {
-    number: number;
-    description?: string;
-    category: string;
-    details: any;
+export interface IReceivedEvent {
+    event: IEvent;
     level?: string; // NOT OI4 Conform and just for us
     timestamp: string; // NOT OI4 Conform and just for us
     tag: string; // Oi4Id of log originator
   }
-// <-- TODO cfz
 
 
 export interface IResourceObject {
@@ -57,18 +53,4 @@ export interface IResourceObject {
 
 export interface IAssetLookup {
     [key: string]: IAsset;
-}
-
-interface IAssetRTLicense {
-    expiryDate: string;
-    licensee: string;
-}
-
-interface IAssetData {
-    health: string;
-    config: IAssetConfig;
-}
-
-interface IAssetConfig {
-    updateInterval: number;
 }

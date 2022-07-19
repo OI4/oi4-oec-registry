@@ -4,15 +4,18 @@ import {Registry} from '../Registry/Registry';
 import {MqttSettings, OI4Application} from '@oi4/oi4-oec-service-node';
 import {Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
+import { RegistryResources } from '../RegistryResources';
 
 export class RegistryWebClient extends Oi4WebClient {
 
     private readonly _registry: Registry;
+    private readonly _applicationResources: RegistryResources;
 
     constructor(application: OI4Application, registry: Registry, port = 5799)
     {
         super(application, port);
         this._registry = registry;
+        this._applicationResources = application.applicationResources as RegistryResources;
 
         this.client.get('/brokerState', (_brokerReq, brokerResp) => {
 
@@ -39,7 +42,7 @@ export class RegistryWebClient extends Oi4WebClient {
 
         this.client.get('/registry/application', (deviceReq, deviceResp) => {
             const filteredApps = JSON.parse(JSON.stringify(registry.applications));
-            if (!registry.getConfig().registry.showRegistry.value) {
+            if (!this._applicationResources.settings.registry.showRegistry) {
                 delete filteredApps[registry.getOi4Id()];
             }
             deviceResp.send(JSON.stringify(filteredApps));
@@ -81,7 +84,7 @@ export class RegistryWebClient extends Oi4WebClient {
         });
         
         this.client.get('/registry/config', async (confReq, confResp) => {
-            confResp.send(JSON.stringify(registry.getConfig()));
+            confResp.send(JSON.stringify(this.applicationResources.config));
         });
         
         this.client.put('/registry/config', async (confReq, confResp) => {

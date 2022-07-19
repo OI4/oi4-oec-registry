@@ -11,14 +11,13 @@ import {
     PublicationListConfig,
     SubscriptionListConfig,
     ESyslogEventFilter,
-    IOI4ApplicationResources,
-    ISpecificContainerConfig,
     Health,
     PublicationList,
     SubscriptionList,
     Resource,
     EAssetType,
-    DataSetClassIds
+    DataSetClassIds,
+    IContainerConfig
 } from '@oi4/oi4-oec-service-model';
 import {
     EOPCUAStatusCode,
@@ -30,21 +29,23 @@ import {
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, OI4ApplicationResources} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {IAssetLookup, IAsset, IEventObject} from '../Models/IRegistry';
+import {IAssetLookup, IAsset, IReceivedEvent} from '../Models/IRegistry';
+import { ELogType, ISettings } from '../Models/ISettings';
+import { RegistryResources } from '../RegistryResources';
 
 
 export class Registry extends EventEmitter {
     private assetLookup: IAssetLookup;
     private registryClient: mqtt.AsyncClient;
-    private globalEventList: IEventObject[];
+    private globalEventList: IReceivedEvent[];
     private builder: OPCUABuilder;
     private logger: Logger;
     private readonly oi4DeviceWildCard: string;
     private readonly oi4Id: string;
     private queue: SequentialTaskQueue;
-    private logToFileEnabled: string; // TODO: Should be a bool, but we use strings as enums...
+    private logToFileEnabled: ELogType;
     private logHappened: boolean;
-    private readonly applicationResources: OI4ApplicationResources;
+    private readonly applicationResources: RegistryResources;
     private readonly maxAuditTrailElements: number;
     private fileLogger: FileLogger;
 
@@ -60,34 +61,32 @@ export class Registry extends EventEmitter {
      * @param registryClient The global mqtt client used to avoid multiple client connections inside the container
      * @param appResources The containerState of the OI4-Service holding information about the oi4Id etc.
      */
-    constructor(registryClient: mqtt.AsyncClient, appResources: IOI4ApplicationResources) {
+    constructor(registryClient: mqtt.AsyncClient, appResources: RegistryResources) {
         super();
         this.oi4Id = appResources.oi4Id;
-        const specificConfig = appResources.config as ISpecificContainerConfig; // TODO cfz verify that cast is ok 
-        this.logToFileEnabled = specificConfig.logging.logType.value;
+        this.logToFileEnabled = appResources.settings.logging.logType;
         // Config section
-        appResources.on('newConfig', (oldConfig: ISpecificContainerConfig) => {
-            const newConfig = specificConfig;
-            if (newConfig.logging.logType.value === 'enabled') {
+        appResources.on('settingsChanged', (oldSettings: ISettings, newSettings: ISettings) => {
+            if (oldSettings.logging.logType === ELogType.enabled) {
                 this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
             }
-            if (oldConfig.logging.auditLevel.value !== newConfig.logging.auditLevel.value) {
-                this.logger.log(`auditLevel is different, updating from ${oldConfig.logging.auditLevel.value} to ${newConfig.logging.auditLevel.value}`, ESyslogEventFilter.debug);
+            if (oldSettings.logging.auditLevel !== newSettings.logging.auditLevel) {
+                this.logger.log(`auditLevel is different, updating from ${oldSettings.logging.auditLevel} to ${newSettings.logging.auditLevel}`, ESyslogEventFilter.debug);
                 this.updateAuditLevel();
             }
-            if (oldConfig.logging.logFileSize.value !== newConfig.logging.logFileSize.value) { // fileSize changed!
-                this.logToFileEnabled = 'disabled'; // Temporarily disable logging
-                this.logger.log(`fileSize for File-logging changed! (old: ${oldConfig.logging.logFileSize.value}, new: ${newConfig.logging.logFileSize.value}) Deleting all old files and adjusting file`);
+            if (oldSettings.logging.logFileSize !== newSettings.logging.logFileSize) { // fileSize changed!
+                this.logToFileEnabled = ELogType.disabled; // Temporarily disable logging
+                this.logger.log(`fileSize for File-logging changed! (old: ${oldSettings.logging.logFileSize}, new: ${newSettings.logging.logFileSize}) Deleting all old files and adjusting file`);
                 this.deleteFiles();
-                this.logToFileEnabled = newConfig.logging.logType.value;
+                this.logToFileEnabled = newSettings.logging.logType;
             }
         });
-        // @ts-ignore: TODO: not assignable message...fix it
+        
         this.logger = new Logger(true, 'Registry-App', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryClient, this.oi4Id, 'Registry');
-        this.fileLogger = new FileLogger(parseInt(specificConfig.logging.logFileSize.value));
+        this.fileLogger = new FileLogger(appResources.settings.logging.logFileSize);
 
         this.queue = new SequentialTaskQueue();
-        this.applicationResources = <OI4ApplicationResources>appResources;
+        this.applicationResources = appResources;
 
         this.timeoutLookup = {};
         this.secondStageTimeoutLookup = {};
@@ -384,9 +383,8 @@ export class Registry extends EventEmitter {
                 case 'set': {
                     switch (topicResource) {
                         case 'config': {
-                            await this.setConfig(parsedMessage.Messages.map((dsm => {
-                                return dsm.Payload
-                            })), topicFilter, parsedMessage.MessageId);
+                            // TODO cfz set subResource and filter
+                            await this.getConfig(parsedMessage, this.oi4Id);
                             break;
                         }
                         default: {
@@ -424,95 +422,43 @@ export class Registry extends EventEmitter {
 
     /**
      * Update the containerstate with the configObject
-     * @param configObject - the object that is to be passed to the ContainerState
-     * //TODO: Careful! This is pretty hardcoded and unique for the Registry app.
-     * A generic way was once in MessageBus Service component in commits from ~17.03.2021
-     * @param configObjectArr - An array containing Registry-App specific configt objects
+     * @param getConfigMessage - The network message that requests the config.
+     * @param subResource - The subResource for which the configuration is requested.
      * @param filter - The filter which was used to set the config
      */
-    async setConfig(configObjectArr: ISpecificContainerConfig[], filter: string, correlationId: string) {
-        let errorSoFar  = false;
-        const tempConfig = JSON.parse(JSON.stringify(this.applicationResources.config));
-        for (const configObjects of configObjectArr) {
-            for (const configGroups of Object.keys(configObjects)) {
-                if (configGroups === 'context') continue;
-                for (const configItems of Object.keys(configObjects[configGroups])) {
-                    // Safety-checks and overwrite of values
-                    switch (configItems) {
-                        case 'auditLevel': {
-                            if (Object.values(ESyslogEventFilter).includes(configObjects['logging']['auditLevel'].value as ESyslogEventFilter)) { // Test if auditLevel is really part of the enum
-                                tempConfig['logging']['auditLevel'].value = configObjects['logging']['auditLevel'].value;
-                            } else {
-                                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                                errorSoFar = true;
-                            }
-                            break;
-                        }
-                        case 'logType': {
-                            if (['enabled', 'disabled', 'endpoint'].includes(configObjects['logging']['logType'].value)) { // Test if logType is part of our "enum"
-                                tempConfig['logging']['logType'].value = configObjects['logging']['logType'].value;
-                            } else {
-                                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                                errorSoFar = true;
-                            }
-                            break;
-                        }
-                        case 'logFileSize': {
-                            if (/^[-+]?(\d+|Infinity)$/.test(configObjects['logging']['logFileSize'].value)) { // Test if logFileSize is a "number"
-                                tempConfig['logging']['logFileSize'].value = configObjects['logging']['logFileSize'].value;
-                            } else {
-                                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                                errorSoFar = true;
-                            }
-                            break;
-                        }
-                        case 'developmentMode': {
-                            if (configObjects['registry']['developmentMode'].value === 'false' || configObjects['registry']['developmentMode'].value === 'true') { // Test if devMode is a boolean
-                                tempConfig['registry']['developmentMode'].value = configObjects['registry']['developmentMode'].value;
-                            } else {
-                                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                                errorSoFar = true;
-                            }
-                            break;
-                        }
-                        case 'showRegistry': {
-                            if (configObjects['registry']['showRegistry'].value === 'false' || configObjects['registry']['showRegistry'].value === 'true') { // Test if showReg is a boolean
-                                tempConfig['registry']['showRegistry'].value = configObjects['registry']['showRegistry'].value;
-                            } else {
-                                this.logger.log(`Config setting ${configItems} failed due to safety check`, ESyslogEventFilter.warning);
-                                errorSoFar = true;
-                            }
-                            break;
-                        }
-                        default: {
-                            if (configItems === 'name' || configItems === 'description') break; // No need to warn, if we are at name and description
-                            this.logger.log('Unknown config item...', ESyslogEventFilter.warning);
-                            break;
-                        }
-                    }
-                }
-            }
+    // TODO Remove this method as soon as getConfig is supported by the OI4 service 
+    async getConfig(getConfigMessage: IOPCUANetworkMessage, subResource?: string,  filter?: string): Promise<void> {
+        if (subResource !== undefined && subResource!=this.oi4Id)
+        {
+            this.logger.log(`Configuration was requested for unknown subResource: ${subResource}.`, ESyslogEventFilter.warning);
+            return;
         }
-        let statusToPublish = 0;
-        if (!errorSoFar) {
-            this.applicationResources.config = tempConfig;
-            this.logger.log('Updated config');
-        } else {
-            this.logger.log('One or more config items failed the safety check', ESyslogEventFilter.warning);
-            statusToPublish = EOPCUAStatusCode.Bad;
-        }
+
         const payload: IOPCUADataSetMessage[] = [];
-        const actualPayload: ISpecificContainerConfig = this.applicationResources['config'] as ISpecificContainerConfig; // TODO cfz cast
-        payload.push({
-            filter: actualPayload.context.name.text.toLowerCase().replace(' ', ''),
-            Payload: actualPayload,
-            DataSetWriterId: CDataSetWriterIdLookup['config'],
-            subResource: this.oi4Id,
-            Status: statusToPublish,
-        });
+        if (this.applicationResources.config !== undefined) {
+            payload.push({
+                filter: this.applicationResources.config.context.name.text.toLowerCase().replace(' ', ''),
+                Payload: this.applicationResources.config,
+                DataSetWriterId: CDataSetWriterIdLookup['config'],
+                subResource: subResource,
+                Status: EOPCUAStatusCode.Good,
+            });
+        }
+
+        const correlationId = getConfigMessage.MessageId;
 
         const networkMessage = this.builder.buildOPCUANetworkMessage(payload, new Date(), DataSetClassIds[Resource.CONFIG], correlationId);
-        await this.registryClient.publish(`oi4/Registry/${this.oi4Id}/pub/config/${this.oi4Id}/${filter}`, JSON.stringify(networkMessage));
+        let topic = `oi4/Registry/${this.oi4Id}/pub/config`;
+        if (subResource !== undefined)
+        {
+            topic = `oi4/Registry/${this.oi4Id}/pub/config/${subResource}`
+        }
+        if (subResource !== undefined && filter !== undefined)
+        {
+            topic = `oi4/Registry/${this.oi4Id}/pub/config/${this.oi4Id}/${filter}`;
+        }
+
+        await this.registryClient.publish(topic, JSON.stringify(networkMessage));
     }
 
     /**
@@ -658,7 +604,7 @@ export class Registry extends EventEmitter {
         const assets: IAssetLookup = Object.assign({}, apps, devices);
         if (filter === '') {
             this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
-            let index: number = 0;
+            let index = 0;
             const mamPayloadArr: IOPCUADataSetMessage[] = [];
             for (const device of Object.keys(assets)) {
                 if (assets[device].available) {
@@ -985,11 +931,7 @@ export class Registry extends EventEmitter {
      * Updates the subscription of the audit trail to match the config
      * Attention. This clears all saved lists (global + assets)
      */
-    async updateAuditLevel() {
-        if (!Object.values(ESyslogEventFilter).includes(this.getConfig().logging.auditLevel.value as ESyslogEventFilter)) {
-            console.log('AuditLevel is not known to Registry');
-            return;
-        }
+    async updateAuditLevel(): Promise<void> {
         // First, clear all old eventLists
         this.globalEventList = [];
         for (const apps of Object.keys(this.assetLookup)) {
@@ -1004,12 +946,12 @@ export class Registry extends EventEmitter {
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
             await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
-            if (levels === this.getConfig().logging.auditLevel.value) {
+            if (levels === this.applicationResources.settings.logging.auditLevel) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }
         }
 
-        this.logger.level = this.getConfig().logging.auditLevel.value as ESyslogEventFilter;
+        this.logger.level = this.applicationResources.settings.logging.auditLevel;
     }
 
     /**
@@ -1024,18 +966,11 @@ export class Registry extends EventEmitter {
      * Updates the config of the Registry
      * @param newConfig the new config object
      */
-    async updateConfig(newConfig: ISpecificContainerConfig) {
+    async updateConfig(newConfig: IContainerConfig): Promise<void> {
         this.applicationResources.config = newConfig;
         this.logger.log(`Sanity-Check: New config as json: ${JSON.stringify(this.applicationResources.config)}`, ESyslogEventFilter.debug);
     }
 
-    /**
-     * Retrieves the config of the Registry
-     * @returns The config of the registry
-     */
-    getConfig(): ISpecificContainerConfig {
-        return this.applicationResources.config as ISpecificContainerConfig; // TODO cfz ensure that always the specific container config is loaded
-    }
 
     /**
      * Getter for applicationLookup
@@ -1077,7 +1012,7 @@ export class Registry extends EventEmitter {
      * Gets the global event list. 
      * @returns The global event list.
      */
-    get eventTrail() : IEventObject[] {
+    get eventTrail(): IReceivedEvent[] {
         return this.globalEventList;
     }
 
@@ -1086,7 +1021,7 @@ export class Registry extends EventEmitter {
      * @param noOfElements - The amount of elements that is to be retrieved
      * @returns The global event list up to the specified amout of elements 
      */
-    public getEventTrail(noOfElements: number) : IEventObject[] {
+    public getEventTrail(noOfElements: number): IReceivedEvent[] {
         if (this.globalEventList.length <= noOfElements) {
             return this.globalEventList;
         } // else
