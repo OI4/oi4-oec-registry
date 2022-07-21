@@ -58,7 +58,9 @@ const port = parseInt((process.env.OI4_EDGE_APPLICATION_PORT as string || '5799'
 const registry = new Registry(registryApp.mqttClient, applicationResources);
 const webProxy = new RegistryWebClient(registryApp, registry, port);
 
-const logger = new Logger(true, 'Registry-Entrypoint', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter, registryApp.mqttClient, registryApp.oi4Id, registryApp.serviceType);
+const logLevel: ESyslogEventFilter = process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning;
+const publishingLevel = process.env.OI4_EDGE_EVENT_PUBLISHING_LEVEL ? process.env.OI4_EDGE_EVENT_PUBLISHING_LEVEL as ESyslogEventFilter : logLevel;
+const logger = new Logger(true, 'Registry-Entrypoint', logLevel, publishingLevel, registryApp.mqttClient, registryApp.oi4Id, registryApp.serviceType);
 logger.level = ESyslogEventFilter.debug;
 logger.log(`Testprint for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
 logger.log(`Testprint for level ${ESyslogEventFilter.informational}`, ESyslogEventFilter.informational);
