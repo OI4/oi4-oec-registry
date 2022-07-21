@@ -18,7 +18,11 @@ import {
     EAssetType,
     DataSetClassIds,
     IContainerConfig,
-    DataSetWriterIdManager
+    DataSetWriterIdManager,
+    License,
+    RTLicense,
+    LicenseText,
+    Profile
 } from '@oi4/oi4-oec-service-model';
 import {
     EOPCUAStatusCode,
@@ -33,6 +37,7 @@ import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-
 import {IAssetLookup, IAsset, IReceivedEvent} from '../Models/IRegistry';
 import { ELogType, ISettings } from '../Models/ISettings';
 import { RegistryResources } from '../RegistryResources';
+import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
 
 
 export class Registry extends EventEmitter {
@@ -54,7 +59,6 @@ export class Registry extends EventEmitter {
 
     // Timeout container TODO: types
     private readonly timeoutLookup: any;
-    private readonly secondStageTimeoutLookup: any;
     private conformityValidator: ConformityValidator;
 
     /**
@@ -93,7 +97,6 @@ export class Registry extends EventEmitter {
         this.applicationResources = appResources;
 
         this.timeoutLookup = {};
-        this.secondStageTimeoutLookup = {};
         this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
         this.globalEventList = [];
         this.assetLookup = {};
@@ -115,6 +118,7 @@ export class Registry extends EventEmitter {
 
         // In most cases the mam for the registry was already published via the OI4 service node component
         // --> We publish the mam again so that the registry detects 'itself' and to enforce validation of the registry
+        // TODO: Instead publishing of the mam again we could also call addToRegistry for ourself
         const mam = this.applicationResources.mam;
         await this.client.publish(`oi4/${mam.getServiceType()}/${this.oi4Id}/pub/mam/${this.oi4Id}`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
@@ -158,7 +162,7 @@ export class Registry extends EventEmitter {
      * Overrides the default mqtt-subscription in order to automatically adjust the 'subscriptionList' resource
      * @param topic - The topic that should be subscribed to
      */
-    private async ownSubscribe(topic: string) {
+    private async ownSubscribe(topic: string): Promise<mqtt.ISubscriptionGrant[]> {
 
         const subscription = new SubscriptionList();
         subscription.topicPath = topic;
@@ -173,10 +177,10 @@ export class Registry extends EventEmitter {
      * Overrides the default mqtt-unsubscription in order to automatically adjust the 'subscriptionList' resource
      * @param topic - The topic that should be unsubscribed from
      */
-    private async ownUnsubscribe(topic: string) {
+    private async ownUnsubscribe(topic: string): Promise<void> {
         // Remove from subscriptionList
         this.removeSubscriptionByTopic(topic);
-        return await this.client.unsubscribe(topic);
+        await this.client.unsubscribe(topic);
     }
 
     private removeSubscriptionByTopic(topic: string): void
@@ -223,21 +227,19 @@ export class Registry extends EventEmitter {
      * The main update callback for incoming registry-related mqtt messages
      * If an incoming message matches a registered asset, the values of that resource are taken from the payload and updated in the registry
      */
-    private processMqttMessage = async (topic: string, message: Buffer) => {
-
-        const topicWrapper = TopicParser.getTopicWrapperWithCommonInfo(topic);
-        const topicInfo = TopicParser.extractResourceSpecificInfo(topicWrapper);
-        if (topicInfo.method == TopicMethods.GET)
-        {
-            // get is completely handled by the OI4 service node
-            return Promise.resolve;
+    private processMqttMessage = async (topic: string, message: Buffer): Promise<void> => {
+        let topicInfo: TopicInfo;
+        try {
+            const topicWrapper = TopicParser.getTopicWrapperWithCommonInfo(topic);
+            topicInfo = TopicParser.extractResourceSpecificInfo(topicWrapper);
+        } catch (e) {
+            this.logger.log(`Error when parsing the topic ${topic}`, ESyslogEventFilter.warning);
+            return;
         }
         
-
-        const topicArr = topic.split('/');
-        let parsedMessage: IOPCUANetworkMessage;
+        let networkMessage: IOPCUANetworkMessage;
         try {
-            parsedMessage = JSON.parse(message.toString());
+            networkMessage = JSON.parse(message.toString());
         } catch (e) {
             this.logger.log(`Error when parsing JSON in processMqttMessage: ${e}`, ESyslogEventFilter.warning);
             this.logger.log(`Topic: ${topic}`, ESyslogEventFilter.warning);
@@ -246,7 +248,7 @@ export class Registry extends EventEmitter {
         }
         let schemaResult = false;
         try {
-            schemaResult = await this.builder.checkOPCUAJSONValidity(parsedMessage);
+            schemaResult = await this.builder.checkOPCUAJSONValidity(networkMessage);
         } catch (e) {
             if (typeof e === 'string') {
                 this.logger.log(e, ESyslogEventFilter.warning);
@@ -257,109 +259,36 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        const networkMessage: IOPCUANetworkMessage = JSON.parse(message.toString()); // TODO cfz performance: message is already parsed above 
-        const baseIdOffset = topicArr.length - 4;
-        const oi4Id = `${topicArr[baseIdOffset]}/${topicArr[baseIdOffset + 1]}/${topicArr[baseIdOffset + 2]}/${topicArr[baseIdOffset + 3]}`;
-
         let parsedPayload: any = {}; // FIXME: Hotfix, remove the "any" and see where it goes...
         if (networkMessage.Messages.length !== 0) {
             parsedPayload = networkMessage.Messages[0].Payload;
         }
 
-        const topicArray = topic.split('/');
-        const topicServiceType = topicArray[1];
-        const topicAppId = `${topicArray[2]}/${topicArray[3]}/${topicArray[4]}/${topicArray[5]}`;
-        const topicMethod = topicArray[6];
-        const topicResource = topicArray[7];
-        const topicFilter = topicArray.splice(8).join('/');
-
-        // Safety-Check: DataSetClassId
-        if (networkMessage.DataSetClassId !== DataSetClassIds[topicResource]) {
-            this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicResource]}`, ESyslogEventFilter.warning);
+         // Safety-Check: DataSetClassId
+        if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
+            this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
             return;
         }
 
-        if (topicMethod === 'pub' && parsedMessage.Messages.length === 0) { // In pub, we do not expect empty messages, they always need at least one entry
-            this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
-            return;
+        if (topicInfo.oi4Id in this.assetLookup) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
+            this.assetLookup[topicInfo.oi4Id].lastMessage = new Date().toISOString();
         }
 
-        if (oi4Id in this.assetLookup) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
-            this.assetLookup[oi4Id]['lastMessage'] = new Date().toISOString();
+        switch (topicInfo.method) {
+            case TopicMethods.PUB:
+                await this.executePubActions(topicInfo, networkMessage);
+                break;
         }
 
-        if (topic.includes('/pub/event')) { // we got an event that we are subscribed on
-            // console.log('Got Event!');
-            this.logHappened = true; // We got some form of logs
-            // console.log(`Length globEventList: ${this.globalEventList.length}`);
-            if (this.globalEventList.length >= this.maxAuditTrailElements) {
-                // If we have too many elements in the list, we purge them
-                clearTimeout(this.flushTimeout);
-                this.flushToLogfile(); // This will also shift the array if there are too many entries!
-            }
-            this.globalEventList.push({ // So we have space for this payload!
-                ...parsedPayload,
-                level: topicFilter.split('/')[1],
-                timestamp: networkMessage.Messages[0].Timestamp,
-                tag: topicAppId,
-            });
-        } else if (topic.includes('/pub/health')) {
-            this.logger.log(`Got Health from ${oi4Id} in processMqttMessage`);
-            if (oi4Id in this.assetLookup) {
-                this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
-                // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-                clearTimeout(this.timeoutLookup[oi4Id]);
-                clearTimeout(this.secondStageTimeoutLookup[oi4Id]);
-
-                if (parsedPayload.health === EDeviceHealth.FAILURE_1 && parsedPayload.healthState === 0) {
-                    this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
-                    this.assetLookup[oi4Id].available = false;
-                } else {
-                    this.assetLookup[oi4Id].available = true; // We got a *health* message from the asset, so it's at least available
-                    const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id, Resource.HEALTH), 65000);
-                    this.timeoutLookup[oi4Id] = timeout;
-                }
-
-                this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(parsedPayload)}`);
-                parsedPayload.lastMessage = new Date().toISOString();
-                this.assetLookup[oi4Id].resources.health = parsedPayload;
-            } else {
-                if (topicAppId === this.oi4Id) return;
-
-                const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.MAM]);
-                await this.client.publish(`oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, JSON.stringify(networkMessage));
-                this.logger.log(`Got a health from unknown Asset, requesting mam on oi4/${topicServiceType}/${topicAppId}/get/mam/${oi4Id}`, ESyslogEventFilter.debug);
-            }
-        } else if (topic.includes('/pub/license')) {
-            if (oi4Id in this.assetLookup) {
-                this.assetLookup[oi4Id].resources.license = parsedPayload;
-            }
-        } else if (topic.includes('/pub/rtLicense')) {
-            if (oi4Id in this.assetLookup) {
-                this.assetLookup[oi4Id].resources.rtLicense = parsedPayload;
-            }
-        } else if (topic.includes('/pub/licenseText')) {
-            if (oi4Id in this.assetLookup) {
-                this.assetLookup[oi4Id].resources.licenseText = parsedPayload;
-            }
-        } else if (topic.includes('/pub/config')) {
-            if (oi4Id in this.assetLookup) {
-                this.assetLookup[oi4Id].resources.config = parsedPayload;
-            }
-        } else if (topic.includes('/pub/profile')) {
-            if (oi4Id in this.assetLookup) {
-                this.assetLookup[oi4Id].resources.profile = parsedPayload;
-            }
-        }
-        if (topicAppId === this.oi4Id) {
-            switch (topicMethod) {
-                case 'get': {
+        if (topicInfo.appId === this.oi4Id) {
+            switch (topicInfo.method) {
+                case TopicMethods.GET: {
                     let payloadType = 'empty';
                     let page = 0;
                     let perPage = 0;
 
-                    if (parsedMessage.Messages.length !== 0) {
-                        for (const messages of parsedMessage.Messages) {
+                    if (networkMessage.Messages.length !== 0) {
+                        for (const messages of networkMessage.Messages) {
                             payloadType = await this.builder.checkPayloadType(messages.Payload);
                             if (payloadType === 'locale') {
                                 this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
@@ -379,17 +308,17 @@ export class Registry extends EventEmitter {
                         }
                     }
 
-                    switch (topicResource) {
-                        case 'mam': {
+                    switch (topicInfo.resource) {
+                        case Resource.MAM: {
                             this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
-                            if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
-                            this.sendOutMam(topicFilter, page, perPage);
+                            // if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
+                            // this.sendOutMam(topicFilter, page, perPage);
                             break;
                         }
-                        case 'health': {
+                        case Resource.HEALTH: {
                             this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
-                            if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
-                            this.sendOutHealth(topicFilter, page, perPage);
+                            // if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
+                            // this.sendOutHealth(topicFilter, page, perPage);
                         }
                         default: {
                             break;
@@ -397,10 +326,11 @@ export class Registry extends EventEmitter {
                     }
                     break;
                 }
-                case 'pub': {
-                    switch (topicResource) {
-                        case 'mam': {
-                            if (topicArr.length > 9) {
+                case TopicMethods.PUB: {
+                    switch (topicInfo.resource) {
+                        case Resource.MAM: {
+                            const topicArray = topic.split('/');
+                            if (topicArray.length > 9) {
                                 // TODO cfz: support for mam that contains all assets of an application?
                                 await this.addToRegistry(topic, parsedPayload);
                             }
@@ -412,11 +342,11 @@ export class Registry extends EventEmitter {
                     }
                     break;
                 }
-                case 'set': {
-                    switch (topicResource) {
+                case TopicMethods.SET: {
+                    switch (topicInfo.resource) {
                         case 'config': {
                             // TODO cfz set subResource and filter
-                            await this.getConfig(parsedMessage, this.oi4Id);
+                            await this.getConfig(networkMessage, this.oi4Id);
                             break;
                         }
                         default: {
@@ -429,11 +359,12 @@ export class Registry extends EventEmitter {
                 }
             }
         } else {
-            switch (topicMethod) {
-                case 'pub': {
-                    switch (topicResource) {
-                        case 'mam': {
-                            if (topicArr.length > 9) {
+            switch (topicInfo.method) {
+                case TopicMethods.PUB: {
+                    switch (topicInfo.resource) {
+                        case Resource.MAM: {
+                            const topicArray = topic.split('/');
+                            if (topicArray.length > 9) {
                                 // TODO cfz: support for mam that contains all assets of an application?
                                 await this.addToRegistry(topic, parsedPayload);
                             }
@@ -450,6 +381,123 @@ export class Registry extends EventEmitter {
                 }
             }
         }
+    }
+
+    private async executePubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
+        if (topicInfo.method !== TopicMethods.PUB) {
+            throw new Error('Invalid argument topicInfo. Method must be TopicMethods.PUB.')
+        }
+
+        if (networkMessage.Messages.length === 0) { // In pub, we do not expect empty messages, they always need at least one entry
+            this.logger.log('Messages Array empty in pub - check DataSetMessage format', ESyslogEventFilter.warning);
+            return;
+        }
+
+        switch (topicInfo.resource)
+        {
+            case Resource.EVENT:
+                await this.processPublishedEvent(topicInfo, networkMessage);
+                break;
+            case Resource.HEALTH:
+                await this.processPublishedHealth(topicInfo, networkMessage);
+                break;
+            case Resource.LICENSE:
+                this.getMessages(networkMessage, (m) => this.updateAssetResource<License>(Resource.LICENSE, m, (p) => License.clone(p)));
+                break;
+            case Resource.RT_LICENSE:
+                this.getMessages(networkMessage, (m) => this.updateAssetResource<RTLicense>(Resource.RT_LICENSE, m, (p) => { 
+                    const rtLicense = new RTLicense();
+                    Object.assign(rtLicense, p); 
+                    return rtLicense;}));
+                break;
+            case Resource.LICENSE_TEXT:
+                this.getMessages(networkMessage, (m) => this.updateAssetResource<LicenseText>(Resource.LICENSE_TEXT, m, (p) => LicenseText.clone(p)));
+                break;
+
+            case Resource.CONFIG:
+                this.getMessages(networkMessage, (m) => this.updateAssetResource<IContainerConfig>(Resource.CONFIG, m, (p) => JSON.parse(JSON.stringify(p))));
+                break;
+
+            case Resource.PROFILE:
+                this.getMessages(networkMessage, (m) => this.updateAssetResource<Profile>(Resource.PROFILE, m, (p) => Profile.clone(p)));
+                break;
+        }
+    }
+
+    private getMessages(networkMessage: IOPCUANetworkMessage, proc: (m: IOPCUADataSetMessage) => void): void {
+        for (const dataSetMessage of networkMessage.Messages) {
+            if (typeof dataSetMessage.Payload.page !=='undefined') { // found pagination 
+                // TODO: request next messages?
+                continue;
+            }
+
+            proc(dataSetMessage);
+        }
+    }
+
+    private updateAssetResource<Type>(resource: Resource, dataSetMessage: IOPCUADataSetMessage, converter: (payload: any) => Type): void {
+        if (dataSetMessage.subResource in this.assetLookup) {
+            this.assetLookup[dataSetMessage.subResource].resources.resource = converter(dataSetMessage.Payload); }
+    }
+
+
+
+    private async processPublishedEvent(_topicInfo: TopicInfo, _networkMessage: IOPCUANetworkMessage): Promise<void>
+    {
+        this.logHappened = true; // We got some form of logs
+
+        if (this.globalEventList.length >= this.maxAuditTrailElements) {
+                // If we have too many elements in the list, we purge them
+                clearTimeout(this.flushTimeout);
+                this.flushToLogfile(); // This will also shift the array if there are too many entries!
+        }
+
+        /* TODO cfz
+        const parsedPayload = networkMessage.Messages[0].Payload;
+
+        this.globalEventList.push({ // So we have space for this payload!
+                ...parsedPayload,
+                level: topicFilter.split('/')[1],
+                timestamp: networkMessage.Messages[0].Timestamp,
+                tag: topicAppId,
+            });
+        */ 
+    }
+
+    private async processPublishedHealth(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
+
+        this.getMessages(networkMessage, async (m) => {
+            const oi4Id = m.subResource;
+            this.logger.log(`Got Health from ${oi4Id}.`);
+
+            const health = Health.clone(m.Payload);
+
+            if (oi4Id in this.assetLookup) {
+                this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
+                // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
+                clearTimeout(this.timeoutLookup[oi4Id]);
+    
+                if (health.health === EDeviceHealth.FAILURE_1 && health.healthScore === 0) {
+                    this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
+                    await this.removeDevice(oi4Id);
+                } else {
+                    const timeout = <any>setTimeout(() => this.resourceTimeout(oi4Id), 65000);
+                    this.timeoutLookup[oi4Id] = timeout;
+
+                    this.assetLookup[oi4Id].lastMessage = new Date().toISOString();
+                    this.assetLookup[oi4Id].resources.health = health;
+                }
+
+            this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
+            } else {
+                if (topicInfo.appId  === this.oi4Id) return;
+    
+                const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.MAM]);
+                const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${topicInfo.appId}`;
+                await this.client.publish(topic, JSON.stringify(networkMessage));
+                this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
+            }
+        });
     }
 
     /**
@@ -503,11 +551,7 @@ export class Registry extends EventEmitter {
         const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
         if (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
-            if (this.assetLookup[assetId].available) {
-                this.logger.log(`Device ${assetId} was available before, no need to re-add`, ESyslogEventFilter.warning);
-                return;
-            }
-            this.logger.log(`Device ${assetId} was unavailable before and is now back! Re-Registering`, ESyslogEventFilter.warning);
+            return;
         }
 
         try {
@@ -534,11 +578,7 @@ export class Registry extends EventEmitter {
 
         if (this.getAsset(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
-            if (this.assetLookup[oi4IdAsset].available) {
-                this.logger.log(`Device ${oi4IdAsset} was available before, no need to re-add`, ESyslogEventFilter.warning);
-                return;
-            }
-            this.logger.log(`Device ${oi4IdAsset} was unavailable before and is now back! Re-Registering`, ESyslogEventFilter.warning);
+            return;
         }
 
         const assetType = this.getAssetType(masterAssetModel);
@@ -558,7 +598,6 @@ export class Registry extends EventEmitter {
             },
             topicPreamble: `oi4/${topicArr[1]}/${oi4IdOriginator}`,
             conformityObject: conf,
-            available: true,
             assetType: assetType,
         };
         console.log(masterAssetModel);
@@ -639,26 +678,22 @@ export class Registry extends EventEmitter {
             let index = 0;
             const mamPayloadArr: IOPCUADataSetMessage[] = [];
             for (const device of Object.keys(assets)) {
-                if (assets[device].available) {
-                    let payload: IOPCUADataSetMessage = {
-                        Payload: {},
-                        DataSetWriterId: 0,
-                        subResource: '',
-                    };
-                    try {
-                        payload = {
-                            subResource: assets[device].oi4Id,
-                            Payload: assets[device].resources.mam,
-                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
-                        }
-                    } catch {
-                        this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
+                let payload: IOPCUADataSetMessage = {
+                    Payload: {},
+                    DataSetWriterId: 0,
+                    subResource: '',
+                };
+                try {
+                    payload = {
+                        subResource: assets[device].oi4Id,
+                        Payload: assets[device].resources.mam,
+                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
                     }
-                    mamPayloadArr.push(payload);
-                    this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
-                } else {
-                    this.logger.log(`Not sending registered mam of ${assets[device].resources.mam.ProductInstanceUri} because it is not available`);
+                } catch {
+                    this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
                 }
+                mamPayloadArr.push(payload);
+                this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
                 index++;
             }
             const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(mamPayloadArr, new Date(), DataSetClassIds[Resource.MAM], '', page, perPage);
@@ -716,26 +751,23 @@ export class Registry extends EventEmitter {
             let index = 0;
             const healthPayloadArr: IOPCUADataSetMessage[] = [];
             for (const device of Object.keys(assets)) {
-                if (assets[device].available) {
-                    let payload: IOPCUADataSetMessage = {
-                        Payload: {},
-                        DataSetWriterId: 0,
-                        subResource: ''
-                    };
-                    try {
-                        payload = {
-                            subResource: assets[device].oi4Id,
-                            Payload: assets[device].resources.health,
-                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
-                        }
-                    } catch {
-                        this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
+                let payload: IOPCUADataSetMessage = {
+                    Payload: {},
+                    DataSetWriterId: 0,
+                    subResource: ''
+                };
+                try {
+                    payload = {
+                        subResource: assets[device].oi4Id,
+                        Payload: assets[device].resources.health,
+                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
                     }
-                    healthPayloadArr.push(payload);
-                    this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
-                } else {
-                    this.logger.log(`Not sending registered health of ${assets[device].resources.mam.ProductInstanceUri} because it is not available`);
+                } catch {
+                    this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
                 }
+                healthPayloadArr.push(payload);
+                this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
+
                 index++;
             }
             const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(healthPayloadArr, new Date(), DataSetClassIds[Resource.HEALTH], '', page, perPage);
@@ -799,7 +831,7 @@ export class Registry extends EventEmitter {
      * Removes an asset from the assetLookup
      * @param device - the oi4Id of the device that is to be removed
      */
-    removeDevice(device: string) {
+    async removeDevice(device: string): Promise<void> {
         if (device in this.assetLookup) {
             this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/event/+/${device}`);
             this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/health/${device}`);
@@ -881,24 +913,21 @@ export class Registry extends EventEmitter {
     }
 
     /**
-     * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
-     * @param oi4Id The oi4Id of the asset that is to be updated
-     * @param resource The resource that is to be updated
+     * Raised in case that the resource has not send a health message within a given time span.
+     * @param oi4Id The oi4Id of the asset that has not send a health message.
      */
-    async resourceTimeout(oi4Id: string, resource: Resource): Promise<void> {
+    async resourceTimeout(oi4Id: string): Promise<void> {
         if (oi4Id in this.assetLookup) {
-            if (!this.assetLookup[oi4Id].available) {
-                if (typeof this.assetLookup[oi4Id].resources.health !== 'undefined') {
-                    this.assetLookup[oi4Id].resources.health = new Health(EDeviceHealth.FAILURE_1, 0);
-                }
-                this.logger.log(`Timeout2 - Setting deviceHealth of ${oi4Id} to FAILURE_1 and healthState 0`, ESyslogEventFilter.warning);
-                return;
-            }
-            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[resource]);
-            await this.client.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`, JSON.stringify(networkMessage));
-            this.secondStageTimeoutLookup[oi4Id] = <any>setTimeout(() => this.resourceTimeout(oi4Id, Resource.HEALTH), 65000); // Set new timeout, if we don't receive a health back...
-            this.logger.log(`Timeout1 - Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}, setting new timeout...`, ESyslogEventFilter.warning);
-            this.assetLookup[oi4Id].available = false;
+            const topic = `${this.assetLookup[oi4Id].topicPreamble}/get/$health/${oi4Id}`;
+            this.logger.log(`Timeout - Get health on ${topic}.`, ESyslogEventFilter.warning);
+
+            // remove the device 
+            await this.removeDevice(oi4Id);
+
+            // last attempt: send a get/health request to the asset 
+            // this might re-add the device
+            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.HEALTH]);
+            await this.client.publish(topic, JSON.stringify(networkMessage));
         }
     }
 
