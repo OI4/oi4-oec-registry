@@ -22,7 +22,6 @@ export interface IAsset {
      */
     topicPreamble: string;
     oi4Id: string;
-    eventList: IReceivedEvent[];
     oi4IdOriginator: string;
     lastMessage: string;
     registeredAt: string;
