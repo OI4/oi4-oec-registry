@@ -64,6 +64,7 @@ class ExpansionTableDetail extends React.Component {
       copySnackOpen: false,
     };
     // A list of mandatory resources so we can decide which ones we display
+    // TODO cfz: Update this list
     this.mandatoryResource = {
       application: ['health', 'license', 'licenseText', 'mam', 'profile', 'publicationList'],
       device: ['health', 'mam', 'profile'],

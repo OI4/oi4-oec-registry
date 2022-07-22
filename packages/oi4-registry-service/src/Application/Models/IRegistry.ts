@@ -6,9 +6,9 @@ import {
     RTLicense,
     LicenseText, 
     EAssetType,
-    IEvent
+    IEvent,
+    MasterAssetModel
 } from '@oi4/oi4-oec-service-model';
-import {IMasterAssetModel} from '@oi4/oi4-oec-service-opcua-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 
 /**
@@ -27,7 +27,6 @@ export interface IAsset {
     lastMessage: string;
     registeredAt: string;
     conformityObject: IConformity;
-    available: boolean;
     assetType: EAssetType;
 }
 
@@ -42,7 +41,7 @@ export interface IReceivedEvent {
 export interface IResourceObject {
     [key: string]: any;
 
-    mam: IMasterAssetModel;
+    mam: MasterAssetModel;
     health?: Health;
     rtLicense?: RTLicense;
     license?: License;

@@ -22,19 +22,19 @@ import {
     License,
     RTLicense,
     LicenseText,
-    Profile
+    Profile,
+    MasterAssetModel
 } from '@oi4/oi4-oec-service-model';
 import {
     EOPCUAStatusCode,
-    IMasterAssetModel,
     IOPCUANetworkMessage,
     IOPCUADataSetMessage,
     OPCUABuilder    
 } from '@oi4/oi4-oec-service-opcua-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicParser, TopicMethods} from '@oi4/oi4-oec-service-node';
-import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {IAssetLookup, IAsset, IReceivedEvent} from '../Models/IRegistry';
+import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
+import {IAssetLookup, IAsset, IReceivedEvent, IResourceObject} from '../Models/IRegistry';
 import { ELogType, ISettings } from '../Models/ISettings';
 import { RegistryResources } from '../RegistryResources';
 import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
@@ -103,8 +103,8 @@ export class Registry extends EventEmitter {
         this.maxAuditTrailElements = 100;
         this.logHappened = false;
 
-        this.builder = new OPCUABuilder(this.oi4Id, 'Registry'); // TODO: Better system for oi4Id!
-        this.conformityValidator = new ConformityValidator(this.oi4Id, client); // TODO: Better system for oi4Id!
+        this.builder = new OPCUABuilder(this.oi4Id, appResources.mam.getServiceType());
+        this.conformityValidator = new ConformityValidator(this.oi4Id, client);
         this.client = client;
 
         this.client.on('connect', async () => this.onClientConnect());
@@ -283,6 +283,8 @@ export class Registry extends EventEmitter {
         if (topicInfo.appId === this.oi4Id) {
             switch (topicInfo.method) {
                 case TopicMethods.GET: {
+
+                    /* TODO cfz -->
                     let payloadType = 'empty';
                     let page = 0;
                     let perPage = 0;
@@ -307,6 +309,7 @@ export class Registry extends EventEmitter {
                             }
                         }
                     }
+                    <-- */
 
                     switch (topicInfo.resource) {
                         case Resource.MAM: {
@@ -319,22 +322,6 @@ export class Registry extends EventEmitter {
                             this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
                             // if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
                             // this.sendOutHealth(topicFilter, page, perPage);
-                        }
-                        default: {
-                            break;
-                        }
-                    }
-                    break;
-                }
-                case TopicMethods.PUB: {
-                    switch (topicInfo.resource) {
-                        case Resource.MAM: {
-                            const topicArray = topic.split('/');
-                            if (topicArray.length > 9) {
-                                // TODO cfz: support for mam that contains all assets of an application?
-                                await this.addToRegistry(topic, parsedPayload);
-                            }
-                            break;
                         }
                         default: {
                             break;
@@ -358,29 +345,7 @@ export class Registry extends EventEmitter {
                     break;
                 }
             }
-        } else {
-            switch (topicInfo.method) {
-                case TopicMethods.PUB: {
-                    switch (topicInfo.resource) {
-                        case Resource.MAM: {
-                            const topicArray = topic.split('/');
-                            if (topicArray.length > 9) {
-                                // TODO cfz: support for mam that contains all assets of an application?
-                                await this.addToRegistry(topic, parsedPayload);
-                            }
-                            break;
-                        }
-                        default: {
-                            break;
-                        }
-                    }
-                    break;
-                }
-                default: {
-                    break;
-                }
-            }
-        }
+        } 
     }
 
     private async executePubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
@@ -395,6 +360,9 @@ export class Registry extends EventEmitter {
 
         switch (topicInfo.resource)
         {
+            case Resource.MAM:
+                await this.addToRegistry(topicInfo, networkMessage);
+                break;
             case Resource.EVENT:
                 await this.processPublishedEvent(topicInfo, networkMessage);
                 break;
@@ -402,30 +370,31 @@ export class Registry extends EventEmitter {
                 await this.processPublishedHealth(topicInfo, networkMessage);
                 break;
             case Resource.LICENSE:
-                this.getMessages(networkMessage, (m) => this.updateAssetResource<License>(Resource.LICENSE, m, (p) => License.clone(p)));
+                this.getMessages(networkMessage, (m) => this.updateResource(m, (r) => r.License = License.clone(m.Payload)));
                 break;
             case Resource.RT_LICENSE:
-                this.getMessages(networkMessage, (m) => this.updateAssetResource<RTLicense>(Resource.RT_LICENSE, m, (p) => { 
+                this.getMessages(networkMessage, (m) => this.updateResource(m, (r) => { 
                     const rtLicense = new RTLicense();
-                    Object.assign(rtLicense, p); 
-                    return rtLicense;}));
+                    Object.assign(rtLicense, m.Payload); 
+                    r.rtLicense = rtLicense;}));
                 break;
             case Resource.LICENSE_TEXT:
-                this.getMessages(networkMessage, (m) => this.updateAssetResource<LicenseText>(Resource.LICENSE_TEXT, m, (p) => LicenseText.clone(p)));
+                this.getMessages(networkMessage, (m) => this.updateResource(m, (r) => r.licenseText = LicenseText.clone(m.Payload)));
                 break;
 
             case Resource.CONFIG:
-                this.getMessages(networkMessage, (m) => this.updateAssetResource<IContainerConfig>(Resource.CONFIG, m, (p) => JSON.parse(JSON.stringify(p))));
+                this.getMessages(networkMessage, (m) => this.updateResource(m, (r) => r.config = JSON.parse(JSON.stringify(m.Payload))));
                 break;
 
             case Resource.PROFILE:
-                this.getMessages(networkMessage, (m) => this.updateAssetResource<Profile>(Resource.PROFILE, m, (p) => Profile.clone(p)));
+                this.getMessages(networkMessage, (m) => this.updateResource(m, (r) => r.profile = Profile.clone(m.Payload)));
                 break;
         }
     }
 
-    private getMessages(networkMessage: IOPCUANetworkMessage, proc: (m: IOPCUADataSetMessage) => void): void {
+    private async getMessages(networkMessage: IOPCUANetworkMessage, proc: (m: IOPCUADataSetMessage) => void): Promise<void> {
         for (const dataSetMessage of networkMessage.Messages) {
+
             if (typeof dataSetMessage.Payload.page !=='undefined') { // found pagination 
                 // TODO: request next messages?
                 continue;
@@ -435,12 +404,11 @@ export class Registry extends EventEmitter {
         }
     }
 
-    private updateAssetResource<Type>(resource: Resource, dataSetMessage: IOPCUADataSetMessage, converter: (payload: any) => Type): void {
+    private updateResource(dataSetMessage: IOPCUADataSetMessage, update: (asset: IResourceObject) => void): void {
         if (dataSetMessage.subResource in this.assetLookup) {
-            this.assetLookup[dataSetMessage.subResource].resources.resource = converter(dataSetMessage.Payload); }
+            update(this.assetLookup[dataSetMessage.subResource].resources)
+        }
     }
-
-
 
     private async processPublishedEvent(_topicInfo: TopicInfo, _networkMessage: IOPCUANetworkMessage): Promise<void>
     {
@@ -544,24 +512,26 @@ export class Registry extends EventEmitter {
     /**
      * If we receive a pubMam Event from the MessageBusProxy, we check if that Mam is already in our Registry lookup
      * If not, we add it to the registry, if yes, we don't.
-     * @param mqttObj The full mqtt message containing a potential addition to the registry
      */
-    async addToRegistry(topic: string, parsedPayload: any): Promise<void> {
-        const topicArr = topic.split('/');
-        const assetId = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
-        if (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-            this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
-            return;
-        }
+    async addToRegistry(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
-        try {
-            this.logger.log('Enqueueing ADD-Device', ESyslogEventFilter.debug);
-            this.queue.push(async () => {
-                return await this.addDevice(topic, parsedPayload);
-            });
-        } catch (addErr) {
-            this.logger.log(`Add-Error: ${addErr}`, ESyslogEventFilter.error);
-        }
+        await this.getMessages(networkMessage, async (m) => {
+            const assetId = m.subResource;
+
+            if  (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+                this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
+                return;
+            }
+            try {
+                const mam = MasterAssetModel.clone(m.Payload);
+                this.logger.log('Enqueueing ADD-Device', ESyslogEventFilter.debug);
+                this.queue.push(async () => {
+                    return await this.addAsset(topicInfo, mam);
+                });
+            } catch (addErr) {
+                this.logger.log(`Add-Error: ${addErr}`, ESyslogEventFilter.error);
+            }
+        });
     }
 
     /**
@@ -570,34 +540,40 @@ export class Registry extends EventEmitter {
      * @param fullTopic The topic that contains information about the device being added
      * @param masterAssetModel The MasterAssetModel of the device
      */
-    async addDevice(fullTopic: string, masterAssetModel: IMasterAssetModel): Promise<void> {
-        this.logger.log(`----------- ADDING ASSET ----------:  ${fullTopic}`, ESyslogEventFilter.informational);
-        const topicArr = fullTopic.split('/');
-        const oi4IdOriginator = `${topicArr[2]}/${topicArr[3]}/${topicArr[4]}/${topicArr[5]}`; // This is the OI4-ID of the Orignator Container
-        const oi4IdAsset = `${topicArr[8]}/${topicArr[9]}/${topicArr[10]}/${topicArr[11]}`; // this is the OI4-ID of the Asset
+    async addAsset(topicInfo: TopicInfo, masterAssetModel: MasterAssetModel): Promise<void> {
+        this.logger.log(`----------- ADDING ASSET ----------:  ${topicInfo.topic}`, ESyslogEventFilter.informational);
+        
+        if (Object.keys(masterAssetModel).length === 0) {
+            this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
+            return;
+        }
+        const oi4Id = topicInfo.oi4Id !== undefined ? topicInfo.oi4Id : topicInfo.appId;
 
-        if (this.getAsset(oi4IdAsset)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+        if (this.getAsset(oi4Id)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
             return;
         }
 
         const assetType = this.getAssetType(masterAssetModel);
-        const conf = await this.conformityValidator.checkConformity(assetType, `oi4/${topicArr[1]}/${oi4IdOriginator}`, oi4IdAsset);
-        if (Object.keys(masterAssetModel).length === 0) {
-            this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
-            return;
-        }
-        const fullDevice: IAsset = {
-            oi4IdOriginator,
-            oi4Id: oi4IdAsset,
+        const registeredAt = new Date().toISOString();
+        const newAsset: IAsset = {
+            oi4IdOriginator: topicInfo.appId,
+            oi4Id: oi4Id,
             eventList: [],
-            lastMessage: '',
-            registeredAt: '',
+            lastMessage: registeredAt,
+            registeredAt: registeredAt,
             resources: {
                 mam: masterAssetModel,
             },
-            topicPreamble: `oi4/${topicArr[1]}/${oi4IdOriginator}`,
-            conformityObject: conf,
+            topicPreamble: `oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
+            conformityObject: { 
+                oi4Id: EValidity.default,
+                validity: EValidity.default,
+                checkedResourceList: [],
+                profileResourceList: [],
+                nonProfileResourceList: [],
+                resource:{}
+            },
             assetType: assetType,
         };
         console.log(masterAssetModel);
@@ -607,39 +583,30 @@ export class Registry extends EventEmitter {
             this.logger.log('___Adding Device___', ESyslogEventFilter.debug);
         }
 
-        this.assetLookup[oi4IdAsset] = fullDevice;
+        this.assetLookup[oi4Id] = newAsset;
 
-        // Subscribe to all changes regarding this application
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/health/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/license/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/rtLicense/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/licenseText/#`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/config/${oi4IdAsset}`);
-        this.ownSubscribe(`${this.assetLookup[oi4IdAsset].topicPreamble}/pub/profile/${oi4IdAsset}`);
-        // Try to get them at least once!
-        try {
-            await this.updateResourceInDevice(oi4IdAsset, Resource.HEALTH);
-            await this.updateResourceInDevice(oi4IdAsset, Resource.PROFILE); // Initial profile reading
-            await this.updateResourceInDevice(oi4IdAsset, Resource.SUBSCRIPTION_LIST); // TODO cfz: Why subscription list? This is not supported by many assets. 
-            this.assetLookup[oi4IdAsset]['registeredAt'] = new Date().toISOString();
-            this.assetLookup[oi4IdAsset]['lastMessage'] = new Date().toISOString();
 
-            const licenseObj = this.assetLookup[oi4IdAsset].resources.license;
-            if (licenseObj) {
-                await this.getLicenseTextFromDevice(oi4IdAsset, Resource.LICENSE_TEXT, licenseObj.licenseId);
-            }
-        } catch (err) {
-            console.log(err);
-        }
+        // Subscribe to all changes regarding this application 
+        // TODO cfz  really necessary? In this case add the missing resources
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/health/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/license/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/rtLicense/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/licenseText/#`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/config/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/pub/profile/${oi4Id}`);
+        
+        newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
+
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
         publicationList.resource = Resource.MAM;
-        publicationList.oi4Identifier = oi4IdAsset;
+        publicationList.oi4Identifier = topicInfo.appId;
         publicationList.DataSetWriterId = 0;
         publicationList.config = PublicationListConfig.NONE_0;
         publicationList.interval = 0;
-        publicationList.subResource = oi4IdAsset;
+        publicationList.subResource = oi4Id;
 
+        // TODO cfz review below code
         this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
         await this.client.publish(
@@ -652,7 +619,7 @@ export class Registry extends EventEmitter {
         );
     }
 
-    private getAssetType( masterAssetModel: IMasterAssetModel): EAssetType
+    private getAssetType(masterAssetModel: MasterAssetModel): EAssetType
     {
         // OEC development specification section 4 (mam) about the 'HardwareRevision':
         // An application (software only) might be listed as an asset and therefore also has a nameplate. 
@@ -899,18 +866,6 @@ export class Registry extends EventEmitter {
         return conformityObject;
     }
 
-    /**
-     * Updates the resource of a registered asset by publishing a /get/ request on the corresponding oi4-topic
-     * @param oi4Id The oi4Id of the asset that is to be updated
-     * @param resource The resource that is to be updated
-     */
-    async updateResourceInDevice(oi4Id: string, resource: Resource): Promise<void> {
-        if (oi4Id in this.assetLookup) {
-            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[resource])
-            await this.client.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`, JSON.stringify(networkMessage));
-            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${oi4Id}`);
-        }
-    }
 
     /**
      * Raised in case that the resource has not send a health message within a given time span.
@@ -931,20 +886,6 @@ export class Registry extends EventEmitter {
         }
     }
 
-    /**
-     * Updates the licenseText of a registered asset by publishing a /get/ request on the corresponding oi4-topic
-     * @param oi4Id The oi4Id of the asset that is to be updated
-     * @param resource The resource that is to be updated (in this case..licenseText)
-     * @param license The license that is to be updated
-     * TODO: merge this functionality into updateResourceInDevice by utilizing a default empty string parameter...
-     */
-    async getLicenseTextFromDevice(oi4Id: string, resource: Resource, license: string): Promise<void> {
-        if (oi4Id in this.assetLookup) {
-            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[resource]);
-            await this.client.publish(`${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${license}`, JSON.stringify(networkMessage));
-            this.logger.log(`Sent Get ${resource} on ${this.assetLookup[oi4Id].topicPreamble}/get/${resource}/${license}`);
-        }
-    }
 
     /**
      * Retrieves a specific resource from an asset via its oi4Id. This includes devices and applications
