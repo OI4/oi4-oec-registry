@@ -259,11 +259,6 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        let parsedPayload: any = {}; // FIXME: Hotfix, remove the "any" and see where it goes...
-        if (networkMessage.Messages.length !== 0) {
-            parsedPayload = networkMessage.Messages[0].Payload;
-        }
-
          // Safety-Check: DataSetClassId
         if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
             this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
@@ -279,73 +274,6 @@ export class Registry extends EventEmitter {
                 await this.executePubActions(topicInfo, networkMessage);
                 break;
         }
-
-        if (topicInfo.appId === this.oi4Id) {
-            switch (topicInfo.method) {
-                case TopicMethods.GET: {
-
-                    /* TODO cfz -->
-                    let payloadType = 'empty';
-                    let page = 0;
-                    let perPage = 0;
-
-                    if (networkMessage.Messages.length !== 0) {
-                        for (const messages of networkMessage.Messages) {
-                            payloadType = await this.builder.checkPayloadType(messages.Payload);
-                            if (payloadType === 'locale') {
-                                this.logger.log('Detected a locale request, but we can only send en-US!', ESyslogEventFilter.informational);
-                            }
-                            if (payloadType === 'pagination') {
-                                page = messages.Payload.page;
-                                perPage = messages.Payload.perPage;
-                                if (page === 0 || perPage === 0) {
-                                    this.logger.log('Pagination requested either page or perPage 0, aborting send...');
-                                    return;
-                                }
-                            }
-                            if (payloadType === 'none') { // Not empty, locale or pagination
-                                this.logger.log('Message must be either empty, locale or pagination type in a /get/ request. Aboring get operation.', ESyslogEventFilter.informational);
-                                return;
-                            }
-                        }
-                    }
-                    <-- */
-
-                    switch (topicInfo.resource) {
-                        case Resource.MAM: {
-                            this.logger.log('Someone requested a mam with our oi4Id as appId', ESyslogEventFilter.debug);
-                            // if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
-                            // this.sendOutMam(topicFilter, page, perPage);
-                            break;
-                        }
-                        case Resource.HEALTH: {
-                            this.logger.log('Someone requested a health with our oi4Id as appId', ESyslogEventFilter.debug);
-                            // if (topicFilter.includes('Registry')) break; // TODO cfz This request should be handled in the service component
-                            // this.sendOutHealth(topicFilter, page, perPage);
-                        }
-                        default: {
-                            break;
-                        }
-                    }
-                    break;
-                }
-                case TopicMethods.SET: {
-                    switch (topicInfo.resource) {
-                        case 'config': {
-                            // TODO cfz set subResource and filter
-                            await this.getConfig(networkMessage, this.oi4Id);
-                            break;
-                        }
-                        default: {
-                            break;
-                        }
-                    }
-                }
-                default: {
-                    break;
-                }
-            }
-        } 
     }
 
     private async executePubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
@@ -410,7 +338,7 @@ export class Registry extends EventEmitter {
         }
     }
 
-    private async processPublishedEvent(_topicInfo: TopicInfo, _networkMessage: IOPCUANetworkMessage): Promise<void>
+    private async processPublishedEvent(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void>
     {
         this.logHappened = true; // We got some form of logs
 
@@ -420,16 +348,17 @@ export class Registry extends EventEmitter {
                 this.flushToLogfile(); // This will also shift the array if there are too many entries!
         }
 
-        /* TODO cfz
-        const parsedPayload = networkMessage.Messages[0].Payload;
+        await this.getMessages(networkMessage, (m)=> {
+            const parsedPayload = m.Payload;
 
-        this.globalEventList.push({ // So we have space for this payload!
-                ...parsedPayload,
-                level: topicFilter.split('/')[1],
-                timestamp: networkMessage.Messages[0].Timestamp,
-                tag: topicAppId,
-            });
-        */ 
+            this.globalEventList.push({ // So we have space for this payload!
+                    ...parsedPayload,
+                    level: topicInfo.filter,
+                    timestamp: m.Timestamp,
+                    tag: topicInfo.appId,
+                });
+    
+        });
     }
 
     private async processPublishedHealth(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
@@ -632,153 +561,6 @@ export class Registry extends EventEmitter {
         return  EAssetType.device;
      }
 
-    /**
-     * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
-     * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
-     */
-    async sendOutMam(filter: string, page: number, perPage: number) {
-        const apps = this.applications as IAssetLookup;
-        const devices = this.devices as IAssetLookup;
-        const assets: IAssetLookup = Object.assign({}, apps, devices);
-        if (filter === '') {
-            this.logger.log(`Sending all known Mams...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
-            let index = 0;
-            const mamPayloadArr: IOPCUADataSetMessage[] = [];
-            for (const device of Object.keys(assets)) {
-                let payload: IOPCUADataSetMessage = {
-                    Payload: {},
-                    DataSetWriterId: 0,
-                    subResource: '',
-                };
-                try {
-                    payload = {
-                        subResource: assets[device].oi4Id,
-                        Payload: assets[device].resources.mam,
-                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${index}`, 10),
-                    }
-                } catch {
-                    this.logger.log('Error when trying to send a mam', ESyslogEventFilter.error);
-                }
-                mamPayloadArr.push(payload);
-                this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
-                index++;
-            }
-            const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(mamPayloadArr, new Date(), DataSetClassIds[Resource.MAM], '', page, perPage);
-            for (const networkMessage of paginatedMessageArray) {
-                await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/mam`, JSON.stringify(networkMessage));
-            }
-        } else {
-
-            // TODO cfz: Filtering of Mam really necessary? According the spec the mam do not make use of filter -->
-
-            const dswidFilterStr = filter.substring(1);
-            const dswidFilter = parseInt(dswidFilterStr, 10);
-            if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
-                try {
-                    const mamPayloadArr: IOPCUADataSetMessage[] = [{
-                        subResource: assets[filter].oi4Id,
-                        Payload: assets[filter].resources.mam,
-                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
-                    }]
-
-                    const networkMessage = this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), DataSetClassIds[Resource.MAM]);
-                    await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${assets[filter].oi4Id}`, JSON.stringify(networkMessage));
-                } catch (ex) {
-                    this.logger.log(`Error when trying to send a mam with oi4Id-based filter: ${ex}`, ESyslogEventFilter.error);
-                }
-            } else { // DSWID filter
-                try {
-                    const mamPayloadArr: IOPCUADataSetMessage[] = [{
-                        subResource: assets[Object.keys(assets)[dswidFilter]].oi4Id,
-                        Payload: assets[Object.keys(assets)[dswidFilter]].resources.mam,
-                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['mam']}${dswidFilter}`, 10),
-                    }]
-
-                    const networkMessage = this.builder.buildOPCUANetworkMessage(mamPayloadArr, new Date(), DataSetClassIds[Resource.MAM]);
-                    await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/mam/${mamPayloadArr[0].subResource}`, JSON.stringify(networkMessage));
-                } catch (ex) {
-                    this.logger.log(`Error when trying to send a mam with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
-                }
-            }
-
-            // <-- TODO cfz
-        }
-    }
-
-    /**
-     * If we receive a getMam Event from the MessageBusProxy, we lookup the Mam in our Registry.
-     * TODO: Currently, only an empty Tag is supported, which leads to a publish of ALL Mam Data on /pub/mam/<oi4Id>
-     */
-    async sendOutHealth(filter: string, page: number, perPage: number) {
-        const apps = this.applications as IAssetLookup;
-        const devices = this.devices as IAssetLookup;
-        const assets: IAssetLookup = Object.assign({}, apps, devices);
-        if (filter === '') {
-            this.logger.log(`Sending all known Healths...count: ${Object.keys(assets).length}`, ESyslogEventFilter.debug);
-            let index = 0;
-            const healthPayloadArr: IOPCUADataSetMessage[] = [];
-            for (const device of Object.keys(assets)) {
-                let payload: IOPCUADataSetMessage = {
-                    Payload: {},
-                    DataSetWriterId: 0,
-                    subResource: ''
-                };
-                try {
-                    payload = {
-                        subResource: assets[device].oi4Id,
-                        Payload: assets[device].resources.health,
-                        DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${index}`, 10),
-                    }
-                } catch {
-                    this.logger.log('Error when trying to send health', ESyslogEventFilter.error);
-                }
-                healthPayloadArr.push(payload);
-                this.logger.log(`Built payload for device with OI4-ID ${assets[device].resources.mam.ProductInstanceUri}`);
-
-                index++;
-            }
-            const paginatedMessageArray = this.builder.buildPaginatedOPCUANetworkMessageArray(healthPayloadArr, new Date(), DataSetClassIds[Resource.HEALTH], '', page, perPage);
-            for (const networkMessage of paginatedMessageArray) {
-                await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/health`, JSON.stringify(networkMessage));
-            }
-        } else {
-            {
-                // TODO cfz: Remove filter logic -->
-
-                const dswidFilterStr = filter.substring(1);
-                const dswidFilter = parseInt(dswidFilterStr, 10);
-                if (Number.isNaN(dswidFilter)) { // NaN means it's a string-based filter, probably oi4Id
-                    try {
-                        const healthPayloadArr: IOPCUADataSetMessage[] = [{
-                            subResource: assets[filter].oi4Id,
-                            Payload: assets[filter].resources.health,
-                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${Object.keys(assets).indexOf(assets[filter].oi4Id)}`, 10),
-                        }]
-
-                        const networkMessage = this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), DataSetClassIds[Resource.HEALTH])
-                        await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/health/${assets[filter].oi4Id}`, JSON.stringify(networkMessage));
-                    } catch (ex) {
-                        this.logger.log(`Error when trying to send health with topic-based filter: ${ex}`, ESyslogEventFilter.error);
-                    }
-                } else { // DSWID filter
-                    try {
-                        const healthPayloadArr: IOPCUADataSetMessage[] = [{
-                            subResource: assets[Object.keys(assets)[dswidFilter]].oi4Id,
-                            Payload: assets[Object.keys(assets)[dswidFilter]].resources.health,
-                            DataSetWriterId: parseInt(`${CDataSetWriterIdLookup['health']}${dswidFilter}`, 10),
-                        }]
-
-                        const networkMessage = this.builder.buildOPCUANetworkMessage(healthPayloadArr, new Date(), DataSetClassIds[Resource.HEALTH]);
-                        await this.client.publish(`oi4/Registry/${this.oi4Id}/pub/health/${healthPayloadArr[0].subResource}`, JSON.stringify(networkMessage));
-                    } catch (ex) {
-                        this.logger.log(`Error when trying to send a health with dswid-based filter: ${ex}`, ESyslogEventFilter.error);
-                    }
-                }
-
-                // <-- TODO cfz
-            }
-        }
-    }
 
     private removePublicationBySubResource(subResource: string): void
     {
@@ -960,7 +742,7 @@ export class Registry extends EventEmitter {
      * Wrapper for the deleteFiles method of the FileLogger.
      * Should be called whenever the logfileSize is changed
      */
-    deleteFiles() {
+    deleteFiles(): string[] {
         return this.fileLogger.deleteFiles();
     }
 
