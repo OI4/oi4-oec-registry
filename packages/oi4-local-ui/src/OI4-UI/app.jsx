@@ -160,10 +160,7 @@ class OI4Base extends React.Component {
                 auditTrailLength: 25,
             },
             backendConfig: {
-                auditLevel: 'debug',
                 showRegistry: true,
-                logToFile: 'disabled',
-                logFileSize: 250, // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
                 developmentMode: false,
             },
             theme: lightTheme,
@@ -365,18 +362,10 @@ class OI4Base extends React.Component {
                         {/* Padding for dialog */}
                         <div style={{ flexGrow: 1 }} />
                         <ClickableFooter
-                            clearAllAssets={this.clearAllAssets.bind(this)}
-                            clearAllLogs={this.clearAllLogs.bind(this)}
-                            updateBackendConfig={this.updateBackendConfig.bind(this)}
                             updateFrontendConfig={this.updateFrontendConfig.bind(this)}
                             config={this.state.config}
                             backendConfig={this.state.backendConfig}
                             fetch={this.fetch}
-                            handleGetConfig={this.getBackendConfig.bind(this)}
-                            handleSetConfig={this.setBackendConfig.bind(this)}
-                            handleUpdateTrail={this.updateGlobalEventTrail.bind(this)}
-                            saveToFile={this.saveToFile.bind(this)}
-                            handleLoadFromFile={this.loadFromFile.bind(this)}
                             license={this.license}
                             version={this.version}
                             bigLogo={this.state.bigLogo}
@@ -408,17 +397,6 @@ class OI4Base extends React.Component {
             _winstonLogger.info('Object does not have this property');
             return false;
         }
-    }
-
-    /**
-     * Clears all logs in the Registry backend by calling the API
-     * @memberof OI4Base
-     */
-    clearAllLogs() {
-        this.fetch.delete(`/registry/logs`)
-            .then(data => {
-                _winstonLogger.info(data);
-            });
     }
 
     /**
@@ -570,7 +548,7 @@ class OI4Base extends React.Component {
             </span>}
                     />);
             } else {
-                return <h3>No items in audit trail...</h3>;
+                return <h3>No items in event list...</h3>;
             }
         }
     }
@@ -766,18 +744,6 @@ class OI4Base extends React.Component {
 
     // DELETION //
     /**
-     * Clear all Assets of the Registry backend by calling the corresponding API
-     * @memberof OI4Base
-     */
-    clearAllAssets() {
-        _winstonLogger.info('Clear all Assets clicked');
-        this.fetch.delete(`/registry/assets`)
-            .then(data => {
-                _winstonLogger.info(data);
-            });
-    }
-
-    /**
      * Clear an Asset of the Registry backend by calling the corresponding API
      * @param {string} oi4Id - The oi4Id of the Asset that is to be deleted
      * @memberof OI4Base
@@ -824,17 +790,6 @@ class OI4Base extends React.Component {
     }
 
     // CALLBACKS FOR CLICKABLE FOOTER //
-    /**
-     * Callback used for state-lifting and updating the backendConfig (setState cannot be called from child-components!)
-     * @param {string} configPropertyName - The property that is to be changed in the backendConfig
-     * @param {any} newProperty - The new value of the property
-     * @memberof OI4Base
-     */
-    updateBackendConfig(configPropertyName, newProperty) {
-        const oldConfigObj = JSON.parse(JSON.stringify(this.state.backendConfig));
-        oldConfigObj[configPropertyName] = newProperty;
-        this.setState({ backendConfig: oldConfigObj });
-    }
 
     /**
      * Callback used for state-lifting and updating the frontendConfig (setState cannot be called from child-components!)
@@ -846,23 +801,6 @@ class OI4Base extends React.Component {
         const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
         oldConfigObj[configPropertyName] = newProperty;
         this.setState({ config: oldConfigObj });
-    }
-
-    /**
-     * Updates the Registry backend with the config by calling the corresponding API
-     * @memberof OI4Base
-     */
-    async setBackendConfig() {
-        const regConfData = await this.retrieveBackendConfig();
-        regConfData.logging.auditLevel.value = this.state.backendConfig.auditLevel;
-        regConfData.registry.showRegistry.value = this.state.backendConfig.showRegistry.toString();
-        regConfData.logging.logType.value = this.state.backendConfig.logToFile;
-        regConfData.logging.logFileSize.value = (this.state.backendConfig.logFileSize * 1000).toString();
-        regConfData.registry.developmentMode.value = this.state.backendConfig.developmentMode.toString();
-        this.fetch.put(`/registry/config`, JSON.stringify(regConfData))
-            .then(data => {
-                _winstonLogger.info(data);
-            });
     }
 
     async retrieveBackendConfig() {
@@ -883,74 +821,10 @@ class OI4Base extends React.Component {
     async getBackendConfig() {
         const regConfData = await this.retrieveBackendConfig();
         const backendConfig = {
-            auditLevel: regConfData.logging.auditLevel.value,
             showRegistry: regConfData.registry.showRegistry.value === 'true',
-            logToFile: regConfData.logging.logType.value,
-            logFileSize: ((parseInt(regConfData.logging.logFileSize.value, 10)) / 1000), // In kiloByte FIXME: THIS IS NOT 1:1 to the backend...
             developmentMode: regConfData.registry.developmentMode.value === 'true',
         };
         this.setState({ backendConfig: backendConfig });
-    }
-
-    /**
-     * Saves both the frontendConfig and backendConfig to the local file system of the user via browser
-     * @memberof OI4Base
-     */
-    saveToFile() {
-        const fullConfigObj = {
-            config: this.state.config,
-            backendConfig: this.state.backendConfig,
-        };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullConfigObj));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `configDmp.json`);
-        document.body.appendChild(downloadAnchorNode); // required for firefox
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    /**
-     * Callback used to load a file from the local file system of the user via the browser.
-     * Implements basic property/type checks for the loaded json / object.
-     * @param {any} e - The event that caused the callback, typically by an <input/> component
-     * @memberof OI4Base
-     */
-    loadFromFile(e) {
-        const fileReader = new FileReader();
-        fileReader.readAsText(e.target.files[0]);
-        fileReader.onload = (evt) => {
-            const confObj = JSON.parse(evt.target.result);
-            _winstonLogger.info('Old config: Frontend');
-            _winstonLogger.info(JSON.parse(JSON.stringify(this.state.config)));
-            _winstonLogger.info('Old config: Backend');
-            _winstonLogger.info(JSON.parse(JSON.stringify(this.state.backendConfig)));
-            _winstonLogger.info('New config');
-            _winstonLogger.info(confObj);
-            if (!(this.checkObjectPropertyType(confObj.config, 'auditTrailLength', 'number'))) return;
-            if (![25, 50, 100, 200, 400].includes(confObj.config.auditTrailLength)) {
-                _winstonLogger.info(`${confObj.config.auditTrailLength} not part of auditTrailLength-array`);
-                return;
-            }
-            if (!(this.checkObjectPropertyType(confObj.backendConfig, 'auditLevel', 'string'))) return;
-            if (!['debug', 'informational', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'].includes(confObj.backendConfig.auditLevel)) {
-                _winstonLogger.info(`${confObj.backendConfig.auditLevel} not part of auditLevel-array`);
-                return;
-            }
-            if (!(this.checkObjectPropertyType(confObj.backendConfig, 'showRegistry', 'boolean'))) return;
-            if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logToFile', 'string'))) return;
-            if (!['enabled', 'disabled', 'endpoint'].includes(confObj.backendConfig.logToFile)) {
-                _winstonLogger.info(`${confObj.backendConfig.logToFile} not part of logToFile-array`);
-                return;
-            }
-            if (!(this.checkObjectPropertyType(confObj.backendConfig, 'logFileSize', 'number'))) return;
-            if (![250, 500, 750, 1000, 2000, 3000, 4000, 5000, 7500, 10000].includes(confObj.backendConfig.logFileSize)) {
-                _winstonLogger.info(`${confObj.backendConfig.logFileSize} not part of logFileSize-array`);
-                return;
-            }
-            if (!(this.checkObjectPropertyType(confObj.backendConfig, 'developmentMode', 'boolean'))) return;
-            this.setState({ config: confObj.config, backendConfig: confObj.backendConfig });
-        };
     }
 
     /**
