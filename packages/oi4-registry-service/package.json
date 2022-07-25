@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4-registry-service",
-  "version": "0.12.3",
+  "version": "1.0.0",
   "description": "Acts as the application in a running OI4 container",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "BSD-3-Clause",

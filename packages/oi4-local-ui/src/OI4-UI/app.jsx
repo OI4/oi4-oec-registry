@@ -208,9 +208,6 @@ class OI4Base extends React.Component {
         this.activeIntervals.push(setInterval(() => {
             this.updateDevices();
         }, 4000));
-        // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('health') }, 7000));
-        // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('eventList') }, 3500));
-        // this.activeIntervals.push(setInterval(() => { this.updateRegistryResource('lastMessage') }, 5000));
         this.activeIntervals.push(setInterval(() => {
             this.updateGlobalEventTrail();
         }, 10000));
@@ -621,14 +618,15 @@ class OI4Base extends React.Component {
                 let wasUpdated = false;
                 Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
-                    jsonData[oi4Id].eventList = [];
+                    const eventList = [];
+                    const globalEvents = this.state.globalEventTrail.slice(0).reverse();
                     // since this.state.globalEventTrail is only an array-like object, we need to iterate over its items by calling forEach indirectly using call
-                    Array.prototype.forEach.call(this.reverse(this.state.globalEventTrail), audits => {
-                        if (audits.Tag === oi4Id) {
-                            jsonData[oi4Id].eventList.push(audits);
+                    Array.prototype.forEach.call(globalEvents, audits => {
+                        if (audits.origin === oi4Id) {
+                            eventList.push(audits);
                         }
                     });
-                    jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
+                    jsonData[oi4Id].eventList = eventList.reverse();
 
                     // Update conformity
                     if (oi4Id in confLookupLoc) {
@@ -663,14 +661,15 @@ class OI4Base extends React.Component {
                 const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
                 Object.keys(jsonData).forEach(oi4Id => {
                     // Update auditTrail
-                    jsonData[oi4Id].eventList = [];
+                    const eventList = [];
+                    const globalEvents = this.state.globalEventTrail.slice(0).reverse();
                     // since this.state.globalEventTrail is only an array-like object, we need to iterate over its items by calling forEach indirectly using call
-                    Array.prototype.forEach.call(this.reverse(this.state.globalEventTrail), audits => {
-                        if (audits.tag === oi4Id) {
-                            jsonData[oi4Id].eventList.push(audits);
+                    Array.prototype.forEach.call(globalEvents, audits => {
+                        if (audits.origin === oi4Id) {
+                            eventList.push(audits);
                         }
                     });
-                    jsonData[oi4Id].eventList = jsonData[oi4Id].eventList.reverse();
+                    jsonData[oi4Id].eventList = eventList.reverse();
                     if (oi4Id in confLookupLoc) {
                         delete confLookupLoc[oi4Id];
                     }
@@ -696,7 +695,7 @@ class OI4Base extends React.Component {
         Object.keys(this.state.applicationLookup).forEach(oi4Id => {
             // Check, if we can even get the resource (through conformity lookup)
             if (typeof this.state.conformityLookup[oi4Id] === 'object' && this.state.conformityLookup[oi4Id] !== null) {
-                if (resource === 'eventList' || resource === 'lastMessage') {
+                if (resource === 'lastMessage') {
                     this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
                         .then(data => {
                             const resourceObject = JSON.parse(data);
@@ -840,18 +839,6 @@ class OI4Base extends React.Component {
                 _winstonLogger.info(err);
                 reject(err);
             });
-    }
-
-    // HELPER-FUNCTIONS //
-    /**
-     * Reverses the order of an Array
-     * @param {array} arr
-     * @memberof OI4Base
-     */
-    * reverse(arr) {
-        for (let i = arr.length - 1; i >= 0; i--) {
-            yield arr[i];
-        }
     }
 }
 

@@ -33,7 +33,7 @@ import {
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicParser, TopicMethods} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {IAssetLookup, IAsset, IReceivedEvent, IResourceObject} from '../Models/IRegistry';
+import {IAssetLookup, IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
 import { ELogType, ISettings } from '../Models/ISettings';
 import { RegistryResources } from '../RegistryResources';
 import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
@@ -50,7 +50,7 @@ interface PaginationPub
 export class Registry extends EventEmitter {
     private assetLookup: IAssetLookup;
     private client: mqtt.AsyncClient;
-    private globalEventList: IReceivedEvent[];
+    private globalEventList: IAssetEvent[];
     private builder: OPCUABuilder;
     private logger: Logger;
     private readonly oi4DeviceWildCard: string;
@@ -208,8 +208,8 @@ export class Registry extends EventEmitter {
      * If logging is not enabled, we skip flushing to file and instead shift the array (in order not to overfill the rambuffer)
      * If it's enabled and no logs happened, we can simply return and re-set the timeout (no need to shift since the array should be empty)
      */
-    private flushToLogfile() {
-        if (this.logToFileEnabled === 'enabled') {
+    private flushToLogfile(): void {
+        if (this.logToFileEnabled === ELogType.enabled) {
             if (!this.logHappened) {
                 console.log('no logs happened in the past minute... returning...');
                 this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
@@ -417,12 +417,17 @@ export class Registry extends EventEmitter {
         await this.processMessage(networkMessage, (m)=> {
             const parsedPayload = m.Payload;
 
-            this.globalEventList.push({ // So we have space for this payload!
-                    ...parsedPayload,
-                    level: topicInfo.filter,
-                    timestamp: m.Timestamp,
-                    tag: topicInfo.appId,
-                });
+            const assetEvent: IAssetEvent = {
+                origin: parsedPayload.origin,
+                level: topicInfo.filter,
+                number: parsedPayload.number,
+                category: topicInfo.category,
+                description: parsedPayload.description,
+                details: parsedPayload.details,
+                timestamp: parsedPayload.timestamp
+            }
+
+            this.globalEventList.push(assetEvent);
     
         },
         async (pagination) => this.requestNextPage(pagination, topicInfo));
@@ -530,7 +535,7 @@ export class Registry extends EventEmitter {
                 nonProfileResourceList: [],
                 resource:{}
             },
-            assetType: assetType,
+            assetType: assetType
         };
         console.log(masterAssetModel);
         if (assetType === EAssetType.application) {
@@ -707,10 +712,6 @@ export class Registry extends EventEmitter {
         const oi4ToObjectList: IAsset[] = [];
         if (oi4Id in this.assetLookup) {
             oi4ToObjectList.push(this.assetLookup[oi4Id]);
-            if (resource === 'eventList'){
-                return [] // for compatibility reasons / currently assets dont have an eventlist
-            }
-
             if (resource === 'lastMessage')
             {
                 return this.assetLookup[oi4Id].lastMessage;
@@ -736,7 +737,6 @@ export class Registry extends EventEmitter {
     async updateAuditLevel(): Promise<void> {
         // First, clear all old eventLists
         this.globalEventList = [];
-
         // Then, unsubscribe from old Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Unsubscribed syslog trail from ${levels}`);
@@ -812,7 +812,7 @@ export class Registry extends EventEmitter {
      * Gets the global event list. 
      * @returns The global event list.
      */
-    get eventTrail(): IReceivedEvent[] {
+    get eventTrail(): IAssetEvent[] {
         return this.globalEventList;
     }
 
@@ -821,7 +821,7 @@ export class Registry extends EventEmitter {
      * @param noOfElements - The amount of elements that is to be retrieved
      * @returns The global event list up to the specified amout of elements 
      */
-    public getEventTrail(noOfElements: number): IReceivedEvent[] {
+    public getEventTrail(noOfElements: number): IAssetEvent[] {
         if (this.globalEventList.length <= noOfElements) {
             return this.globalEventList;
         } // else

@@ -6,7 +6,6 @@ import {
     RTLicense,
     LicenseText, 
     EAssetType,
-    IEvent,
     MasterAssetModel
 } from '@oi4/oi4-oec-service-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
@@ -29,11 +28,14 @@ export interface IAsset {
     assetType: EAssetType;
 }
 
-export interface IReceivedEvent {
-    event: IEvent;
-    level?: string; // NOT OI4 Conform and just for us
-    timestamp: string; // NOT OI4 Conform and just for us
-    tag: string; // Oi4Id of log originator
+export interface IAssetEvent {
+    origin: string;
+    level: string;
+    number: number;
+    category: string;
+    description?: string;
+    details?: any;
+    timestamp: string;
   }
 
 

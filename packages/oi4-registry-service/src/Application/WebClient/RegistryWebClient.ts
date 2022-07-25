@@ -97,7 +97,7 @@ export class RegistryWebClient extends Oi4WebClient {
         });
         
         // In this resourceList, eventList, lastMessage and mam are custom resources only used by the registry
-        const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'eventList', 'lastMessage', 'mam'];
+        const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'lastMessage', 'mam'];
         
         for (const resources of resourceList) {
             this.client.get(`/registry/${resources}/:oi4Id`, async (resourceReq, resourceResp) => {
