@@ -20,5 +20,7 @@ module.exports = {
     "no-useless-concat": "error",
     "prefer-template": "error",
     "template-curly-spacing": ["error", "never"],
+    "no-loss-of-precision": "off",
+    "@typescript-eslint/no-loss-of-precision": "off"
   },
 };
