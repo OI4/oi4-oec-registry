@@ -192,8 +192,6 @@ export class Registry extends EventEmitter {
 
     private removeSubscriptionByTopic(topic: string): void
     {
-        // TODO cfz find a better way to remove the subscription list 
-        
         for (let i=0; i < this.applicationResources.subscriptionList.length; i++)
         {
             if (this.applicationResources.subscriptionList[i].topicPath == topic)
@@ -596,9 +594,7 @@ export class Registry extends EventEmitter {
 
     private removePublicationBySubResource(subResource: string): void
     {
-        // TODO cfz find a better way to remove the publication list 
-        
-        for (let i=0; i < this.applicationResources.subscriptionList.length; i++)
+        for (let i=0; i < this.applicationResources.publicationList.length; i++)
         {
             if (this.applicationResources.publicationList[i].subResource == subResource)
             {

@@ -38,19 +38,6 @@ function checkForDefaultEnvironment() {
     if (!process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE) process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE = '262144';
 }
 
-/* --> TODO cfz remove environment variables (or use them for backward compatibility)
-
-if (checkForValidEnvironment()) {
-    dotenv.config({path: path.join(__dirname, '.env')});
-    if (checkForValidEnvironment()) {
-        console.log('Init: Failed to load default environment vars, stopping container');
-        process.exit(1);
-    }
-}
-checkForDefaultEnvironment();
-<-- */
-
-
 const applicationResources = new RegistryResources();
 const applicationFactory = new OI4ApplicationFactory(applicationResources);
 const registryApp = applicationFactory.createOI4Application();
