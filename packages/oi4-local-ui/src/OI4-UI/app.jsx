@@ -15,7 +15,7 @@ import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
 import namur_normal_0 from './Images/namur_normal_0.png';
 import namur_failure_1 from './Images/namur_failure_1.png';
 
-import { MuiThemeProvider, createMuiTheme, withStyles } from '@material-ui/core/styles';
+import { MuiThemeProvider, createTheme, withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 
 import Checkbox from '@material-ui/core/Checkbox';
@@ -28,9 +28,9 @@ import winston from 'winston';
 
 import {
     Typography,
-    ExpansionPanel,
-    ExpansionPanelDetails,
-    ExpansionPanelSummary,
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
     IconButton,
     Snackbar,
     Tooltip,
@@ -55,7 +55,7 @@ import ExpansionTable from './Components/ExpansionTable.jsx';
 
 // const pjson = require('../../package.json');
 
-const darkTheme = createMuiTheme({
+const darkTheme = createTheme({
     palette: {
         secondary: {
             light: '#80e27e',
@@ -73,7 +73,7 @@ const darkTheme = createMuiTheme({
     },
 });
 
-const lightTheme = createMuiTheme({
+const lightTheme = createTheme({
     palette: {
         secondary: {
             light: '#80e27e',
@@ -329,8 +329,8 @@ class OI4Base extends React.Component {
                                 expertMode={this.state.backendConfig.developmentMode}
                                 clearAsset={this.clearAssetById.bind(this)}
                             />
-                            <ExpansionPanel>
-                                <ExpansionPanelSummary expandIcon={<ExpandMore />}>
+                            <Accordion>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
                                     Global Event Trail: ({this.state.globalEventTrail.length} entries)
                                     {/* <TextField
                     id='filterText'
@@ -349,11 +349,11 @@ class OI4Base extends React.Component {
                     style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
                     color='secondary'
                   /> */}
-                                </ExpansionPanelSummary>
-                                <ExpansionPanelDetails className={classes.paper}>
+                                </AccordionSummary>
+                                <AccordionDetails className={classes.paper}>
                                     {this.displayGlobalEvents(this.state.globalEventTrail)}
-                                </ExpansionPanelDetails>
-                            </ExpansionPanel>
+                                </AccordionDetails>
+                            </Accordion>
 
                         </div>
                         {/* Padding for dialog */}

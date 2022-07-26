@@ -109,7 +109,7 @@ export class ClickableFooter extends React.Component {
               <Typography style={{ textAlign: 'center', marginBottom: '1em' }} variant='body2'>Copyright (C): 2022 Open Industry 4.0 Alliance - Community</Typography>
             </DialogContent>
           </Dialog>
-          <Grid container justify='center' style={{ paddingBottom: '10px' }}>
+          <Grid container justifyContent='center' style={{ paddingBottom: '10px' }}>
             <Typography>License: {this.props.license} | Version: {this.props.version} |
               <Link
                   color='inherit'

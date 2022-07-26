@@ -14,9 +14,9 @@ import MaterialTable from 'material-table';
 
 import {
   Typography,
-  ExpansionPanel,
-  ExpansionPanelDetails,
-  ExpansionPanelSummary,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Table,
   TableBody,
   TableCell,
@@ -54,7 +54,7 @@ const styles = theme => ({
   tableWrap: {
     overflowX: 'auto',
     overflowY: 'hidden',
-    flexDirection: 'column', // ExpansionPanelDetail is a flex container!
+    flexDirection: 'column', // AccordionDetail is a flex container!
   },
 });
 
@@ -91,8 +91,8 @@ class ExpansionTable extends React.Component {
     const { classes } = this.props;
     return (
         <>
-          <ExpansionPanel>
-            <ExpansionPanelSummary expandIcon={<ExpandMore />}>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>
               <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
               <TextField
                   id='filterText'
@@ -111,8 +111,8 @@ class ExpansionTable extends React.Component {
                   style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
                   color='secondary'
               />
-            </ExpansionPanelSummary>
-            <ExpansionPanelDetails className={classes.tableWrap}>
+            </AccordionSummary>
+            <AccordionDetails className={classes.tableWrap}>
               <Table className={classes.table}>
                 <TableHead>
                   <TableRow>
@@ -240,8 +240,8 @@ class ExpansionTable extends React.Component {
                   ))}
                 </TableBody>
               </Table>
-            </ExpansionPanelDetails>
-          </ExpansionPanel>
+            </AccordionDetails>
+          </Accordion>
         </>
     );
   }
