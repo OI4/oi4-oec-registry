@@ -7,21 +7,18 @@ import { IContainerConfig,
     IContainerConfigGroupName,
     IContainerConfigConfigName} from '@oi4/oi4-oec-service-model';
 import { ISettings, ELogType} from './Models/ISettings';
-import { existsSync, fstat, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { StartupConfig } from "./StartupConfig";
 
 
 export class RegistryResources extends OI4ApplicationResources
 {
-    private static readonly LICENSE_FILE = '/etc/oi4/config/license.json';
-    private static readonly LICENSE_TEXT_FILE = '/etc/oi4/config/licenseText.json';
-    private static readonly CONFIG_FILE = '/etc/oi4/config/config.json';
 
     private static readonly AUDIT_LEVEL_DEFAULT = ESyslogEventFilter.warning;
     private static readonly LOG_TYPE_DEFAULT = ELogType.disabled;
     private static readonly LOG_FILE_SIZE_DEFAULT = 250000;
     private static readonly DEVELOPMENT_MODE_DEFAULT = false;
     private static readonly SHOW_REGISTRY_DEFAULT = true;
-
 
     private _settings: ISettings = {
         logging: {
@@ -37,7 +34,7 @@ export class RegistryResources extends OI4ApplicationResources
 
     constructor()
     {
-        super(DEFAULT_MAM_FILE);
+        super(StartupConfig.MAM_FILE);
 
         this.once('resourceChanged', (res: string) => {
             if (res == 'config') {
@@ -83,8 +80,8 @@ export class RegistryResources extends OI4ApplicationResources
     private loadLicenses(): void
     {
         // license
-        if (existsSync(RegistryResources.LICENSE_FILE)) {
-            const texts = JSON.parse(readFileSync(RegistryResources.LICENSE_FILE, 'utf-8'));
+        if (existsSync(StartupConfig.LICENSE_FILE)) {
+            const texts = JSON.parse(readFileSync(StartupConfig.LICENSE_FILE, 'utf-8'));
             for (const text of texts) {
                 const license = License.clone(text);
                 this.license.push(license);
@@ -92,8 +89,8 @@ export class RegistryResources extends OI4ApplicationResources
         }
 
         // license text
-        if (existsSync(RegistryResources.LICENSE_TEXT_FILE)) {
-            const texts = JSON.parse(readFileSync(RegistryResources.LICENSE_TEXT_FILE, 'utf-8')) as ({licenseId: string; licenseText: string})[];
+        if (existsSync(StartupConfig.LICENSE_TEXT_FILE)) {
+            const texts = JSON.parse(readFileSync(StartupConfig.LICENSE_TEXT_FILE, 'utf-8')) as ({licenseId: string; licenseText: string})[];
             for (const text of texts) {
                 this.licenseText.set(text.licenseId, new LicenseText(text.licenseText));
             }
@@ -101,15 +98,15 @@ export class RegistryResources extends OI4ApplicationResources
     }
 
     private loadConfig(): void {
-        if (existsSync(RegistryResources.CONFIG_FILE)) {
-            const config: IContainerConfig = JSON.parse(readFileSync(RegistryResources.CONFIG_FILE, 'utf-8'));
+        if (existsSync(StartupConfig.CONFIG_FILE)) {
+            const config: IContainerConfig = JSON.parse(readFileSync(StartupConfig.CONFIG_FILE, 'utf-8'));
             this.config = config;
         }
     }
 
     private writeConfig(): void {
         try {
-            writeFileSync(RegistryResources.CONFIG_FILE, Buffer.from(JSON.stringify(this.config, null, 4)));
+            writeFileSync(StartupConfig.CONFIG_FILE, Buffer.from(JSON.stringify(this.config, null, 4)));
         }
         catch (e) {
             console.log(e);

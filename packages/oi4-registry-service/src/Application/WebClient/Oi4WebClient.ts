@@ -13,6 +13,7 @@ import {OI4Application} from '@oi4/oi4-oec-service-node';
 
 // @ts-ignore
 import pJson from '../../../package.json';
+import { StartupConfig } from '../StartupConfig';
 
 
 export class Oi4WebClient extends EventEmitter {
@@ -34,7 +35,8 @@ export class Oi4WebClient extends EventEmitter {
         this.topicPreamble = application.topicPreamble;
         this.applicationResources = application.applicationResources;
 
-        this.logger = new Logger(true, 'Registry-WebProxy', process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter);
+        const startupConfig = new StartupConfig();
+        this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.publishingLevel);
         this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
 
         this.client = express();
@@ -49,16 +51,14 @@ export class Oi4WebClient extends EventEmitter {
         this.client.use(cors());
         this.client.use(bodyParser.json());
         //this.client.options('*', cors());
-        // TODO should not be hard coded / fixed / better make it relative
-        const certPath = process.platform === 'win32' ? 'C:/certs' : '/usr/local/share/oi4registry/cert';
 
-        if ((process.env.USE_HTTPS) && process.env.USE_HTTPS === 'true') { // Environment variable found, so we should use HTTPS, check for key/cert
-            if (fs.existsSync(`${certPath}/cert.pem`) && fs.existsSync(`${certPath}/key.pem`)) {
+        if (startupConfig.useHttps) { // we should use HTTPS, check for key/cert
+            if (fs.existsSync(startupConfig.certFile) && fs.existsSync(startupConfig.keyFile)) {
                 this.logger.log('Key and Cert exist, using HTTPS for Express...', ESyslogEventFilter.warning);
                 https.createServer(
                     {
-                        key: fs.readFileSync(`${certPath}/key.pem`),
-                        cert: fs.readFileSync(`${certPath}/cert.pem`),
+                        key: fs.readFileSync(startupConfig.keyFile),
+                        cert: fs.readFileSync(startupConfig.certFile),
                     },
                     this.client)
                     .listen(port, () => {

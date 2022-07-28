@@ -37,6 +37,7 @@ import {IAssetLookup, IAsset, IAssetEvent, IResourceObject} from '../Models/IReg
 import { ELogType, ISettings } from '../Models/ISettings';
 import { RegistryResources } from '../RegistryResources';
 import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
+import { StartupConfig } from '../StartupConfig';
 
 interface PaginationPub
 {
@@ -94,9 +95,10 @@ export class Registry extends EventEmitter {
             }
         });
 
-        const logLevel: ESyslogEventFilter = process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning;
-        const publishingLevel = process.env.OI4_EDGE_EVENT_PUBLISHING_LEVEL ? process.env.OI4_EDGE_EVENT_PUBLISHING_LEVEL as ESyslogEventFilter : logLevel;
-        
+        const startupConfig = new StartupConfig();
+        const logLevel = startupConfig.logLevel;
+        const publishingLevel = startupConfig.publishingLevel;
+       
         this.logger = new Logger(true, 'Registry-App', logLevel, publishingLevel, client, this.oi4Id, 'Registry');
         this.fileLogger = new FileLogger(appResources.settings.logging.logFileSize);
 
