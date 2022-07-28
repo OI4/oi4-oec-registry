@@ -24,7 +24,7 @@ const webProxy = new RegistryWebClient(registryApp, registry, port);
 
 const logLevel = startupConfig.logLevel;
 const publishingLevel = startupConfig.publishingLevel;
-const logger = new Logger(true, 'Registry-Entrypoint', logLevel, publishingLevel, registryApp.mqttClient, registryApp.oi4Id, registryApp.serviceType);
+const logger = new Logger(true, 'Registry-Entrypoint', logLevel, publishingLevel, registryApp.oi4Id, registryApp.serviceType, registryApp.client);
 logger.level = ESyslogEventFilter.debug;
 logger.log(`Testprint for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
 logger.log(`Testprint for level ${ESyslogEventFilter.informational}`, ESyslogEventFilter.informational);

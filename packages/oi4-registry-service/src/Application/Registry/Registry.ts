@@ -99,7 +99,7 @@ export class Registry extends EventEmitter {
         const logLevel = startupConfig.logLevel;
         const publishingLevel = startupConfig.publishingLevel;
        
-        this.logger = new Logger(true, 'Registry-App', logLevel, publishingLevel, client, this.oi4Id, 'Registry');
+        this.logger = new Logger(true, 'Registry-App', logLevel, publishingLevel, this.oi4Id, appResources.mam.getServiceType(), client);
         this.fileLogger = new FileLogger(appResources.settings.logging.logFileSize);
 
         this.queue = new SequentialTaskQueue();
@@ -113,7 +113,7 @@ export class Registry extends EventEmitter {
         this.logHappened = false;
 
         this.builder = new OPCUABuilder(this.oi4Id, appResources.mam.getServiceType());
-        this.conformityValidator = new ConformityValidator(this.oi4Id, client);
+        this.conformityValidator = new ConformityValidator(this.oi4Id, client, appResources.mam.getServiceType());
         this.client = client;
 
         this.client.on('connect', async () => this.onClientConnect());

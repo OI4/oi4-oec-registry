@@ -36,7 +36,7 @@ export class Oi4WebClient extends EventEmitter {
         this.applicationResources = application.applicationResources;
 
         const startupConfig = new StartupConfig();
-        this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.publishingLevel);
+        this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.logLevel, startupConfig.publishingLevel, application.oi4Id, application.serviceType);
         this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
 
         this.client = express();
