@@ -548,7 +548,6 @@ export class Registry extends EventEmitter {
 
 
         // Subscribe to all changes regarding this application 
-        // TODO cfz  really necessary? In this case add the missing resources
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/health/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/license/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/rtLicense/${oi4Id}`);
@@ -567,7 +566,6 @@ export class Registry extends EventEmitter {
         publicationList.interval = 0;
         publicationList.subResource = oi4Id;
 
-        // TODO cfz review below code
         this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
         await this.client.publish(
