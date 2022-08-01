@@ -57,7 +57,7 @@ export class StartupConfig {
      * @returns The file name of the key file that is used for the REST-API.
      */
     public get keyFile(): string {
-        return `${this.certPath}/key.pem`;
+        return '/run/secrets/registry_private_key.pem';
     }
 
     /**
@@ -65,12 +65,6 @@ export class StartupConfig {
      * @returns The file name of the certificate file that is used for the REST-API.
      */
     public get certFile(): string {
-        return `${this.certPath}/cert.pem`;
-    }
-
-    private get certPath(): string {
-        // TODO win32: should not be hard coded / fixed / better make it relative
-        // TODO use oi4 compatible path, e.g. /etc/oi4/app/certs
-        return  process.platform === 'win32' ? 'C:/certs' : '/usr/local/share/oi4registry/cert';
+        return '/etc/oi4/certs/registry_cert.pem';
     }
 }
