@@ -457,12 +457,12 @@ export class Registry extends EventEmitter {
                     this.assetLookup[oi4Id].resources.health = health;
                 }
 
-            this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
+                this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
             } else {
                 if (topicInfo.appId  === this.oi4Id) return;
     
                 const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.MAM]);
-                const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${topicInfo.appId}`;
+                const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${oi4Id}`;
                 await this.client.publish(topic, JSON.stringify(networkMessage));
                 this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
             }

@@ -16,16 +16,6 @@ export class StartupConfig {
         return process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning;
     }
 
-    public get mqttMaxMessageSize(): number {
-        if (process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE) {
-            const size = Number.parseInt(process.env.OI4_EDGE_MQTT_MAX_MESSAGE_SIZE, 10);
-            if (size > 1000) {
-                return size;
-            }
-        }
-        return 262144;
-    }
-
     public get edgeApplicationPort(): number {
         if (process.env.OI4_EDGE_APPLICATION_PORT) {
             const port = Number.parseInt(process.env.OI4_EDGE_APPLICATION_PORT, 10);
