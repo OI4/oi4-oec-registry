@@ -28,16 +28,18 @@ import {
 import {
     IOPCUANetworkMessage,
     IOPCUADataSetMessage,
-    OPCUABuilder    
+    OPCUABuilder,
+    Oi4Identifier
 } from '@oi4/oi4-oec-service-opcua-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicParser, TopicMethods} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {IAssetLookup, IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
+import { IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
 import { ELogType, ISettings } from '../Models/ISettings';
 import { RegistryResources } from '../RegistryResources';
 import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
 import { StartupConfig } from '../StartupConfig';
+import { AssetLookup} from '../Models/AssetLookup';
 
 interface PaginationPub
 {
@@ -49,13 +51,13 @@ interface PaginationPub
 
 
 export class Registry extends EventEmitter {
-    private assetLookup: IAssetLookup;
+    private assetLookup: AssetLookup;
     private client: mqtt.AsyncClient;
     private globalEventList: IAssetEvent[];
     private builder: OPCUABuilder;
     private logger: Logger;
     private readonly oi4DeviceWildCard: string;
-    private readonly oi4Id: string;
+    private readonly oi4Id: Oi4Identifier;
     private queue: SequentialTaskQueue;
     private logToFileEnabled: ELogType;
     private logHappened: boolean;
@@ -76,6 +78,7 @@ export class Registry extends EventEmitter {
      */
     constructor(client: mqtt.AsyncClient, appResources: RegistryResources) {
         super();
+        this.assetLookup = new AssetLookup();
         this.oi4Id = appResources.oi4Id;
         this.logToFileEnabled = appResources.settings.logging.logType;
         // Config section
@@ -108,7 +111,7 @@ export class Registry extends EventEmitter {
         this.timeoutLookup = {};
         this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
         this.globalEventList = [];
-        this.assetLookup = {};
+        this.assetLookup = new AssetLookup();
         this.maxAuditTrailElements = 100;
         this.logHappened = false;
 
@@ -131,9 +134,9 @@ export class Registry extends EventEmitter {
         const mam = this.applicationResources.mam;
         await this.client.publish(`oi4/${mam.getServiceType()}/${this.oi4Id}/pub/mam/${this.oi4Id}`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                subResource: this.oi4Id,
+                subResource: this.oi4Id.toString(),
                 Payload: this.applicationResources.mam,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resource.MAM, this.oi4Id),
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resource.MAM, this.oi4Id.toString()),
             }], new Date(), DataSetClassIds.mam)),
         );
     }
@@ -270,8 +273,9 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        if (topicInfo.oi4Id in this.assetLookup) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
-            this.assetLookup[topicInfo.oi4Id].lastMessage = new Date().toISOString();
+        if (this.assetLookup.has(topicInfo.oi4Id)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
+            const asset = this.assetLookup.get(topicInfo.oi4Id);
+            asset.lastMessage = new Date().toISOString();
         }
 
         switch (topicInfo.method) {
@@ -351,8 +355,11 @@ export class Registry extends EventEmitter {
     }
 
     private updateResource(dataSetMessage: IOPCUADataSetMessage, update: (asset: IResourceObject) => void): void {
-        if (dataSetMessage.subResource in this.assetLookup) {
-            update(this.assetLookup[dataSetMessage.subResource].resources)
+        const oi4Id = this.parseIdentifier(dataSetMessage.subResource);
+
+        if (this.assetLookup.has(oi4Id)) {
+            const asset = this.assetLookup.get(oi4Id);
+            update(asset.resources)
         }
     }
     
@@ -383,11 +390,11 @@ export class Registry extends EventEmitter {
             default:
                 if (topicInfo.oi4Id !== undefined) {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.oi4Id}`
-                    subResource = topicInfo.oi4Id;
+                    subResource = topicInfo.oi4Id.toString();
                 }
                 else {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}`;
-                    subResource = topicInfo.appId;
+                    subResource = topicInfo.appId.toString();
                 }
                 break;
 
@@ -398,7 +405,7 @@ export class Registry extends EventEmitter {
                 subResource: subResource,
                 filter: filter,
                 Payload: paginationGet,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(topicInfo.resource, this.oi4Id),
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(topicInfo.resource, this.oi4Id.toString()),
             }], new Date(), DataSetClassIds[topicInfo.resource])),
         );
 
@@ -436,25 +443,26 @@ export class Registry extends EventEmitter {
     private async processPublishedHealth(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
         this.processMessage(networkMessage, async (m) => {
-            const oi4Id = m.subResource;
+            const oi4Id = this.parseIdentifier(m.subResource);
             this.logger.log(`Got Health from ${oi4Id}.`);
 
             const health = Health.clone(m.Payload);
 
-            if (oi4Id in this.assetLookup) {
+            if (this.assetLookup.has(oi4Id)) {
                 this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
                 // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-                clearTimeout(this.timeoutLookup[oi4Id]);
+                clearTimeout(this.timeoutLookup[oi4Id.toString()]);
     
                 if (health.health === EDeviceHealth.FAILURE_1 && health.healthScore === 0) {
                     this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
                     await this.removeDevice(oi4Id);
                 } else {
                     const timeout = setTimeout(() => this.resourceTimeout(oi4Id), 65000);
-                    this.timeoutLookup[oi4Id] = timeout;
+                    this.timeoutLookup[oi4Id.toString()] = timeout;
 
-                    this.assetLookup[oi4Id].lastMessage = new Date().toISOString();
-                    this.assetLookup[oi4Id].resources.health = health;
+                    const asset = this.assetLookup.get(oi4Id);
+                    asset.lastMessage = new Date().toISOString();
+                    asset.resources.health = health;
                 }
 
                 this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
@@ -477,7 +485,7 @@ export class Registry extends EventEmitter {
     async addToRegistry(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
         await this.processMessage(networkMessage, async (m) => {
-            const assetId = m.subResource;
+            const assetId = this.parseIdentifier(m.subResource);
 
             if  (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
                 this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
@@ -544,8 +552,7 @@ export class Registry extends EventEmitter {
             this.logger.log('___Adding Device___', ESyslogEventFilter.debug);
         }
 
-        this.assetLookup[oi4Id] = newAsset;
-
+        this.assetLookup.set(oi4Id, newAsset);
 
         // Subscribe to all changes regarding this application 
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/health/${oi4Id}`);
@@ -555,7 +562,7 @@ export class Registry extends EventEmitter {
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/config/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/profile/${oi4Id}`);
         
-        newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
+        newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id.toString());
 
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
@@ -564,7 +571,7 @@ export class Registry extends EventEmitter {
         publicationList.DataSetWriterId = 0;
         publicationList.config = PublicationListConfig.NONE_0;
         publicationList.interval = 0;
-        publicationList.subResource = oi4Id;
+        publicationList.subResource = oi4Id.toString();
 
         this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
@@ -573,7 +580,7 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                subResource: this.oi4Id
+                subResource: this.oi4Id.toString()
             }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
         );
     }
@@ -606,30 +613,32 @@ export class Registry extends EventEmitter {
 
     /**
      * Removes an asset from the assetLookup
-     * @param device - the oi4Id of the device that is to be removed
+     * @param oi4Id - the oi4Id of the device that is to be removed
      */
-    async removeDevice(device: string): Promise<void> {
-        if (device in this.assetLookup) {
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/event/+/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/health/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/license/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/rtLicense/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/config/${device}`);
-            this.ownUnsubscribe(`${this.assetLookup[device].topicPreamble}/pub/profile/${device}`);
-            delete this.assetLookup[device];
+    async removeDevice(oi4Id: Oi4Identifier): Promise<void> {
+        if (this.assetLookup.has(oi4Id)) {
+            const asset = this.assetLookup.get(oi4Id);
+
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/event/+/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/license/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/rtLicense/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/licenseText/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/config/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/profile/${oi4Id}`);
+            this.assetLookup.delete(oi4Id);
             // Remove from publicationList
-            this.removePublicationBySubResource(device);
+            this.removePublicationBySubResource(oi4Id.toString());
             // Publish the new publicationList according to spec
             this.client.publish(
                 `oi4/Registry/${this.oi4Id}/pub/publicationList`,
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                     Payload: this.applicationResources.publicationList,
                     DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                    subResource: this.oi4Id,
+                    subResource: this.oi4Id.toString(),
                 }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
             );
-            this.logger.log(`Deleted App: ${device}`, ESyslogEventFilter.warning);
+            this.logger.log(`Deleted App: ${oi4Id}`, ESyslogEventFilter.warning);
         } else {
             this.logger.log('Nothing to remove here!', ESyslogEventFilter.debug);
         }
@@ -639,15 +648,15 @@ export class Registry extends EventEmitter {
      * Clears the entire Registry by removing every asset from the assetLookup
      */
     clearRegistry(): void {
-        for (const assets of Object.keys(this.assetLookup)) { // Unsubscribe topics of every asset
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/health/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/license/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/rtLicense/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/config/${assets}`);
-            this.ownUnsubscribe(`${this.assetLookup[assets].topicPreamble}/pub/profile/${assets}`);
+        for (const asset of this.assetLookup) { // Unsubscribe topics of every asset
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/license/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/rtLicense/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/licenseText/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/config/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/pub/profile/${asset.oi4Id}`);
             // Remove from publicationList
-            this.removePublicationBySubResource(assets);
+            this.removePublicationBySubResource(asset.oi4Id.toString());
         }
         // Publish the new publicationList according to spec
         this.client.publish(
@@ -655,10 +664,11 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                subResource: this.oi4Id
+                subResource: this.oi4Id.toString()
             }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
         );
-        this.assetLookup = {}; // Clear application lookup
+
+        this.assetLookup.clear(); // Clear asset lookup
     }
 
     /**
@@ -666,12 +676,13 @@ export class Registry extends EventEmitter {
      * @param oi4Id The oi4Id of the asset that is to be checked for conformity
      * @param resourceList The resourceList that is to be checked for conformity
      */
-    async updateConformityInDevice(oi4Id: string, resourceList: Resource[]): Promise<IConformity> {
+    async updateConformityInDevice(oi4Id: Oi4Identifier, resourceList: Resource[]): Promise<IConformity> {
         this.logger.log(`Checking conformity for ${oi4Id}`);
         let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
-        if (oi4Id in this.assetLookup) {
-            conformityObject = await this.conformityValidator.checkConformity(this.assetLookup[oi4Id].assetType, this.assetLookup[oi4Id].topicPreamble, this.assetLookup[oi4Id].oi4Id, resourceList);
-            this.assetLookup[oi4Id].conformityObject = conformityObject;
+        if (this.assetLookup.has(oi4Id)) {
+            const asset = this.assetLookup.get(oi4Id);
+            conformityObject = await this.conformityValidator.checkConformity(asset.assetType, asset.topicPreamble, asset.oi4Id.toString(), resourceList);
+            asset.conformityObject = conformityObject;
         }
         return conformityObject;
     }
@@ -681,9 +692,10 @@ export class Registry extends EventEmitter {
      * Raised in case that the resource has not send a health message within a given time span.
      * @param oi4Id The oi4Id of the asset that has not send a health message.
      */
-    async resourceTimeout(oi4Id: string): Promise<void> {
-        if (oi4Id in this.assetLookup) {
-            const topic = `${this.assetLookup[oi4Id].topicPreamble}/get/$health/${oi4Id}`;
+    async resourceTimeout(oi4Id: Oi4Identifier): Promise<void> {
+        if (this.assetLookup.has(oi4Id)) {
+            const asset = this.assetLookup.get(oi4Id);
+            const topic = `${asset.topicPreamble}/get/$health/${oi4Id}`;
             this.logger.log(`Timeout - Get health on ${topic}.`, ESyslogEventFilter.warning);
 
             // remove the device 
@@ -702,20 +714,21 @@ export class Registry extends EventEmitter {
      * @param oi4Id The oi4Id of the Asset that provides the resource
      * @param resource The name of the resource that needs to be retireved
      */
-    getResourceFromLookup(oi4Id: string, resource: string) {
+    getResourceFromLookup(oi4Id: Oi4Identifier, resource: string) {
         // TODO: Resource intensive, we should push to the error object only if we actually have an error
         // FIXME: Better yet, don't separate between device and application lookup
         const oi4ToObjectList: IAsset[] = [];
-        if (oi4Id in this.assetLookup) {
-            oi4ToObjectList.push(this.assetLookup[oi4Id]);
+        if (this.assetLookup.has(oi4Id)) {
+            const asset = this.assetLookup.get(oi4Id);
+            oi4ToObjectList.push(asset);
             if (resource === 'lastMessage')
             {
-                return this.assetLookup[oi4Id].lastMessage;
+                return asset.lastMessage;
             }
 
-            if ('resources' in this.assetLookup[oi4Id]) {
-                if (resource in this.assetLookup[oi4Id].resources) {
-                    return this.assetLookup[oi4Id].resources[resource];
+            if ('resources' in asset) {
+                if (resource in asset.resources) {
+                    return asset.resources[resource];
                 }
             }
         }
@@ -773,17 +786,8 @@ export class Registry extends EventEmitter {
      * @returns {IDeviceLookup} The applicationLookup of the Registry
      */
     get applications() {
-        return Object.keys(this.assetLookup)
-            .filter((key) => {
-                if (this.assetLookup[key].assetType === EAssetType.application) return true;
-                return false;
-            })
-            .reduce(
-                (obj: any, key) => {
-                    obj[key] = this.assetLookup[key];
-                    return obj;
-                },
-                {});
+        const allAssets = [... this.assetLookup];
+        return allAssets.filter(a => a.assetType === EAssetType.application);
     }
 
     /**
@@ -791,17 +795,9 @@ export class Registry extends EventEmitter {
      * @returns {IDeviceLookup} The deviceLookup of the Registry
      */
     get devices() {
-        return Object.keys(this.assetLookup)
-            .filter((key) => {
-                if (this.assetLookup[key].assetType === EAssetType.device) return true;
-                return false;
-            })
-            .reduce(
-                (obj: any, key) => {
-                    obj[key] = this.assetLookup[key];
-                    return obj;
-                },
-                {});
+
+        const allAssets = [... this.assetLookup];
+        return allAssets.filter(a => a.assetType === EAssetType.device);
     }
 
     /**
@@ -829,16 +825,25 @@ export class Registry extends EventEmitter {
      * @param oi4Id The oi4Id of the asset that is to be retrieved
      * @returns The asset
      */
-    getAsset(oi4Id: string): IAsset | undefined {
-        if (oi4Id in this.assetLookup) {
-            return this.assetLookup[oi4Id];
+    getAsset(oi4Id: Oi4Identifier): IAsset | undefined {
+        if (this.assetLookup.has(oi4Id)) {
+            return this.assetLookup.get(oi4Id);
         }
     }
 
     /**
      * Retrieves the oi4Id of the registry
      */
-    getOi4Id(): string {
-        return this.oi4Id;
+    getOi4Id(): Oi4Identifier {
+            return this.oi4Id;
+    }
+
+    private parseIdentifier(value: string): Oi4Identifier | undefined {
+        try {
+            return Oi4Identifier.fromString(value);
+
+        } catch {
+            return undefined;
+        }
     }
 }

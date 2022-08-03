@@ -7,7 +7,7 @@ import https = require('https');
 
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {ESyslogEventFilter, IOI4ApplicationResources, IContainerConfig} from '@oi4/oi4-oec-service-model';
-import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage} from '@oi4/oi4-oec-service-opcua-model';
+import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage, Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 import {OI4Application} from '@oi4/oi4-oec-service-node';
 
 
@@ -20,7 +20,7 @@ export class Oi4WebClient extends EventEmitter {
     protected readonly client: express.Application;
     protected readonly logger: Logger;
 
-    public readonly oi4Id: string;
+    public readonly oi4Id: Oi4Identifier;
     public readonly serviceType: string;
     public applicationResources: IOI4ApplicationResources;
     public topicPreamble: string;
@@ -79,7 +79,7 @@ export class Oi4WebClient extends EventEmitter {
 
         // Handle Get Requests
         this.client.get('/', (_indexReq, indexResp) => {
-            indexResp.send(JSON.stringify(this.oi4Id));
+            indexResp.send(JSON.stringify(this.oi4Id.toString()));
         });
 
         this.client.get('/packageVersion', (_packageVersionReq, packageVersionResp) => {

@@ -5,6 +5,7 @@ import {MqttSettings, OI4Application} from '@oi4/oi4-oec-service-node';
 import {Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import { RegistryResources } from '../RegistryResources';
+import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
 
 export class RegistryWebClient extends Oi4WebClient {
 
@@ -43,7 +44,7 @@ export class RegistryWebClient extends Oi4WebClient {
         this.client.get('/registry/application', (deviceReq, deviceResp) => {
             const filteredApps = JSON.parse(JSON.stringify(registry.applications));
             if (!this._applicationResources.settings.registry.showRegistry) {
-                delete filteredApps[registry.getOi4Id()];
+                delete filteredApps[registry.getOi4Id().toString()];
             }
             deviceResp.send(JSON.stringify(filteredApps));
         });
@@ -53,7 +54,7 @@ export class RegistryWebClient extends Oi4WebClient {
         });
         
         this.client.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
-            const oi4Id = deviceReq.params.oi4Id;
+            const oi4Id = this.parseIdentifier(deviceReq.params.oi4Id);
             console.log(`Trying to remove asset with Id: ${oi4Id}`);
             try {
                 await registry.removeDevice(oi4Id);
@@ -103,7 +104,8 @@ export class RegistryWebClient extends Oi4WebClient {
             this.client.get(`/registry/${resources}/:oi4Id`, async (resourceReq, resourceResp) => {
                 let resourceObject;
                 try {
-                    resourceObject = await registry.getResourceFromLookup(resourceReq.params.oi4Id, resources);
+                    const oi4Id = this.parseIdentifier(resourceReq.params.oi4Id);
+                    resourceObject = await registry.getResourceFromLookup(oi4Id, resources);
                     if (resourceObject === null || resourceObject === undefined) {
                         this.logger.log(`Resource not found in /registry/resources/:oi4Id ${resources}`);
                     }
@@ -123,7 +125,8 @@ export class RegistryWebClient extends Oi4WebClient {
         this.client.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
             let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
             try {
-                conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, []);
+                const oi4Id = this.parseIdentifier(conformityReq.params.oi4Id)
+                conformityObject = await registry.updateConformityInDevice(oi4Id, []);
             } catch (err) {
                 console.log(`Got error in conformity REST request: ${err}`);
             }
@@ -134,7 +137,8 @@ export class RegistryWebClient extends Oi4WebClient {
         this.client.get('/fullConformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
             let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
             try {
-                conformityObject = await registry.updateConformityInDevice(conformityReq.params.oi4Id, Application.full);
+                const oi4Id = this.parseIdentifier(conformityReq.params.oi4Id);
+                conformityObject = await registry.updateConformityInDevice(oi4Id, Application.full);
             } catch (err) {
                 console.log(`Got error in conformity REST request: ${err}`);
             }
@@ -160,5 +164,14 @@ export class RegistryWebClient extends Oi4WebClient {
         return (mqttSettings.ca !== undefined &&
             mqttSettings.cert !== undefined &&
             mqttSettings.key !== undefined).toString();
+    }
+
+    private parseIdentifier(value: string): Oi4Identifier | undefined {
+        try {
+            return Oi4Identifier.fromString(value);
+
+        } catch {
+            return undefined;
+        }
     }
 }
