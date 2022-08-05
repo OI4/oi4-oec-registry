@@ -6,17 +6,13 @@ import {Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import { RegistryResources } from '../RegistryResources';
 import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
+import { IAsset } from '../Models/IRegistry';
 
 export class RegistryWebClient extends Oi4WebClient {
-
-    private readonly _registry: Registry;
-    private readonly _applicationResources: RegistryResources;
 
     constructor(application: OI4Application, registry: Registry, port = 5799)
     {
         super(application, port);
-        this._registry = registry;
-        this._applicationResources = application.applicationResources as RegistryResources;
 
         this.client.get('/brokerState', (_brokerReq, brokerResp) => {
 
@@ -42,15 +38,19 @@ export class RegistryWebClient extends Oi4WebClient {
 
 
         this.client.get('/registry/application', (deviceReq, deviceResp) => {
-            const filteredApps = JSON.parse(JSON.stringify(registry.applications));
-            if (!this._applicationResources.settings.registry.showRegistry) {
-                delete filteredApps[registry.getOi4Id().toString()];
+            function include(asset: IAsset): boolean {
+               return !asset.oi4Id.equals(registry.getOi4Id()) ||
+                (application.applicationResources as RegistryResources).settings.registry.showRegistry;
             }
+
+            const filteredApps = RegistryWebClient.convert(registry.applications.filter(a => include(a)));
             deviceResp.send(JSON.stringify(filteredApps));
         });
         
         this.client.get('/registry/device', (deviceReq, deviceResp) => {
-            deviceResp.send(JSON.stringify(registry.devices));
+
+            const devices = RegistryWebClient.convert(registry.devices);
+            deviceResp.send(JSON.stringify(devices));
         });
         
         this.client.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
@@ -173,5 +173,18 @@ export class RegistryWebClient extends Oi4WebClient {
         } catch {
             return undefined;
         }
+    }
+
+    private static convert(assets: IAsset[]) {
+        if (assets.length === 0) { 
+            return {};
+        }
+
+        return assets.map(a => { return { // convert oi4Identifier objects to its string representation
+            ...a,
+            oi4Id: a.oi4Id.toString(),
+            oi4IdOriginator: a.oi4IdOriginator?.toString()
+            }
+        }).reduce((a, v) => ({...a, [v.oi4Id]: v }), {} ); // convert array to object list
     }
 }

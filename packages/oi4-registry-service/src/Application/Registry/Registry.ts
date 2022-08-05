@@ -795,7 +795,6 @@ export class Registry extends EventEmitter {
      * @returns {IDeviceLookup} The deviceLookup of the Registry
      */
     get devices() {
-
         const allAssets = [... this.assetLookup];
         return allAssets.filter(a => a.assetType === EAssetType.device);
     }
