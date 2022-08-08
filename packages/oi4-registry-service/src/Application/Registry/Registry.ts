@@ -425,7 +425,7 @@ export class Registry extends EventEmitter {
             const parsedPayload = m.Payload;
 
             const assetEvent: IAssetEvent = {
-                origin: parsedPayload.origin,
+                origin: parsedPayload.origin ?? topicInfo.oi4Id,
                 level: topicInfo.filter,
                 number: parsedPayload.number,
                 category: topicInfo.category,
