@@ -1,12 +1,39 @@
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
+import path from 'path';
+import { copyFileSync, existsSync,  mkdirSync } from 'fs';
 
 export class StartupConfig {
 
-    public static readonly LICENSE_FILE = '/etc/oi4/app/license.json';
-    public static readonly LICENSE_TEXT_FILE = '/etc/oi4/app/licenseText.json';
-    public static readonly CONFIG_FILE = '/etc/oi4/app/config.json';
-    public static readonly MAM_FILE = '/etc/oi4/app/mam.json';
+    public static mamFile(): string {
+        return path.join(__dirname, 'Resources', 'mam.json');
+    }
 
+    public static licenseFile(): string {
+        return path.join(__dirname, 'Resources', 'license.json');
+    }
+
+    public static licenseTextFile(): string {
+        return path.join(__dirname, 'Resources', 'licenseText.json');
+    }
+
+    public static configFile(): string | undefined {
+        const configFile = '/etc/oi4/app/config.json';
+        
+        if (!existsSync(configFile)) {
+            try {
+                mkdirSync('/etc/oi4/app', {recursive: true});
+
+                const templatePath = path.join(__dirname, 'Resources', 'config.json');
+                copyFileSync(templatePath, configFile);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        if (existsSync(configFile)) {
+            return configFile;
+        }
+    }
 
     public get logLevel(): ESyslogEventFilter {
         return process.env.OI4_EDGE_LOG_LEVEL ? process.env.OI4_EDGE_LOG_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning : this.publishingLevel;
