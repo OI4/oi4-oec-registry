@@ -1,4 +1,4 @@
-import { OI4ApplicationResources } from '@oi4/oi4-oec-service-node';
+import { OI4ApplicationResources} from '@oi4/oi4-oec-service-node';
 import { IContainerConfig, 
     License, 
     LicenseText, 
@@ -9,6 +9,7 @@ import { IContainerConfig,
 import { ISettings, ELogType} from './Models/ISettings';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { StartupConfig } from './StartupConfig';
+import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
 
 
 export class RegistryResources extends OI4ApplicationResources
@@ -35,8 +36,8 @@ export class RegistryResources extends OI4ApplicationResources
     {
         super(StartupConfig.mamFile());
 
-        this.once('resourceChanged', (res: string) => {
-            if (res == 'config') {
+        this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resource) => {
+            if (oi4Id.equals(this.oi4Id) && resource === Resource.CONFIG) {
                 const oldSettings = this._settings;
                 const newSettings = this.getSettingsFromConfig(this.config);
                 if (newSettings != undefined) {
