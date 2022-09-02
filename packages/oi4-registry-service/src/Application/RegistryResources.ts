@@ -5,7 +5,8 @@ import { IContainerConfig,
     Resource, 
     ESyslogEventFilter, 
     IContainerConfigGroupName,
-    IContainerConfigConfigName} from '@oi4/oi4-oec-service-model';
+    IContainerConfigConfigName
+} from '@oi4/oi4-oec-service-model';
 import { ISettings, ELogType} from './Models/ISettings';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { StartupConfig } from './StartupConfig';
@@ -53,7 +54,12 @@ export class RegistryResources extends OI4ApplicationResources
 
         this.loadLicenses();
         const isConfigLoaded = this.loadConfig();
+        
+        /*  TODO disabled because of side effects in the oi4-service
+        /*  (changing the profile will change the global application.mandatory list)
+        /*  fixed in PR #127 of the oi4-service --> 
         this.initProfile(isConfigLoaded);
+        <--- */
     }
 
     public get settings(): ISettings {
@@ -65,6 +71,7 @@ export class RegistryResources extends OI4ApplicationResources
     }
 
     private initProfile(addConfig: boolean): void {
+
         // profile (contains allready the mandatory resources for an application) 
         this.profile.resource.push(Resource.SUBSCRIPTION_LIST);
         if (addConfig) {
