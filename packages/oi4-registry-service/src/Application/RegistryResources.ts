@@ -55,11 +55,7 @@ export class RegistryResources extends OI4ApplicationResources
         this.loadLicenses();
         const isConfigLoaded = this.loadConfig();
         
-        /*  TODO disabled because of side effects in the oi4-service
-        /*  (changing the profile will change the global application.mandatory list)
-        /*  fixed in PR #127 of the oi4-service --> 
         this.initProfile(isConfigLoaded);
-        <--- */
     }
 
     public get settings(): ISettings {
