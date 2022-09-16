@@ -23,7 +23,8 @@ import {
     RTLicense,
     LicenseText,
     Profile,
-    MasterAssetModel
+    MasterAssetModel,
+    IOI4Resource
 } from '@oi4/oi4-oec-service-model';
 import {
     IOPCUANetworkMessage,
@@ -40,6 +41,7 @@ import { RegistryResources } from '../RegistryResources';
 import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
 import { StartupConfig } from '../StartupConfig';
 import { AssetLookup} from '../Models/AssetLookup';
+import { OI4ApplicationResources } from '@oi4/oi4-oec-service-node';
 
 interface PaginationPub
 {
@@ -524,6 +526,24 @@ export class Registry extends EventEmitter {
             return;
         }
 
+        if (!oi4Id.equals(this.oi4Id) && !this.applicationResources.hasSubResource(oi4Id))
+        {
+            const subResource: IOI4Resource = {
+                oi4Id: oi4Id,
+                profile: undefined,
+                mam: masterAssetModel,
+                health: undefined,
+                license: undefined,
+                licenseText: undefined,
+                rtLicense: undefined,
+                config: undefined,
+                publicationList: undefined,
+                subscriptionList: undefined
+            };
+
+            this.applicationResources.addSubResource(subResource);
+        }
+
         const assetType = this.getAssetType(masterAssetModel);
         const registeredAt = new Date().toISOString();
         const newAsset: IAsset = {
@@ -618,6 +638,8 @@ export class Registry extends EventEmitter {
     async removeDevice(oi4Id: Oi4Identifier): Promise<void> {
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
+
+            this.applicationResources.removeSubResource(oi4Id);
 
             this.ownUnsubscribe(`${asset.topicPreamble}/pub/event/+/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${oi4Id}`);
