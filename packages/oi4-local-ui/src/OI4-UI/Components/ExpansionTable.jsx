@@ -14,9 +14,9 @@ import MaterialTable from 'material-table';
 
 import {
   Typography,
-  ExpansionPanel,
-  ExpansionPanelDetails,
-  ExpansionPanelSummary,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Table,
   TableBody,
   TableCell,
@@ -54,7 +54,7 @@ const styles = theme => ({
   tableWrap: {
     overflowX: 'auto',
     overflowY: 'hidden',
-    flexDirection: 'column', // ExpansionPanelDetail is a flex container!
+    flexDirection: 'column', // AccordionDetail is a flex container!
   },
 });
 
@@ -91,8 +91,8 @@ class ExpansionTable extends React.Component {
     const { classes } = this.props;
     return (
         <>
-          <ExpansionPanel>
-            <ExpansionPanelSummary expandIcon={<ExpandMore />}>
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>
               <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
               <TextField
                   id='filterText'
@@ -111,8 +111,8 @@ class ExpansionTable extends React.Component {
                   style={{ marginLeft: 'auto', minWidth: '5%', maxWidth: '22%' }}
                   color='secondary'
               />
-            </ExpansionPanelSummary>
-            <ExpansionPanelDetails className={classes.tableWrap}>
+            </AccordionSummary>
+            <AccordionDetails className={classes.tableWrap}>
               <Table className={classes.table}>
                 <TableHead>
                   <TableRow>
@@ -225,10 +225,10 @@ class ExpansionTable extends React.Component {
                                 <Grid item xs={12}>
                                   {this.displayLocalEvents(this.props.assetLookup[oi4Id].eventList.filter((item) => {
                                     if (this.state.filterWordEvent === '') return true;
-                                    if (item.Tag.includes(this.state.filterWordEvent)) return true;
+                                    if (item.origin.includes(this.state.filterWordEvent)) return true;
                                     if (item.description.includes(this.state.filterWordEvent)) return true;
                                     if (item.number.toString().includes(this.state.filterWordEvent)) return true;
-                                    if (JSON.stringify(item.payload).includes(this.state.filterWordEvent)) return true;
+                                    if (JSON.stringify(item.details).includes(this.state.filterWordEvent)) return true;
                                     return false;
                                   }))}
                                 </Grid>
@@ -240,8 +240,8 @@ class ExpansionTable extends React.Component {
                   ))}
                 </TableBody>
               </Table>
-            </ExpansionPanelDetails>
-          </ExpansionPanel>
+            </AccordionDetails>
+          </Accordion>
         </>
     );
   }
@@ -366,13 +366,13 @@ class ExpansionTable extends React.Component {
    */
   displayLocalEvents(eventArray) {
     const newArray = [];
-    eventArray.forEach(items => {
+    eventArray.forEach(item => {
       newArray.push({
-        level: items.level,
-        number: items.number,
-        description: items.description,
-        category: items.category,
-        details: JSON.stringify(items.details),
+        level: item.level,
+        number: item.number,
+        description: item.description,
+        category: item.category,
+        details: JSON.stringify(item.details),
       });
     });
     if (Array.isArray(eventArray)) {
@@ -424,7 +424,7 @@ class ExpansionTable extends React.Component {
             </span>}
             />);
       } else {
-        return <h3>No items in audit trail...</h3>;
+        return <h3>No items in event list...</h3>;
       }
 
       // return <Grid item xs={3}><Table style={{ width: 'auto', tableLayout: 'auto' }}>

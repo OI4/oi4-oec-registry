@@ -1,70 +1,53 @@
 import {
     IContainerConfig,
-    IContainerHealth,
-    IContainerLicense,
-    IContainerLicenseText,
-    IContainerProfile,
-    IContainerRTLicense,
-    IEventObject,
+    Health,
+    Profile,
+    License,
+    RTLicense,
+    LicenseText, 
+    EAssetType,
+    MasterAssetModel
 } from '@oi4/oi4-oec-service-model';
-import {IMasterAssetModel} from '@oi4/oi4-oec-service-opcua-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
+import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
 /**
  * This interface is proprietary and only used between registry backend and frontend.
  */
-export interface IDeviceMessage {
+export interface IAsset {
     resources: IResourceObject;
-    fullDevicePath: string;
-    oi4Id: string;
-    eventList: IEventObject[];
-    oi4IdOriginator: string;
+
+    /**
+     * The MQTT topic that identifies this asset. Has the format "oi4/<serviceType>/<Oi4Identifier>".
+     */
+    topicPreamble: string;
+    oi4Id: Oi4Identifier;
+    oi4IdOriginator: Oi4Identifier;
     lastMessage: string;
     registeredAt: string;
     conformityObject: IConformity;
-    available: boolean;
-    deviceType: EDeviceType;
+    assetType: EAssetType;
 }
 
-export enum EDeviceType {
-    device = 0,
-    application = 1,
-}
+export interface IAssetEvent {
+    origin: string;
+    level: string;
+    number: number;
+    category: string;
+    description?: string;
+    details?: any;
+    timestamp: string;
+  }
+
 
 export interface IResourceObject {
     [key: string]: any;
 
-    mam: IMasterAssetModel;
-    health?: IContainerHealth;
-    rtLicense?: IContainerRTLicense;
-    license?: IContainerLicense;
+    mam: MasterAssetModel;
+    health?: Health;
+    rtLicense?: RTLicense;
+    license?: License;
     config?: IContainerConfig;
-    profile?: IContainerProfile;
-    licenseText?: IContainerLicenseText;
-}
-
-export interface IDeviceLookup {
-    [key: string]: IDeviceMessage;
-}
-
-interface IDeviceRTLicense {
-    expiryDate: string;
-    licensee: string;
-}
-
-interface IDeviceData {
-    health: string;
-    config: IDeviceConfig;
-}
-
-interface IDeviceConfig {
-    updateInterval: number;
-}
-
-export interface IRegistryConfig {
-    developmentMode: boolean;
-    logFileSize: number;
-    auditLevel: string;
-    showRegistry: boolean;
-    logToFile: string; // TODO: ENUM with either enabled, disabled or endpoint
+    profile?: Profile;
+    licenseText?: LicenseText;
 }

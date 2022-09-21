@@ -64,6 +64,7 @@ class ExpansionTableDetail extends React.Component {
       copySnackOpen: false,
     };
     // A list of mandatory resources so we can decide which ones we display
+    // TODO cfz: Update this list
     this.mandatoryResource = {
       application: ['health', 'license', 'licenseText', 'mam', 'profile', 'publicationList'],
       device: ['health', 'mam', 'profile'],
@@ -127,7 +128,7 @@ class ExpansionTableDetail extends React.Component {
           <Grid item xs>
             <h3>Conformity Validation:
               <Tooltip title='Refresh conformity'>
-                <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.fullDevicePath, this.props.oi4Id) }}>
+                <IconButton size='small' color='default' onClick={() => { this.props.updateConformity(this.props.asset.topicPreamble, this.props.oi4Id) }}>
                   <Refresh />
                 </IconButton>
               </Tooltip>
@@ -190,8 +191,8 @@ class ExpansionTableDetail extends React.Component {
    */
   detailedHealthViewer(healthObject) {
     return <div>
-      <div><span style={{ fontWeight: 'bold' }}>NE107 Status:</span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 20, 20)})</div>
-      <div><span style={{ fontWeight: 'bold' }}>Health state[%]:</span>{healthObject.healthScore}</div>
+      <div><span style={{ fontWeight: 'bold' }}>NE107 Status: </span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 20, 20)})</div>
+      <div><span style={{ fontWeight: 'bold' }}>Health score[%]: </span>{healthObject.healthScore}</div>
     </div>;
   }
 

@@ -1,0 +1,19 @@
+{
+  "Manufacturer":{"locale":"en-US","text":"Open Industry 4.0 Alliance Community"},
+  "ManufacturerUri":"openindustry4.com",
+  "Model":{"locale":"en-US","text":"OEC Registry"},
+  "ProductCode":"OEC-REG",
+  "HardwareRevision":"",
+  "SoftwareRevision":"1.0.0.0",
+  "DeviceRevision":"1.0.0.0",
+  "DeviceManual":"https://openindustry4.com/fileadmin/Dateien/Downloads/2019_11_20_OI4_Whitepaper_General.pdf",
+  "DeviceClass":"OI4.Registry",
+  "SerialNumber":"OEC-Registry",
+  "ProductInstanceUri":"oi4/appid/service",
+  "RevisionCounter":0,
+  "Description":
+  {
+    "locale":"en-US",
+    "text":"The OEC Registry, an Open Industry 4.0 Alliance application"
+  }
+}
