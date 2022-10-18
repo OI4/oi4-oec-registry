@@ -2458,57 +2458,62 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
+"@oi4/oi4-oec-json-schemas@^1.0.0", "@oi4/oi4-oec-json-schemas@^1.0.0-preview":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-json-schemas/1.0.0/cef25d423b5a7724c6b7643dc276f575a1849f0e#cef25d423b5a7724c6b7643dc276f575a1849f0e"
+  integrity sha512-2FMIqx9uSGcyrQZ32lLDFLNn4yJIDBDkpK+xTlx3HZKqV1o8yt15GEggGLWmhnukQGVO5a/ha7QPyTVyrtgXMA==
+
 "@oi4/oi4-oec-json-schemas@^1.0.0-preview.4":
   version "1.0.0-preview.4"
   resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-json-schemas/1.0.0-preview.4/e629508777e5ef4dcc8241d017677f476b8a0d49#e629508777e5ef4dcc8241d017677f476b8a0d49"
   integrity sha512-w5qgfgsO7y9q7u/LHDDHsRPFN4bpF2qKn/TH6xC/ADOeNwDDIXnDO+GpeMEDrE2AdjlQg9vilG3M8B4KomE3+A==
 
-"@oi4/oi4-oec-service-conformity-validator@1.0.0-preview.4", "@oi4/oi4-oec-service-conformity-validator@^1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-conformity-validator/1.0.0-preview.4/2623ed18af128f5e8446ba476058eefabf7b4280#2623ed18af128f5e8446ba476058eefabf7b4280"
-  integrity sha512-p4rQ+ZSnmIpXjfIaICjLcj86cqeWQjtpx7AqiZLzTb7ZzCr1IELbHtbRHazy3034gLgh/o8EIqtWFoXCq80aLg==
+"@oi4/oi4-oec-service-conformity-validator@1.0.0", "@oi4/oi4-oec-service-conformity-validator@^1.0.0":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-conformity-validator/1.0.0/1f9f48198d37870219a37889a5096e59617f9281#1f9f48198d37870219a37889a5096e59617f9281"
+  integrity sha512-4jqNzBp3NNfYNG/8TloFK0TBcs0MSWo5Rwr7WuvwyTCwOmFXMeuovSg3TmT4fd29VX+4tXpMdtUa3K0I66n9ZA==
   dependencies:
-    "@oi4/oi4-oec-json-schemas" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-logger" "^1.0.0-preview.4"
+    "@oi4/oi4-oec-json-schemas" "^1.0.0-preview"
+    "@oi4/oi4-oec-service-logger" "^1.0.0-preview"
     async-mqtt "^2.5.0"
 
-"@oi4/oi4-oec-service-logger@1.0.0-preview.4", "@oi4/oi4-oec-service-logger@^1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-logger/1.0.0-preview.4/de7d327fbdba6cda4ddbf37291455eb4b8f6afb9#de7d327fbdba6cda4ddbf37291455eb4b8f6afb9"
-  integrity sha512-uDq6QA2iM6YUK2VQ8Gx4BpmXtz5Xy2eAbTTs8xEiutpijJwetxczfDAmBTt9aNaILP+eZJ2wzJ/nSIDk0KsSHw==
+"@oi4/oi4-oec-service-logger@1.0.0", "@oi4/oi4-oec-service-logger@^1.0.0", "@oi4/oi4-oec-service-logger@^1.0.0-preview":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-logger/1.0.0/24c8920dbfec6df651edaf0ff5cfd6beedb269ed#24c8920dbfec6df651edaf0ff5cfd6beedb269ed"
+  integrity sha512-3KYvjVNcp0M8XOyhN5hmztTSWTHhAOIaf2i7gALK6JLssAPlLHEUDP532Mu7+uGpuN0a8vK5zHYcK9W791Oo6Q==
   dependencies:
-    "@oi4/oi4-oec-service-model" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0-preview.4"
+    "@oi4/oi4-oec-service-model" "^1.0.0"
+    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
     async-mqtt "^2.5.0"
     uuid "^8.3.2"
     winston "^3.3.3"
     winston-syslog "^2.4.4"
 
-"@oi4/oi4-oec-service-model@1.0.0-preview.4", "@oi4/oi4-oec-service-model@^1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-model/1.0.0-preview.4/d171bdf1e8e1e006665ddafc1f4960f5a9144a78#d171bdf1e8e1e006665ddafc1f4960f5a9144a78"
-  integrity sha512-9yluMPkJxX6GK3QEkrRjMXMXDo9Au2vyPxMqvcDhNUI43vFESdOzwMWqVLoJewplZQLo+jtUZWjj/nWhSfCFGA==
+"@oi4/oi4-oec-service-model@1.0.0", "@oi4/oi4-oec-service-model@^1.0.0":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-model/1.0.0/5b5fde6c17345d90d4a67820d1a4916539d94118#5b5fde6c17345d90d4a67820d1a4916539d94118"
+  integrity sha512-qG/fTQ5IisZZuk+KX4ocadeUlZGp0PXfAgNu3GojzSQD1NBbwkb4MYbRO4fWeQe05tgbJxyuTiKuuWCvvbeogw==
   dependencies:
-    "@oi4/oi4-oec-json-schemas" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0-preview.4"
+    "@oi4/oi4-oec-json-schemas" "^1.0.0"
+    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
 
-"@oi4/oi4-oec-service-node@1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-node/1.0.0-preview.4/a15ddb54b2e93f88f8bef3fcc650c7a4c57a927c#a15ddb54b2e93f88f8bef3fcc650c7a4c57a927c"
-  integrity sha512-7Q+63olsMlGSjav5ovFeGvkJDbvCHamFQwgMREEMYTIdJ9f+f6fds20A8lLPIi2TpEhJy+nXmdFIJKqigpt4pw==
+"@oi4/oi4-oec-service-node@1.0.0":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-node/1.0.0/ac6b35c998d97568548baaf966556314091be3e1#ac6b35c998d97568548baaf966556314091be3e1"
+  integrity sha512-TQvpV/fp9dwF3XcTz2LFqYMDvG+GSsI28Yt1Gt52G3TlgnafyPwoBLgHE22J7qRlSCJJGcQ8S/e1mBvQc85+5A==
   dependencies:
-    "@oi4/oi4-oec-service-conformity-validator" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-logger" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-model" "^1.0.0-preview.4"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0-preview.4"
+    "@oi4/oi4-oec-service-conformity-validator" "^1.0.0"
+    "@oi4/oi4-oec-service-logger" "^1.0.0"
+    "@oi4/oi4-oec-service-model" "^1.0.0"
+    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
     cors "^2.8.5"
     dotenv "^8.2.0"
     express "^4.17.1"
 
-"@oi4/oi4-oec-service-opcua-model@1.0.0-preview.4", "@oi4/oi4-oec-service-opcua-model@^1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-opcua-model/1.0.0-preview.4/3632d35f5fea20d9bfac7ec0f7a4e110ac3e9fef#3632d35f5fea20d9bfac7ec0f7a4e110ac3e9fef"
-  integrity sha512-YdlEHHogV4A+ATKjwpUqovv0vYsWztxXXuv+DWTHfTb8ar5pgqlb6nmq71yXX3JkVRp1ORMx8mDZRX743ZPEig==
+"@oi4/oi4-oec-service-opcua-model@1.0.0", "@oi4/oi4-oec-service-opcua-model@^1.0.0":
+  version "1.0.0"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-opcua-model/1.0.0/58499a3d38ef438eef8de15dbc363f6179f88d19#58499a3d38ef438eef8de15dbc363f6179f88d19"
+  integrity sha512-yJavY1BVb+KLv3kh3lulkOh3A/ScxZh5DmEPMqaUf5AqMBlQSii23dGTB6Ng+/Pz+wPlavD8EcmUj+yiB6+TCQ==
   dependencies:
     "@oi4/oi4-oec-json-schemas" "^1.0.0-preview.4"
 

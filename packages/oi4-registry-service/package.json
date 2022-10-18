@@ -22,11 +22,11 @@
     "url": "git@github.com:OI4/oi4-registry.git"
   },
   "dependencies": {
-    "@oi4/oi4-oec-service-conformity-validator": "1.0.0-preview.4",
-    "@oi4/oi4-oec-service-logger": "1.0.0-preview.4",
-    "@oi4/oi4-oec-service-model": "1.0.0-preview.4",
-    "@oi4/oi4-oec-service-node": "1.0.0-preview.4",
-    "@oi4/oi4-oec-service-opcua-model": "1.0.0-preview.4",
+    "@oi4/oi4-oec-service-conformity-validator": "1.0.0",
+    "@oi4/oi4-oec-service-logger": "1.0.0",
+    "@oi4/oi4-oec-service-model": "1.0.0",
+    "@oi4/oi4-oec-service-node": "1.0.0",
+    "@oi4/oi4-oec-service-opcua-model": "1.0.0",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
