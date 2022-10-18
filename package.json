@@ -1,20 +1,38 @@
 {
-  "name": "oi4registry",
-  "version": "0.12.1",
-  "description": "A Registry that keeps track of all oi4 compatible members \u001b[D\u001b[A\u001b[Bmessagebus",
-  "main": "index.js",
-  "dependencies": {},
-  "devDependencies": {},
-  "scripts": {
-    "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve OI4-Local-UI/build -s",
-    "buildLocalUI": "cd ./OI4-Local-UI && npm run build",
-    "serveLocalUI": "cd ./OI4-Local-UI && serve build/",
-    "buildAll": "node ./Helper/UpdateVersion/index && cd ./OI4-Local-UI && npm run build && cd ../OI4-Service && npm run tsc && cd ..",
-    "installAll": "cd ./OI4-Local-UI && npm install && cd ../OI4-Service && npm install && cd ..",
-    "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/386",
-    "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/386 -t ghcr.io/oi4/oi4-registry:${npm_package_version} .",
-    "docker:build:local": "docker build -t oi4/oi4-registry:${npm_package_version} -t oi4/oi4-registry:latest ."
+  "name": "@oi4/oi4registry",
+  "version": "1.0.0",
+  "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
+  "author": "Open Industry 4.0 Alliance - Community",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "keywords": [],
+  "repository": "git@github.com:OI4/oi4-registry.git",
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "http-server": "^14.1.0"
   },
-  "author": "Hilscher",
-  "license": "MIT"
+  "devDependencies": {
+    "dotenv": "^16.0.0",
+    "lerna": "^4.0.0"
+  },
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "clean": "lerna clean",
+    "build": "lerna run build",
+    "install": "lerna run install",
+    "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve packages/oi4-local-ui/build -s",
+    "buildLocalUI": "cd ./packages/oi4-local-ui && npm run build",
+    "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386",
+    "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t ghcr.io/oi4/oi4-registry:${npm_package_version} .",
+    "docker:build:local": "docker build -t oi4/oi4-registry:${npm_package_version} -t oi4/oi4-registry:latest .",
+    "serveLocalUI": "cd ./packages/oi4-local-ui && serve build/",
+    "buildAll": "cd ./packages/oi4-local-ui && npm run build && cd ../packages/oi4-registry-service && npm run tsc && cd ..",
+    "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
+  },
+  "engines": {
+    "node": ">=16.0.0 <18.0.0",
+    "yarn": ">=1.22.0 <2"
+  }
 }

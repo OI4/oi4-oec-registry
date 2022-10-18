@@ -1,7 +1,12 @@
 node_modules/**/*
+!node_modules/@oi4/oi4-oec-json-schemas/**/*
+!node_modules/@oi4/oi4-oec-service-conformity-validator/**/*
+!node_modules/@oi4/oi4-oec-service-logger/**/*
+!node_modules/@oi4/oi4-oec-service-model/**/*
+!node_modules/@oi4/oi4-oec-service-node/**/*
+!node_modules/@oi4/oi4-oec-service-opcua-model/**/*
 .vscode
 npm-debug.log
 
-OI4-Cockpit-UI/node_modules/**/*
-OI4-Local-UI/node_modules/**/*
-OI4-Registry/node_modules/**/*
+packages/oi4-local-ui/node_modules/**/*
+packages/oi4-registry-service/node_modules/**/*

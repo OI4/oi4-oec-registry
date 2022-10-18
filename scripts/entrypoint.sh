@@ -27,29 +27,35 @@ term_handler() {
 echo "Setup SIGTERM trap"
 trap 'kill ${!}; term_handler' SIGHUP SIGINT SIGTERM
 
+# Prepare settings for deploy script
+if [[ -z "${OI4_EDGE_APPLICATION_PORT}" ]]; then
+  export OI4_EDGE_APPLICATION_PORT=5799
+fi
+
 # Run deploy script
 echo "Run deploy script"
-chmod +x "/usr/OI4-Service/scripts/deploy-config-ui.sh"
-/usr/OI4-Service/scripts/deploy-config-ui.sh
+chmod +x "/usr/oi4-registry-service/scripts/deploy-config-ui.sh"
+/usr/oi4-registry-service/scripts/deploy-config-ui.sh
 
 # Run applications as services in the background now
-echo "Starting OI4-Service and LocalUI"
-exec node ./src/app.js & cd ../OI4-Local-UI
+echo "Starting OI4-Registry-Service and LocalUI"
+exec node ./src/app.js & cd ../oi4-local-ui
 
 # Conditional entry: Unsecure Frontend / Secure frontend
 if [ "$USE_HTTPS" = "true" ];
 then
   echo "USE_HTTPS true detected..."
-  FILE=/usr/local/share/oi4registry/cert/cert.pem
+  FILE=/run/secrets/registry_private_key.pem
 	if [ -f "$FILE" ];
     then
 		echo "$FILE exists, serving https without creating own certificate"
 	else
 		echo "$FILE does not exist! creating own certificate..."
-    mkdir -p /usr/local/share/oi4registry/cert
-		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /usr/local/share/oi4registry/cert/key.pem -out /usr/local/share/oi4registry/cert/cert.pem -subj "/C=DE/C=DE/ST=Hesse/O=HilscherTest/OU=Org/CN=localhost"
+		mkdir -p /etc/oi4/certs
+		mkdir -p /run/secrets/
+		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /run/secrets/registry_private_key.pem -out /etc/oi4/certs/registry_cert.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
 	fi
-	exec npx http-server -S -C /usr/local/share/oi4registry/cert/cert.pem -K /usr/local/share/oi4registry/cert/key.pem --cors -p 5798 build &
+	exec npx http-server -S -C /etc/oi4/certs/registry_cert.pem -K /run/secrets/registry_private_key.pem --cors -p 5798 build &
 else
    echo "USE_HTTPS other than true detected...serving without https"
    exec npx http-server --cors -p 5798 build &

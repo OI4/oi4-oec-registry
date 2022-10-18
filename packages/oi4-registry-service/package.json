@@ -1,0 +1,70 @@
+{
+  "name": "@oi4/oi4-registry-service",
+  "version": "1.0.0",
+  "description": "Acts as the application in a running OI4 container",
+  "author": "Open Industry 4.0 Alliance - Community",
+  "license": "BSD-3-Clause",
+  "private": false,
+  "keywords": [
+    "oi4",
+    "open",
+    "industry",
+    "industry4.0"
+  ],
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:OI4/oi4-registry.git"
+  },
+  "dependencies": {
+    "@oi4/oi4-oec-service-conformity-validator": "1.0.0",
+    "@oi4/oi4-oec-service-logger": "1.0.0",
+    "@oi4/oi4-oec-service-model": "1.0.0",
+    "@oi4/oi4-oec-service-node": "1.0.0",
+    "@oi4/oi4-oec-service-opcua-model": "1.0.0",
+    "@types/ws": "^8.5.2",
+    "ajv": "^6.12.6",
+    "async-mqtt": "^2.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "glossy": "^0.1.7",
+    "sequential-task-queue": "^1.2.1",
+    "swagger-ui-express": "^4.3.0",
+    "uuid": "^8.3.2",
+    "winston": "^3.6.0",
+    "winston-syslog": "^2.5.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.13",
+    "@types/jest": "^27.4.1",
+    "@types/lodash": "^4.14.179",
+    "@types/node": "^15.12.2",
+    "@types/swagger-ui-express": "^4.1.3",
+    "@types/uuid": "^8.3.2",
+    "@types/winston": "^2.4.4",
+    "@types/winston-syslog": "^2.4.0",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "eslint": "~6.1.0",
+    "jest": "~24.9.0",
+    "ts-jest": "^24.3.0",
+    "tslint-config-airbnb": "^5.11.2",
+    "typescript": "^4.6.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "clean": "rm -rf ./dist && rm -rf tsconfig.tsbuildinfo",
+    "build": "yarn run clean && tsc -b tsconfig.json",
+    "start": "node dist/app.js"
+  }
+}

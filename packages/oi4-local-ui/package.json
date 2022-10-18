@@ -1,0 +1,55 @@
+{
+  "name": "@oi4/oi4-local-ui",
+  "version": "1.0.0",
+  "author": "Open Industry 4.0 Alliance - Community",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "keywords": [
+    "oi4",
+    "oec",
+    "local-ui"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:OI4/oi4-conformity-validator-base.git"
+  },
+  "dependencies": {
+    "@material-ui/core": "^4.9.12",
+    "@material-ui/icons": "^4.9.1",
+    "cockpit": "^0.1.1",
+    "lodash": "^4.17.15",
+    "material-table": "^1.57.2",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "3.4.4"
+  },
+  "devDependencies": {
+    "eslint": "~6.1.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-config-standard-react": "^9.2.0",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "http-server": "^0.13.0",
+    "serve": "^11.3.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "startSecure": "set HTTPS=true&&react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

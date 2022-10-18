@@ -3,6 +3,7 @@ set -x
 echo "Deploying Service Endpoint"
 
 echo "var serviceEndpoint = { \
-  \"port\": \"5799\", \
+  \"address\": \"${SERVICE_ENDPOINT_ADDRESS}\", \
+  \"port\": ${SERVICE_ENDPOINT_PORT}, \
   \"platform\": \"fetch\" \
-}; " > "$UI_SRC_PATH/../../OI4-Local-UI/build/service-endpoint.js"
+}; " > "$UI_SRC_PATH/../../oi4-local-ui/build/service-endpoint.js"
