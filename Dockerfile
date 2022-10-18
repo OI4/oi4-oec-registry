@@ -1,10 +1,10 @@
-FROM node:16-alpine3.16
+FROM node:16-alpine3.15
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
 
 # -------FIX NPM ERRORS ON LOW MEM MACHINE
-# RUN npm config set unsafe-perm true
+RUN npm config set unsafe-perm true
 
 # -------ADD ENVIRONMENT PATHS
 ENV UI_SRC_PATH=/usr/oi4-local-ui/build
