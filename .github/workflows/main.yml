@@ -9,7 +9,7 @@ on:
     tags:
       - "!*"
 jobs:
-  main:
+  release:
     name: Setup
     runs-on: ubuntu-latest
     steps:
