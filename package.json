@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
   "author": "Open Industry 4.0 Alliance - Community",
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "private": true,
   "keywords": [],
   "repository": "git@github.com:OI4/oi4-registry.git",
