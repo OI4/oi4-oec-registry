@@ -1,45 +1,65 @@
-# This is a basic workflow to help you get started with Actions
+name: release
 
-name: CI
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+env:
+  CI: true
 on:
   push:
     branches:
-      - 'development'
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+      - main
+    tags:
+      - "!*"
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  release:
+    name: Setup
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-          # checking-out submodule like this should work, but does not https://github.com/actions/checkout/issues/116
-          #with:
-          #ssh-key: ${{ secrets.SSH_KEY_FOR_SUBMODULE }}
-        #submodules: true
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v3.0.0
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup Node
+        uses: actions/setup-node@v2
         with:
-          # Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.
-          node-version: 16.x
-          # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN
-          registry-url: https://registry.npmjs.org/
-      - name: Bootstrap
+          node-version: 14.x
+          registry-url: 'https://npm.pkg.github.com'
+      - name: install
         run: |
-          export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
-          yarn run bootstrap
-      - name: Install packages for all components
+          yarn install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      # Build packages
+      - name: build
         run: |
-          export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
-          yarn run install
-      - name: Build all
+          yarn build
+      # No test so far -> skip them for now
+      #- name: test
+      #  run: npm test
+      # Publish to github docker repo if this version is not published
+      - name: publish
         run: |
           export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
           yarn run build
+      - name: Prepare Docker build
+        run: npm run docker:prepare
+      - name: Docker Login
+        run: echo ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+      - name: Docker Build & Push
+        run: npm run docker:build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      # Push tag to GitHub if package.json version's tag is not tagged
+      - name: package-version
+        run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
+      # Create GitHub Repo tag
+      - name: package-version-to-git-tag
+        uses: pkgdeps/git-tag-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          version: ${{ env.PACKAGE_VERSION }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: "v"
+      # Create GitHub Repo release
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          tag_name: v${{ env.PACKAGE_VERSION }}
