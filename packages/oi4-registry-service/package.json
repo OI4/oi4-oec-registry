@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Acts as the application in a running OI4 container",
   "author": "Open Industry 4.0 Alliance - Community",
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "private": false,
   "keywords": [
     "oi4",
