@@ -10,10 +10,7 @@ import {ESyslogEventFilter, IOI4ApplicationResources, IContainerConfig} from '@o
 import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage, Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 import {OI4Application} from '@oi4/oi4-oec-service-node';
 
-
-// @ts-ignore
-import pJson from '../../../package.json';
-import { StartupConfig } from '../StartupConfig';
+import {StartupConfig} from '../StartupConfig';
 
 
 export class Oi4WebClient extends EventEmitter {
@@ -26,7 +23,10 @@ export class Oi4WebClient extends EventEmitter {
     public topicPreamble: string;
     public readonly builder: OPCUABuilder;
 
-    constructor(application: OI4Application, port = 5799) {
+    private readonly version: string;
+    private readonly license: string;
+
+    constructor(application: OI4Application, port = 5799, version: string, license: string) {
         super();
 
         this.oi4Id = application.oi4Id;
@@ -34,13 +34,15 @@ export class Oi4WebClient extends EventEmitter {
         this.builder = application.builder;
         this.topicPreamble = application.topicPreamble;
         this.applicationResources = application.applicationResources;
+        this.version = version;
+        this.license = license;
 
         const startupConfig = new StartupConfig();
         this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.logLevel, startupConfig.publishingLevel, application.oi4Id, application.serviceType);
         this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
 
         this.client = express();
-        this.client.use((_initReq, initRes, initNext) => {
+        this.client.use((initReq, initRes, initNext) => {
             // TODO security issue? WebAPI allows calls from any domain.
             initRes.header('Access-Control-Allow-Origin', '*'); // update to match the domain you will make the request from
             initRes.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -78,35 +80,35 @@ export class Oi4WebClient extends EventEmitter {
         }
 
         // Handle Get Requests
-        this.client.get('/', (_indexReq, indexResp) => {
+        this.client.get('/', (indexReq, indexResp) => {
             indexResp.send(JSON.stringify(this.oi4Id.toString()));
         });
 
-        this.client.get('/packageVersion', (_packageVersionReq, packageVersionResp) => {
-            packageVersionResp.send(pJson.version);
+        this.client.get('/packageVersion', (packageVersionReq, packageVersionResp) => {
+            packageVersionResp.send(this.version);
         });
 
-        this.client.get('/packageLicense', (_packageLicenseReq, packageLicenseResp) => {
-            packageLicenseResp.send(pJson.license);
+        this.client.get('/packageLicense', (packageLicenseReq, packageLicenseResp) => {
+            packageLicenseResp.send(this.license);
         });
 
-        this.client.get('/health', (_healthReq, healthResp) => {
+        this.client.get('/health', (healthReq, healthResp) => {
             healthResp.send(JSON.stringify(this.applicationResources.health));
         });
 
-        this.client.get('/config', (_configReq, configResp) => {
+        this.client.get('/config', (configReq, configResp) => {
             configResp.send(JSON.stringify(this.applicationResources.config));
         });
 
-        this.client.get('/license', (_licenseReq, licenseResp) => {
+        this.client.get('/license', (licenseReq, licenseResp) => {
             licenseResp.send(JSON.stringify(this.applicationResources.license));
         });
 
-        this.client.get('/rtLicense', (_rtLicenseReq, rtLicenseResp) => {
+        this.client.get('/rtLicense', (rtLicenseReq, rtLicenseResp) => {
             rtLicenseResp.send(JSON.stringify(this.applicationResources.rtLicense));
         });
 
-        this.client.get('/mam', (_mamReq, mamResp) => {
+        this.client.get('/mam', (mamReq, mamResp) => {
             mamResp.send(JSON.stringify(this.applicationResources.mam));
         });
 
@@ -114,7 +116,7 @@ export class Oi4WebClient extends EventEmitter {
             dataResp.send(JSON.stringify(this.applicationResources.dataLookup[dataReq.params.tagName]));
         });
 
-        this.client.get('/data', (_dataReq, dataResp) => {
+        this.client.get('/data', (dataReq, dataResp) => {
             dataResp.send(JSON.stringify(this.applicationResources.dataLookup));
         });
 
@@ -122,7 +124,7 @@ export class Oi4WebClient extends EventEmitter {
             metaDataResp.send(JSON.stringify(this.applicationResources.metaDataLookup[metaDataReq.params.tagName]));
         });
 
-        this.client.get('/metadata', (_metaDataReq, metaDataResp) => {
+        this.client.get('/metadata', (metaDataReq, metaDataResp) => {
             metaDataResp.send(JSON.stringify(this.applicationResources.metaDataLookup));
         });
 

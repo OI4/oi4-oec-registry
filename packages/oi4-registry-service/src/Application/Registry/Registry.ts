@@ -4,47 +4,45 @@ import {EventEmitter} from 'events';
 import {SequentialTaskQueue} from 'sequential-task-queue';
 import {
     CDataSetWriterIdLookup,
+    DataSetClassIds,
+    DataSetWriterIdManager,
+    EAssetType,
     EDeviceHealth,
     EGenericEventFilter,
     ENamurEventFilter,
     EOpcUaEventFilter,
-    PublicationListConfig,
-    SubscriptionListConfig,
     ESyslogEventFilter,
     Health,
-    PublicationList,
-    SubscriptionList,
-    Resource,
-    EAssetType,
-    DataSetClassIds,
     IContainerConfig,
-    DataSetWriterIdManager,
+    IOI4Resource,
     License,
-    RTLicense,
     LicenseText,
-    Profile,
     MasterAssetModel,
-    IOI4Resource
+    Methods,
+    Profile,
+    PublicationList,
+    PublicationListConfig,
+    Resources,
+    RTLicense,
+    SubscriptionList,
+    SubscriptionListConfig
 } from '@oi4/oi4-oec-service-model';
 import {
-    IOPCUANetworkMessage,
     IOPCUADataSetMessage,
-    OPCUABuilder,
-    Oi4Identifier
+    IOPCUANetworkMessage,
+    Oi4Identifier,
+    OPCUABuilder
 } from '@oi4/oi4-oec-service-opcua-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {FileLogger, TopicParser, TopicMethods} from '@oi4/oi4-oec-service-node';
+import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import { IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
-import { ELogType, ISettings } from '../Models/ISettings';
-import { RegistryResources } from '../RegistryResources';
-import { TopicInfo } from '@oi4/oi4-oec-service-node/dist/Utilities/Helpers/Types';
-import { StartupConfig } from '../StartupConfig';
-import { AssetLookup} from '../Models/AssetLookup';
-import { OI4ApplicationResources } from '@oi4/oi4-oec-service-node';
+import {IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
+import {ELogType, ISettings} from '../Models/ISettings';
+import {RegistryResources} from '../RegistryResources';
+import {StartupConfig} from '../StartupConfig';
+import {AssetLookup} from '../Models/AssetLookup';
 
-interface PaginationPub
-{
+interface PaginationPub {
     totalCount: number;
     perPage: number;
     page: number;
@@ -53,7 +51,7 @@ interface PaginationPub
 
 
 export class Registry extends EventEmitter {
-    private assetLookup: AssetLookup;
+    private readonly assetLookup: AssetLookup;
     private client: mqtt.AsyncClient;
     private globalEventList: IAssetEvent[];
     private builder: OPCUABuilder;
@@ -103,7 +101,7 @@ export class Registry extends EventEmitter {
         const startupConfig = new StartupConfig();
         const logLevel = startupConfig.logLevel;
         const publishingLevel = startupConfig.publishingLevel;
-       
+
         this.logger = new Logger(true, 'Registry-App', logLevel, publishingLevel, this.oi4Id, appResources.mam.getServiceType(), client);
         this.fileLogger = new FileLogger(appResources.settings.logging.logFileSize);
 
@@ -136,9 +134,9 @@ export class Registry extends EventEmitter {
         const mam = this.applicationResources.mam;
         await this.client.publish(`oi4/${mam.getServiceType()}/${this.oi4Id}/pub/mam/${this.oi4Id}`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                subResource: this.oi4Id.toString(),
+                Source: this.oi4Id.toString(),
                 Payload: this.applicationResources.mam,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resource.MAM, this.oi4Id.toString()),
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id.toString()),
             }], new Date(), DataSetClassIds.mam)),
         );
     }
@@ -179,9 +177,9 @@ export class Registry extends EventEmitter {
     private async ownSubscribe(topic: string): Promise<mqtt.ISubscriptionGrant[]> {
 
         const subscription = new SubscriptionList();
-        subscription.topicPath = topic;
-        subscription.config = SubscriptionListConfig.NONE_0;
-        subscription.interval = 0;
+        subscription.TopicPath = topic;
+        subscription.Config = SubscriptionListConfig.NONE_0;
+        subscription.Interval = 0;
 
         this.applicationResources.addSubscription(subscription);
         return await this.client.subscribe(topic);
@@ -197,12 +195,9 @@ export class Registry extends EventEmitter {
         await this.client.unsubscribe(topic);
     }
 
-    private removeSubscriptionByTopic(topic: string): void
-    {
-        for (let i=0; i < this.applicationResources.subscriptionList.length; i++)
-        {
-            if (this.applicationResources.subscriptionList[i].topicPath == topic)
-            {
+    private removeSubscriptionByTopic(topic: string): void {
+        for (let i = 0; i < this.applicationResources.subscriptionList.length; i++) {
+            if (this.applicationResources.subscriptionList[i].TopicPath == topic) {
                 this.applicationResources.subscriptionList.splice(i--, 1)
             }
         }
@@ -246,7 +241,7 @@ export class Registry extends EventEmitter {
             this.logger.log(`Error when parsing the topic ${topic}`, ESyslogEventFilter.warning);
             return;
         }
-        
+
         let networkMessage: IOPCUANetworkMessage;
         try {
             networkMessage = JSON.parse(message.toString());
@@ -269,7 +264,7 @@ export class Registry extends EventEmitter {
             return;
         }
 
-         // Safety-Check: DataSetClassId
+        // Safety-Check: DataSetClassId
         if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
             this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
             return;
@@ -281,14 +276,14 @@ export class Registry extends EventEmitter {
         }
 
         switch (topicInfo.method) {
-            case TopicMethods.PUB:
+            case Methods.PUB:
                 await this.executePubActions(topicInfo, networkMessage);
                 break;
         }
     }
 
     private async executePubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
-        if (topicInfo.method !== TopicMethods.PUB) {
+        if (topicInfo.method !== Methods.PUB) {
             throw new Error('Invalid argument topicInfo. Method must be TopicMethods.PUB.')
         }
 
@@ -297,115 +292,112 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        switch (topicInfo.resource)
-        {
-            case Resource.MAM:
+        switch (topicInfo.resource) {
+            case Resources.MAM:
                 await this.addToRegistry(topicInfo, networkMessage);
                 break;
-            case Resource.EVENT:
+            case Resources.EVENT:
                 await this.processPublishedEvent(topicInfo, networkMessage);
                 break;
-            case Resource.HEALTH:
+            case Resources.HEALTH:
                 await this.processPublishedHealth(topicInfo, networkMessage);
                 break;
-            case Resource.LICENSE:
-                this.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.License = License.clone(m.Payload)));
+            case Resources.LICENSE:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.License = License.clone(m.Payload)));
                 break;
-            case Resource.RT_LICENSE:
-                this.processMessage(networkMessage, (m) => this.updateResource(m, (r) => { 
+            case Resources.RT_LICENSE:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => {
                     const rtLicense = new RTLicense();
-                    Object.assign(rtLicense, m.Payload); 
-                    r.rtLicense = rtLicense;}));
+                    Object.assign(rtLicense, m.Payload);
+                    r.rtLicense = rtLicense;
+                }));
                 break;
-            case Resource.LICENSE_TEXT:
-                this.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.licenseText = LicenseText.clone(m.Payload)));
-                break;
-
-            case Resource.CONFIG:
-                this.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.config = JSON.parse(JSON.stringify(m.Payload))));
+            case Resources.LICENSE_TEXT:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.licenseText = LicenseText.clone(m.Payload)));
                 break;
 
-            case Resource.PROFILE:
-                this.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.profile = Profile.clone(m.Payload)));
+            case Resources.CONFIG:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.config = JSON.parse(JSON.stringify(m.Payload))));
+                break;
+
+            case Resources.PROFILE:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.profile = Profile.clone(m.Payload)));
                 break;
         }
     }
 
-    private async processMessage(input: IOPCUANetworkMessage, proc: (m: IOPCUADataSetMessage) => void, pagination?: (p: PaginationPub) => void): Promise<void> {
+    private static async processMessage(input: IOPCUANetworkMessage, proc: (m: IOPCUADataSetMessage) => void, pagination?: (p: PaginationPub) => void): Promise<void> {
         let paginationPub: PaginationPub;
 
         for (const dataSetMessage of input.Messages) {
 
-            if (typeof dataSetMessage.Payload.page !=='undefined') { // found pagination 
-                paginationPub  = 
-                {
-                    totalCount: dataSetMessage.Payload.totalCount,
-                    perPage: dataSetMessage.Payload.perPage,
-                    page: dataSetMessage.Payload.page,
-                    hasNext: dataSetMessage.Payload.hasNext
-                };
-                
+            if (typeof dataSetMessage.Payload.page !== 'undefined') { // found pagination
+                paginationPub =
+                    {
+                        totalCount: dataSetMessage.Payload.totalCount,
+                        perPage: dataSetMessage.Payload.perPage,
+                        page: dataSetMessage.Payload.page,
+                        hasNext: dataSetMessage.Payload.hasNext
+                    };
+
                 continue;
             }
 
             proc(dataSetMessage);
         }
 
-        if (pagination !== undefined && paginationPub !== undefined && paginationPub.hasNext){
+        if (pagination !== undefined && paginationPub !== undefined && paginationPub.hasNext) {
             pagination(paginationPub);
         }
     }
 
     private updateResource(dataSetMessage: IOPCUADataSetMessage, update: (asset: IResourceObject) => void): void {
-        const oi4Id = this.parseIdentifier(dataSetMessage.subResource);
+        const oi4Id = Registry.parseIdentifier(dataSetMessage.Source);
 
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
             update(asset.resources)
         }
     }
-    
+
     private async requestNextPage(pagination: PaginationPub, topicInfo: TopicInfo): Promise<void> {
-        
+
         const paginationGet = {
-            perPage: pagination.perPage, // get same amout of data 
+            perPage: pagination.perPage, // get same amout of data
             page: ++pagination.page // get next page
         };
 
         let topic: string;
-        let subResource: string;
+        let source: string;
         let filter: string;
-        switch (topicInfo.resource)
-        {
-            case Resource.EVENT:
+        switch (topicInfo.resource) {
+            case Resources.EVENT:
                 if (topicInfo.filter !== undefined) {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}/${topicInfo.filter}`;
-                    subResource = topicInfo.category;
+                    source = topicInfo.category;
                     filter = topicInfo.filter;
-                }
-                else {
+                } else {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}`;
-                    subResource = topicInfo.category;
+                    source = topicInfo.category;
                 }
                 break;
 
             default:
                 if (topicInfo.oi4Id !== undefined) {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.oi4Id}`
-                    subResource = topicInfo.oi4Id.toString();
-                }
-                else {
+                    source = topicInfo.oi4Id.toString();
+                } else {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}`;
-                    subResource = topicInfo.appId.toString();
+                    source = topicInfo.appId.toString();
                 }
                 break;
 
         }
-       
+
         await this.client.publish(topic,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                subResource: subResource,
-                filter: filter,
+                Source: source,
+                Filter: filter,
                 Payload: paginationGet,
                 DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(topicInfo.resource, this.oi4Id.toString()),
             }], new Date(), DataSetClassIds[topicInfo.resource])),
@@ -413,71 +405,69 @@ export class Registry extends EventEmitter {
 
     }
 
-    private async processPublishedEvent(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void>
-    {
+    private async processPublishedEvent(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
         this.logHappened = true; // We got some form of logs
 
         if (this.globalEventList.length >= this.maxAuditTrailElements) {
-                // If we have too many elements in the list, we purge them
-                clearTimeout(this.flushTimeout);
-                this.flushToLogfile(); // This will also shift the array if there are too many entries!
+            // If we have too many elements in the list, we purge them
+            clearTimeout(this.flushTimeout);
+            this.flushToLogfile(); // This will also shift the array if there are too many entries!
         }
 
-        await this.processMessage(networkMessage, (m)=> {
-            const parsedPayload = m.Payload;
+        await Registry.processMessage(networkMessage, (m) => {
+                const parsedPayload = m.Payload;
 
-            const assetEvent: IAssetEvent = {
-                origin: parsedPayload.origin ?? topicInfo.oi4Id,
-                level: topicInfo.filter,
-                number: parsedPayload.number,
-                category: topicInfo.category,
-                description: parsedPayload.description,
-                details: parsedPayload.details,
-                timestamp: parsedPayload.timestamp
-            }
+                const assetEvent: IAssetEvent = {
+                    origin: parsedPayload.origin ?? topicInfo.oi4Id,
+                    level: topicInfo.filter,
+                    number: parsedPayload.number,
+                    category: topicInfo.category,
+                    description: parsedPayload.description,
+                    details: parsedPayload.details,
+                    timestamp: parsedPayload.timestamp
+                }
 
-            this.globalEventList.push(assetEvent);
-    
-        },
-        async (pagination) => this.requestNextPage(pagination, topicInfo));
+                this.globalEventList.push(assetEvent);
+
+            },
+            async (pagination) => this.requestNextPage(pagination, topicInfo));
     }
 
     private async processPublishedHealth(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
-        this.processMessage(networkMessage, async (m) => {
-            const oi4Id = this.parseIdentifier(m.subResource);
-            this.logger.log(`Got Health from ${oi4Id}.`);
+        await Registry.processMessage(networkMessage, async (m) => {
+                const oi4Id = Registry.parseIdentifier(m.Source);
+                this.logger.log(`Got Health from ${oi4Id}.`);
 
-            const health = Health.clone(m.Payload);
+                const health = Health.clone(m.Payload);
 
-            if (this.assetLookup.has(oi4Id)) {
-                this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
-                // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-                clearTimeout(this.timeoutLookup[oi4Id.toString()]);
-    
-                if (health.health === EDeviceHealth.FAILURE_1 && health.healthScore === 0) {
-                    this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
-                    await this.removeDevice(oi4Id);
+                if (this.assetLookup.has(oi4Id)) {
+                    this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
+                    // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
+                    clearTimeout(this.timeoutLookup[oi4Id.toString()]);
+
+                    if (health.Health === EDeviceHealth.FAILURE_1 && health.HealthScore === 0) {
+                        this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
+                        await this.removeDevice(oi4Id);
+                    } else {
+                        this.timeoutLookup[oi4Id.toString()] = setTimeout(() => this.resourceTimeout(oi4Id), 65000);
+
+                        const asset = this.assetLookup.get(oi4Id);
+                        asset.lastMessage = new Date().toISOString();
+                        asset.resources.health = health;
+                    }
+
+                    this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
                 } else {
-                    const timeout = setTimeout(() => this.resourceTimeout(oi4Id), 65000);
-                    this.timeoutLookup[oi4Id.toString()] = timeout;
+                    if (topicInfo.appId === this.oi4Id) return;
 
-                    const asset = this.assetLookup.get(oi4Id);
-                    asset.lastMessage = new Date().toISOString();
-                    asset.resources.health = health;
+                    const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resources.MAM]);
+                    const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${oi4Id}`;
+                    await this.client.publish(topic, JSON.stringify(networkMessage));
+                    this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
                 }
-
-                this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
-            } else {
-                if (topicInfo.appId  === this.oi4Id) return;
-    
-                const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.MAM]);
-                const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${oi4Id}`;
-                await this.client.publish(topic, JSON.stringify(networkMessage));
-                this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
-            }
-        },
-        async (pagination)=> this.requestNextPage(pagination, topicInfo));
+            },
+            async (pagination) => this.requestNextPage(pagination, topicInfo));
     }
 
     /**
@@ -486,35 +476,35 @@ export class Registry extends EventEmitter {
      */
     async addToRegistry(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
-        await this.processMessage(networkMessage, async (m) => {
-            const assetId = this.parseIdentifier(m.subResource);
+        await Registry.processMessage(networkMessage, async (m) => {
+                const assetId = Registry.parseIdentifier(m.Source);
 
-            if  (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
-                this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
-                return;
-            }
-            try {
-                const mam = MasterAssetModel.clone(m.Payload);
-                this.logger.log('Enqueueing ADD-Device', ESyslogEventFilter.debug);
-                this.queue.push(async () => {
-                    return await this.addAsset(topicInfo, mam);
-                });
-            } catch (addErr) {
-                this.logger.log(`Add-Error: ${addErr}`, ESyslogEventFilter.error);
-            }
-        },
-        async (pagination) => this.requestNextPage(pagination, topicInfo));
+                if (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
+                    this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
+                    return;
+                }
+                try {
+                    const mam = MasterAssetModel.clone(m.Payload);
+                    this.logger.log('Enqueueing ADD-Device', ESyslogEventFilter.debug);
+                    this.queue.push(async () => {
+                        return await this.addAsset(topicInfo, mam);
+                    });
+                } catch (addErr) {
+                    this.logger.log(`Add-Error: ${addErr}`, ESyslogEventFilter.error);
+                }
+            },
+            async (pagination) => this.requestNextPage(pagination, topicInfo));
     }
 
     /**
      * Adds an asset based on the topic it registered on and its MasterAssetModel to the registry.
      * The asset is either classified into a device or an application
-     * @param fullTopic The topic that contains information about the device being added
+     * @param topicInfo The topic that contains information about the device being added
      * @param masterAssetModel The MasterAssetModel of the device
      */
     async addAsset(topicInfo: TopicInfo, masterAssetModel: MasterAssetModel): Promise<void> {
         this.logger.log(`----------- ADDING ASSET ----------:  ${topicInfo.topic}`, ESyslogEventFilter.informational);
-        
+
         if (Object.keys(masterAssetModel).length === 0) {
             this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
             return;
@@ -526,9 +516,8 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        if (!oi4Id.equals(this.oi4Id) && !this.applicationResources.hasSubResource(oi4Id))
-        {
-            const subResource: IOI4Resource = {
+        if (!oi4Id.equals(this.oi4Id) && !this.applicationResources.getSource(oi4Id)) {
+            const source: IOI4Resource = {
                 oi4Id: oi4Id,
                 profile: undefined,
                 mam: masterAssetModel,
@@ -541,10 +530,10 @@ export class Registry extends EventEmitter {
                 subscriptionList: undefined
             };
 
-            this.applicationResources.addSubResource(subResource);
+            this.applicationResources.addSource(source);
         }
 
-        const assetType = this.getAssetType(masterAssetModel);
+        const assetType = Registry.getAssetType(masterAssetModel);
         const registeredAt = new Date().toISOString();
         const newAsset: IAsset = {
             oi4IdOriginator: topicInfo.appId,
@@ -555,13 +544,13 @@ export class Registry extends EventEmitter {
                 mam: masterAssetModel,
             },
             topicPreamble: `oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
-            conformityObject: { 
+            conformityObject: {
                 oi4Id: EValidity.default,
                 validity: EValidity.default,
                 checkedResourceList: [],
                 profileResourceList: [],
                 nonProfileResourceList: [],
-                resource:{}
+                resources: {}
             },
             assetType: assetType
         };
@@ -574,24 +563,24 @@ export class Registry extends EventEmitter {
 
         this.assetLookup.set(oi4Id, newAsset);
 
-        // Subscribe to all changes regarding this application 
+        // Subscribe to all changes regarding this application
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/health/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/license/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/rtLicense/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/licenseText/#`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/config/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/profile/${oi4Id}`);
-        
+
         newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id.toString());
 
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
-        publicationList.resource = Resource.MAM;
-        publicationList.oi4Identifier = topicInfo.appId;
+        publicationList.Resource = Resources.MAM;
+        // publicationList.oi4Identifier = topicInfo.appId;
         publicationList.DataSetWriterId = 0;
-        publicationList.config = PublicationListConfig.NONE_0;
-        publicationList.interval = 0;
-        publicationList.subResource = oi4Id.toString();
+        publicationList.Config = PublicationListConfig.NONE_0;
+        publicationList.Interval = 0;
+        publicationList.Source = oi4Id;
 
         this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
@@ -600,31 +589,27 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                subResource: this.oi4Id.toString()
-            }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
+                Source: this.oi4Id.toString()
+            }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
     }
 
-    private getAssetType(masterAssetModel: MasterAssetModel): EAssetType
-    {
+    private static getAssetType(masterAssetModel: MasterAssetModel): EAssetType {
         // OEC development specification section 4 (mam) about the 'HardwareRevision':
-        // An application (software only) might be listed as an asset and therefore also has a nameplate. 
-        // In this case, the HardwareRevision shall be set to an empty string to detect the differences 
+        // An application (software only) might be listed as an asset and therefore also has a nameplate.
+        // In this case, the HardwareRevision shall be set to an empty string to detect the differences
         // between hardware and software only assets!
         if (masterAssetModel.HardwareRevision === '') {
             return EAssetType.application;
-        } 
-          
-        return  EAssetType.device;
-     }
+        }
+
+        return EAssetType.device;
+    }
 
 
-    private removePublicationBySubResource(subResource: string): void
-    {
-        for (let i=0; i < this.applicationResources.publicationList.length; i++)
-        {
-            if (this.applicationResources.publicationList[i].subResource == subResource)
-            {
+    private removePublicationBySubResource(subResource: string): void {
+        for (let i = 0; i < this.applicationResources.publicationList.length; i++) {
+            if (this.applicationResources.publicationList[i].Source == Oi4Identifier.fromString(subResource)) {
                 this.applicationResources.publicationList.splice(i--, 1)
             }
         }
@@ -639,7 +624,7 @@ export class Registry extends EventEmitter {
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
 
-            this.applicationResources.removeSubResource(oi4Id);
+            this.applicationResources.removeSource(oi4Id);
 
             this.ownUnsubscribe(`${asset.topicPreamble}/pub/event/+/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${oi4Id}`);
@@ -657,8 +642,8 @@ export class Registry extends EventEmitter {
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                     Payload: this.applicationResources.publicationList,
                     DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                    subResource: this.oi4Id.toString(),
-                }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
+                    Source: this.oi4Id.toString(),
+                }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
             );
             this.logger.log(`Deleted App: ${oi4Id}`, ESyslogEventFilter.warning);
         } else {
@@ -686,8 +671,8 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                subResource: this.oi4Id.toString()
-            }], new Date(), DataSetClassIds[Resource.PUBLICATION_LIST])),
+                Source: this.oi4Id.toString()
+            }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
 
         this.assetLookup.clear(); // Clear asset lookup
@@ -698,7 +683,7 @@ export class Registry extends EventEmitter {
      * @param oi4Id The oi4Id of the asset that is to be checked for conformity
      * @param resourceList The resourceList that is to be checked for conformity
      */
-    async updateConformityInDevice(oi4Id: Oi4Identifier, resourceList: Resource[]): Promise<IConformity> {
+    async updateConformityInDevice(oi4Id: Oi4Identifier, resourceList: Resources[]): Promise<IConformity> {
         this.logger.log(`Checking conformity for ${oi4Id}`);
         let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
         if (this.assetLookup.has(oi4Id)) {
@@ -720,12 +705,12 @@ export class Registry extends EventEmitter {
             const topic = `${asset.topicPreamble}/get/$health/${oi4Id}`;
             this.logger.log(`Timeout - Get health on ${topic}.`, ESyslogEventFilter.warning);
 
-            // remove the device 
+            // remove the device
             await this.removeDevice(oi4Id);
 
-            // last attempt: send a get/health request to the asset 
+            // last attempt: send a get/health request to the asset
             // this might re-add the device
-            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resource.HEALTH]);
+            const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resources.HEALTH]);
             await this.client.publish(topic, JSON.stringify(networkMessage));
         }
     }
@@ -743,8 +728,7 @@ export class Registry extends EventEmitter {
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
             oi4ToObjectList.push(asset);
-            if (resource === 'lastMessage')
-            {
+            if (resource === 'lastMessage') {
                 return asset.lastMessage;
             }
 
@@ -805,24 +789,24 @@ export class Registry extends EventEmitter {
 
     /**
      * Getter for applicationLookup
-     * @returns {IDeviceLookup} The applicationLookup of the Registry
+     * @returns {IAsset[]} The applicationLookup of the Registry
      */
     get applications() {
-        const allAssets = [... this.assetLookup];
+        const allAssets = [...this.assetLookup];
         return allAssets.filter(a => a.assetType === EAssetType.application);
     }
 
     /**
      * Getter for deviceLookup
-     * @returns {IDeviceLookup} The deviceLookup of the Registry
+     * @returns {IAsset[]} The deviceLookup of the Registry
      */
     get devices() {
-        const allAssets = [... this.assetLookup];
+        const allAssets = [...this.assetLookup];
         return allAssets.filter(a => a.assetType === EAssetType.device);
     }
 
     /**
-     * Gets the global event list. 
+     * Gets the global event list.
      * @returns The global event list.
      */
     get eventTrail(): IAssetEvent[] {
@@ -832,7 +816,7 @@ export class Registry extends EventEmitter {
     /**
      * Retrieve the global event list up to a specified amount of elements.
      * @param noOfElements - The amount of elements that is to be retrieved
-     * @returns The global event list up to the specified amout of elements 
+     * @returns The global event list up to the specified amout of elements
      */
     public getEventTrail(noOfElements: number): IAssetEvent[] {
         if (this.globalEventList.length <= noOfElements) {
@@ -856,10 +840,10 @@ export class Registry extends EventEmitter {
      * Retrieves the oi4Id of the registry
      */
     getOi4Id(): Oi4Identifier {
-            return this.oi4Id;
+        return this.oi4Id;
     }
 
-    private parseIdentifier(value: string): Oi4Identifier | undefined {
+    private static parseIdentifier(value: string): Oi4Identifier | undefined {
         try {
             return Oi4Identifier.fromString(value);
 

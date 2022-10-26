@@ -1,5 +1,5 @@
 import {IAsset} from './IRegistry';
-import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
+import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
 export class AssetLookup implements IterableIterator<IAsset> {
 
@@ -15,8 +15,8 @@ export class AssetLookup implements IterableIterator<IAsset> {
     }
 
     next(): IteratorResult<IAsset> {
-        const assets = [... this._assets.values()];
-        if (this.index <  assets.length) {
+        const assets = [...this._assets.values()];
+        if (this.index < assets.length) {
             return {
                 done: false,
                 value: assets[this.index++]
@@ -36,7 +36,7 @@ export class AssetLookup implements IterableIterator<IAsset> {
 
     public set(oi4Id: Oi4Identifier, asset: IAsset): void {
         this._assets.set(oi4Id.toString(), asset);
-    } 
+    }
 
     public get(oi4Id: Oi4Identifier): IAsset {
         return this._assets.get(oi4Id.toString());

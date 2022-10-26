@@ -22,6 +22,7 @@
     "clean": "lerna clean",
     "build": "lerna run build",
     "install": "lerna run install",
+    "test": "jest",
     "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve packages/oi4-local-ui/build -s",
     "buildLocalUI": "cd ./packages/oi4-local-ui && npm run build",
     "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6",

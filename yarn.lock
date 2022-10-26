@@ -2458,64 +2458,59 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@oi4/oi4-oec-json-schemas@^1.0.0", "@oi4/oi4-oec-json-schemas@^1.0.0-preview":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-json-schemas/1.0.0/cef25d423b5a7724c6b7643dc276f575a1849f0e#cef25d423b5a7724c6b7643dc276f575a1849f0e"
-  integrity sha512-2FMIqx9uSGcyrQZ32lLDFLNn4yJIDBDkpK+xTlx3HZKqV1o8yt15GEggGLWmhnukQGVO5a/ha7QPyTVyrtgXMA==
+"@oi4/oi4-oec-json-schemas@^1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-json-schemas/1.1.0-preview.2/9d66d232e3365eaa865386857986aa446ff9cdfd#9d66d232e3365eaa865386857986aa446ff9cdfd"
+  integrity sha512-E4Ws4TccjFP5z1nD/8lybpZngaXkc2koLvGPSnguTR/eQnNcftnjuBSIpF71RgyEKIi1zHSQ+A1qLtClw5nKwA==
 
-"@oi4/oi4-oec-json-schemas@^1.0.0-preview.4":
-  version "1.0.0-preview.4"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-json-schemas/1.0.0-preview.4/e629508777e5ef4dcc8241d017677f476b8a0d49#e629508777e5ef4dcc8241d017677f476b8a0d49"
-  integrity sha512-w5qgfgsO7y9q7u/LHDDHsRPFN4bpF2qKn/TH6xC/ADOeNwDDIXnDO+GpeMEDrE2AdjlQg9vilG3M8B4KomE3+A==
-
-"@oi4/oi4-oec-service-conformity-validator@1.0.0", "@oi4/oi4-oec-service-conformity-validator@^1.0.0":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-conformity-validator/1.0.0/1f9f48198d37870219a37889a5096e59617f9281#1f9f48198d37870219a37889a5096e59617f9281"
-  integrity sha512-4jqNzBp3NNfYNG/8TloFK0TBcs0MSWo5Rwr7WuvwyTCwOmFXMeuovSg3TmT4fd29VX+4tXpMdtUa3K0I66n9ZA==
+"@oi4/oi4-oec-service-conformity-validator@1.1.0-preview.2", "@oi4/oi4-oec-service-conformity-validator@^1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-conformity-validator/1.1.0-preview.2/b37fd93f710eb69ac7408107b6c512297babd4cd#b37fd93f710eb69ac7408107b6c512297babd4cd"
+  integrity sha512-CRWUGtvJQTu/w9V/T9LDgiNeYbHg8WuzyHFoY8gOwaFGTiY9ppclUo2wRbBneIwHE2aDfi8V/3ABuqRqJNa1sA==
   dependencies:
-    "@oi4/oi4-oec-json-schemas" "^1.0.0-preview"
-    "@oi4/oi4-oec-service-logger" "^1.0.0-preview"
+    "@oi4/oi4-oec-json-schemas" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.2"
     async-mqtt "^2.5.0"
 
-"@oi4/oi4-oec-service-logger@1.0.0", "@oi4/oi4-oec-service-logger@^1.0.0", "@oi4/oi4-oec-service-logger@^1.0.0-preview":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-logger/1.0.0/24c8920dbfec6df651edaf0ff5cfd6beedb269ed#24c8920dbfec6df651edaf0ff5cfd6beedb269ed"
-  integrity sha512-3KYvjVNcp0M8XOyhN5hmztTSWTHhAOIaf2i7gALK6JLssAPlLHEUDP532Mu7+uGpuN0a8vK5zHYcK9W791Oo6Q==
+"@oi4/oi4-oec-service-logger@1.1.0-preview.2", "@oi4/oi4-oec-service-logger@^1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-logger/1.1.0-preview.2/88f3e908a0ac74f99d1e49689ea8c262fffd81b2#88f3e908a0ac74f99d1e49689ea8c262fffd81b2"
+  integrity sha512-T5zRMcMgCjGS9c+mBzsI+FPHOFgT5yvwESdo9HODGAcFWf5UJFDQW9wJvZFpUfW27MbQ7KEOjI7pWZNObpUBig==
   dependencies:
-    "@oi4/oi4-oec-service-model" "^1.0.0"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
+    "@oi4/oi4-oec-service-model" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-opcua-model" "^1.1.0-preview.2"
     async-mqtt "^2.5.0"
     uuid "^8.3.2"
     winston "^3.3.3"
     winston-syslog "^2.4.4"
 
-"@oi4/oi4-oec-service-model@1.0.0", "@oi4/oi4-oec-service-model@^1.0.0":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-model/1.0.0/5b5fde6c17345d90d4a67820d1a4916539d94118#5b5fde6c17345d90d4a67820d1a4916539d94118"
-  integrity sha512-qG/fTQ5IisZZuk+KX4ocadeUlZGp0PXfAgNu3GojzSQD1NBbwkb4MYbRO4fWeQe05tgbJxyuTiKuuWCvvbeogw==
+"@oi4/oi4-oec-service-model@1.1.0-preview.2", "@oi4/oi4-oec-service-model@^1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-model/1.1.0-preview.2/736fde496f925875a0de277df6abee2abca020da#736fde496f925875a0de277df6abee2abca020da"
+  integrity sha512-N3FkolGrtd4RD9OvqE4mVbJzQqjEAxWOP3PgHKgw0vKVveP0kF1pJCNDXA3qfWe30kIdkaW0I6wWbGsVYaAPWg==
   dependencies:
-    "@oi4/oi4-oec-json-schemas" "^1.0.0"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
+    "@oi4/oi4-oec-json-schemas" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-opcua-model" "^1.1.0-preview.2"
 
-"@oi4/oi4-oec-service-node@1.0.0":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-node/1.0.0/ac6b35c998d97568548baaf966556314091be3e1#ac6b35c998d97568548baaf966556314091be3e1"
-  integrity sha512-TQvpV/fp9dwF3XcTz2LFqYMDvG+GSsI28Yt1Gt52G3TlgnafyPwoBLgHE22J7qRlSCJJGcQ8S/e1mBvQc85+5A==
+"@oi4/oi4-oec-service-node@1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-node/1.1.0-preview.2/aa47462b0f6de50e6d3fd769ea249f69890c26e8#aa47462b0f6de50e6d3fd769ea249f69890c26e8"
+  integrity sha512-Bdq0y6BvKKNYMWEYYqPfLllCS4xY7b9GsWloeQMxFFVP8/sVn72HiHnqz3fJAE7pkAlryOGRT1haEATzlwe0Rg==
   dependencies:
-    "@oi4/oi4-oec-service-conformity-validator" "^1.0.0"
-    "@oi4/oi4-oec-service-logger" "^1.0.0"
-    "@oi4/oi4-oec-service-model" "^1.0.0"
-    "@oi4/oi4-oec-service-opcua-model" "^1.0.0"
+    "@oi4/oi4-oec-service-conformity-validator" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-model" "^1.1.0-preview.2"
+    "@oi4/oi4-oec-service-opcua-model" "^1.1.0-preview.2"
     cors "^2.8.5"
     dotenv "^8.2.0"
     express "^4.17.1"
 
-"@oi4/oi4-oec-service-opcua-model@1.0.0", "@oi4/oi4-oec-service-opcua-model@^1.0.0":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-opcua-model/1.0.0/58499a3d38ef438eef8de15dbc363f6179f88d19#58499a3d38ef438eef8de15dbc363f6179f88d19"
-  integrity sha512-yJavY1BVb+KLv3kh3lulkOh3A/ScxZh5DmEPMqaUf5AqMBlQSii23dGTB6Ng+/Pz+wPlavD8EcmUj+yiB6+TCQ==
+"@oi4/oi4-oec-service-opcua-model@1.1.0-preview.2", "@oi4/oi4-oec-service-opcua-model@^1.1.0-preview.2":
+  version "1.1.0-preview.2"
+  resolved "https://npm.pkg.github.com/download/@OI4/oi4-oec-service-opcua-model/1.1.0-preview.2/21bdafadba52e53d07f00fb6297a64b1bf122e3d#21bdafadba52e53d07f00fb6297a64b1bf122e3d"
+  integrity sha512-oy7kSzzLOYuVqIMeCdexCVrfRDTMPrBzikDdLkCBBIGXWuy4e2SK2Gm/9fRCTS2PF+tP29vbTEMng3p6EiZnHQ==
   dependencies:
-    "@oi4/oi4-oec-json-schemas" "^1.0.0-preview.4"
+    "@oi4/oi4-oec-json-schemas" "^1.1.0-preview.2"
 
 "@svgr/babel-plugin-add-jsx-attribute@^4.2.0":
   version "4.2.0"

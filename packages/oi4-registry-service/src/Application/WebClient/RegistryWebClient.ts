@@ -10,11 +10,11 @@ import { IAsset } from '../Models/IRegistry';
 
 export class RegistryWebClient extends Oi4WebClient {
 
-    constructor(application: OI4Application, registry: Registry, port = 5799)
+    constructor(application: OI4Application, registry: Registry, port = 5799, version: string, license: string)
     {
-        super(application, port);
+        super(application, port, version, license);
 
-        this.client.get('/brokerState', (_brokerReq, brokerResp) => {
+        this.client.get('/brokerState', (brokerReq, brokerResp) => {
 
             brokerResp.send(application.mqttClient.connected);
         });
@@ -46,13 +46,13 @@ export class RegistryWebClient extends Oi4WebClient {
             const filteredApps = RegistryWebClient.convert(registry.applications.filter(a => include(a)));
             deviceResp.send(JSON.stringify(filteredApps));
         });
-        
+
         this.client.get('/registry/device', (deviceReq, deviceResp) => {
 
             const devices = RegistryWebClient.convert(registry.devices);
             deviceResp.send(JSON.stringify(devices));
         });
-        
+
         this.client.delete('/registry/assets/:oi4Id', async (deviceReq, deviceResp) => {
             const oi4Id = this.parseIdentifier(deviceReq.params.oi4Id);
             console.log(`Trying to remove asset with Id: ${oi4Id}`);
@@ -64,7 +64,7 @@ export class RegistryWebClient extends Oi4WebClient {
             }
             deviceResp.sendStatus(200);
         });
-        
+
         this.client.delete('/registry/assets', async (deviceReq, deviceResp) => {
             try {
                 await registry.clearRegistry();
@@ -73,7 +73,7 @@ export class RegistryWebClient extends Oi4WebClient {
             }
             deviceResp.send('OK, cleared Registry');
         });
-        
+
         this.client.delete('/registry/logs', async (deviceReq, deviceResp) => {
             let deletedFiles;
             try {
@@ -83,11 +83,11 @@ export class RegistryWebClient extends Oi4WebClient {
             }
             deviceResp.send(`OK, deleted files: ${deletedFiles}`);
         });
-        
+
         this.client.get('/registry/config', async (confReq, confResp) => {
             confResp.send(JSON.stringify(this.applicationResources.config));
         });
-        
+
         this.client.put('/registry/config', async (confReq, confResp) => {
             try {
                 await registry.updateConfig(confReq.body);
@@ -96,10 +96,10 @@ export class RegistryWebClient extends Oi4WebClient {
             }
             confResp.send(`OK, updated Registry Config with ${JSON.stringify(confReq.body)}`);
         });
-        
+
         // In this resourceList, eventList, lastMessage and mam are custom resources only used by the registry
         const resourceList = ['health', 'config', 'profile', 'license', 'rtLicense', 'licenseText', 'lastMessage', 'mam'];
-        
+
         for (const resources of resourceList) {
             this.client.get(`/registry/${resources}/:oi4Id`, async (resourceReq, resourceResp) => {
                 let resourceObject;
@@ -115,12 +115,12 @@ export class RegistryWebClient extends Oi4WebClient {
                 resourceResp.send(JSON.stringify(resourceObject));
             });
         }
-        
+
         this.client.get('/registry/event/:noOfElements', (deviceEventReq, deviceEventResp) => {
             const noOfElements = parseInt(deviceEventReq.params.noOfElements, 10);
             deviceEventResp.send(JSON.stringify(registry.getEventTrail(noOfElements)));
         });
-        
+
         // -------- Conformity Checker Application (Used to be ConformityValidator instance, now we use the Registry)
         this.client.get('/conformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
             let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
@@ -130,10 +130,10 @@ export class RegistryWebClient extends Oi4WebClient {
             } catch (err) {
                 console.log(`Got error in conformity REST request: ${err}`);
             }
-        
+
             conformityResp.send(JSON.stringify(conformityObject));
         });
-        
+
         this.client.get('/fullConformity/:originator/:oi4Id', async (conformityReq, conformityResp) => {
             let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
             try {
@@ -142,10 +142,10 @@ export class RegistryWebClient extends Oi4WebClient {
             } catch (err) {
                 console.log(`Got error in conformity REST request: ${err}`);
             }
-        
+
             conformityResp.send(JSON.stringify(conformityObject));
         });
-       
+
     }
 
     private protocolVersionToString(version?: number): string {
@@ -176,7 +176,7 @@ export class RegistryWebClient extends Oi4WebClient {
     }
 
     private static convert(assets: IAsset[]) {
-        if (assets.length === 0) { 
+        if (assets.length === 0) {
             return {};
         }
 

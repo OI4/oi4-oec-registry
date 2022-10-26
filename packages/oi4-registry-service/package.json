@@ -22,11 +22,11 @@
     "url": "git@github.com:OI4/oi4-registry.git"
   },
   "dependencies": {
-    "@oi4/oi4-oec-service-conformity-validator": "1.0.0",
-    "@oi4/oi4-oec-service-logger": "1.0.0",
-    "@oi4/oi4-oec-service-model": "1.0.0",
-    "@oi4/oi4-oec-service-node": "1.0.0",
-    "@oi4/oi4-oec-service-opcua-model": "1.0.0",
+    "@oi4/oi4-oec-service-conformity-validator": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-logger": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-model": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-node": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-opcua-model": "1.1.0-preview.2",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
@@ -61,7 +61,7 @@
     "typescript": "^4.6.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest ",
     "tsc": "tsc",
     "clean": "rm -rf ./dist && rm -rf tsconfig.tsbuildinfo",
     "build": "yarn run clean && tsc -b tsconfig.json",
