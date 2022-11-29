@@ -22,10 +22,10 @@
     "url": "git@github.com:OI4/oi4-registry.git"
   },
   "dependencies": {
-    "@oi4/oi4-oec-service-conformity-validator": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-conformity-validator": "1.1.0-preview.3",
     "@oi4/oi4-oec-service-logger": "1.1.0-preview.2",
-    "@oi4/oi4-oec-service-model": "1.1.0-preview.2",
-    "@oi4/oi4-oec-service-node": "1.1.0-preview.2",
+    "@oi4/oi4-oec-service-model": "1.1.0-preview.3",
+    "@oi4/oi4-oec-service-node": "1.1.0-preview.3",
     "@oi4/oi4-oec-service-opcua-model": "1.1.0-preview.2",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
@@ -34,12 +34,12 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "glossy": "^0.1.7",
+    "lodash": "^4.17.21",
     "sequential-task-queue": "^1.2.1",
     "swagger-ui-express": "^4.3.0",
     "uuid": "^8.3.2",
     "winston": "^3.6.0",
-    "winston-syslog": "^2.5.0",
-    "lodash": "^4.17.21"
+    "winston-syslog": "^2.5.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
