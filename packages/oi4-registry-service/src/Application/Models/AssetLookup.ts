@@ -1,5 +1,5 @@
 import {IAsset} from './IRegistry';
-import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
+import {Oi4Identifier} from '@oi4/oi4-oec-service-model';
 
 export class AssetLookup implements IterableIterator<IAsset> {
 

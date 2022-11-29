@@ -5,11 +5,11 @@ import {
     License,
     LicenseText,
     MasterAssetModel,
+    Oi4Identifier,
     Profile,
     RTLicense
 } from '@oi4/oi4-oec-service-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
 /**
  * This interface is proprietary and only used between registry backend and frontend.

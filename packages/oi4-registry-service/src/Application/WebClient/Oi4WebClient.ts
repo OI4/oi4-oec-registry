@@ -6,9 +6,8 @@ import fs = require('fs');
 import https = require('https');
 
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {ESyslogEventFilter, IOI4ApplicationResources, IContainerConfig} from '@oi4/oi4-oec-service-model';
-import {OPCUABuilder, IOPCUAMetaData, IOPCUANetworkMessage, Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
-import {OI4Application} from '@oi4/oi4-oec-service-node';
+import {ESyslogEventFilter, IOI4ApplicationResources, IContainerConfig, IOPCUAMetaData, IOPCUANetworkMessage, Oi4Identifier, OPCUABuilder} from '@oi4/oi4-oec-service-model';
+import {IOI4Application} from '@oi4/oi4-oec-service-node';
 
 import {StartupConfig} from '../StartupConfig';
 
@@ -26,7 +25,7 @@ export class Oi4WebClient extends EventEmitter {
     private readonly version: string;
     private readonly license: string;
 
-    constructor(application: OI4Application, port = 5799, version: string, license: string) {
+    constructor(application: IOI4Application, port = 5799, version: string, license: string) {
         super();
 
         this.oi4Id = application.oi4Id;

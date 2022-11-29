@@ -1,28 +1,28 @@
 import mqtt = require('async-mqtt');
 import {Oi4WebClient} from './Oi4WebClient';
 import {Registry} from '../Registry/Registry';
-import {MqttSettings, OI4Application} from '@oi4/oi4-oec-service-node';
+import {MqttSettings, IOI4Application} from '@oi4/oi4-oec-service-node';
 import {Application} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import { RegistryResources } from '../RegistryResources';
-import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
+import { Oi4Identifier } from '@oi4/oi4-oec-service-model';
 import { IAsset } from '../Models/IRegistry';
 
 export class RegistryWebClient extends Oi4WebClient {
 
-    constructor(application: OI4Application, registry: Registry, port = 5799, version: string, license: string)
+    constructor(application: IOI4Application, registry: Registry, port = 5799, version: string, license: string)
     {
         super(application, port, version, license);
 
         this.client.get('/brokerState', (brokerReq, brokerResp) => {
 
-            brokerResp.send(application.mqttClient.connected);
+            brokerResp.send(application.client.connected);
         });
 
         this.client.get('/mqttSettings', (mqttSettingsReq, mqttSettingsResp) => {
             // workaround for bug in the async-mqtt library
             // 'mqttClient.options' returns undefined / must use 'mqttClient._client.options' instead
-            const clientOpts: mqtt.IClientOptions = (application.mqttClient as any)._client.options;
+            const clientOpts: mqtt.IClientOptions = (application.client as any)._client.options;
 
             mqttSettingsResp.send(JSON.stringify({
                 brokerUri: `${clientOpts.protocol}://${clientOpts.host}:${clientOpts.port}`,

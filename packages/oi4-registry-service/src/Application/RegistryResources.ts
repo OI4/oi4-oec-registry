@@ -6,12 +6,12 @@ import {
     IContainerConfigGroupName,
     License,
     LicenseText,
+    Oi4Identifier,
     Resources
 } from '@oi4/oi4-oec-service-model';
 import {ELogType, ISettings} from './Models/ISettings';
 import {existsSync, readFileSync, writeFileSync} from 'fs';
 import {StartupConfig} from './StartupConfig';
-import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
 
 export class RegistryResources extends OI4ApplicationResources

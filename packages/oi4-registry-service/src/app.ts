@@ -18,7 +18,7 @@ const applicationResources = new RegistryResources();
 const applicationFactory = new OI4ApplicationFactory(applicationResources);
 const registryApp = applicationFactory.createOI4Application();
 const port = startupConfig.edgeApplicationPort;
-const registry = new Registry(registryApp.mqttClient, applicationResources);
+const registry = new Registry(registryApp.client, applicationResources);
 const webProxy = new RegistryWebClient(registryApp, registry, port, pJson.version, pJson.license);
 
 const logLevel = startupConfig.logLevel;
