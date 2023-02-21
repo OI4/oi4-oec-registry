@@ -4,6 +4,14 @@ import { copyFileSync, existsSync,  mkdirSync } from 'fs';
 
 export class StartupConfig {
 
+    private readonly etcFolder;
+    private readonly runFolder;
+
+    constructor(etcFolder = '/etc', runFolder = '/run') {
+        this.etcFolder = etcFolder;
+        this.runFolder = runFolder;
+    }
+
     public static mamFile(): string {
         return path.join(__dirname, 'Resources', 'mam.json');
     }
@@ -16,12 +24,11 @@ export class StartupConfig {
         return path.join(__dirname, 'Resources', 'licenseText.json');
     }
 
-    public static configFile(): string | undefined {
-        const configFile = '/etc/oi4/app/config.json';
-        
+    public static configFile(configFolder = '/etc/oi4/app/config.json'): string | undefined {
+        const configFile = `${configFolder}/config.json`;
         if (!existsSync(configFile)) {
             try {
-                mkdirSync('/etc/oi4/app', {recursive: true});
+                mkdirSync(configFolder, {recursive: true});
 
                 const templatePath = path.join(__dirname, 'Resources', 'config.json');
                 copyFileSync(templatePath, configFile);
@@ -56,7 +63,7 @@ export class StartupConfig {
     public get useOpenAPI(): boolean {
         if (!process.env.OI4_EDGE_APPLICATION_ENABLE_OPENAPI) {
             return true; // default is true
-        } 
+        }
 
         return process.env.OI4_EDGE_APPLICATION_ENABLE_OPENAPI === 'true';
     }
@@ -74,7 +81,7 @@ export class StartupConfig {
      * @returns The file name of the key file that is used for the REST-API.
      */
     public get keyFile(): string {
-        return '/run/secrets/registry_private_key.pem';
+        return `${this.runFolder}/secrets/registry_private_key.pem`;
     }
 
     /**
@@ -82,6 +89,6 @@ export class StartupConfig {
      * @returns The file name of the certificate file that is used for the REST-API.
      */
     public get certFile(): string {
-        return '/etc/oi4/certs/registry_cert.pem';
+        return `${this.etcFolder}/oi4/registry_cert.pem`;
     }
 }

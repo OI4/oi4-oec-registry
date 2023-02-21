@@ -6,16 +6,14 @@ import {
     IContainerConfigGroupName,
     License,
     LicenseText,
+    Oi4Identifier,
     Resources
 } from '@oi4/oi4-oec-service-model';
 import {ELogType, ISettings} from './Models/ISettings';
 import {existsSync, readFileSync, writeFileSync} from 'fs';
 import {StartupConfig} from './StartupConfig';
-import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
-
-export class RegistryResources extends OI4ApplicationResources
-{
+export class RegistryResources extends OI4ApplicationResources {
     private static readonly AUDIT_LEVEL_DEFAULT = ESyslogEventFilter.warning;
     private static readonly LOG_TYPE_DEFAULT = ELogType.disabled;
     private static readonly LOG_FILE_SIZE_DEFAULT = 250000;
@@ -34,8 +32,7 @@ export class RegistryResources extends OI4ApplicationResources
         }
     };
 
-    constructor()
-    {
+    constructor() {
         super(StartupConfig.mamFile());
 
         this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resources) => {
@@ -91,7 +88,7 @@ export class RegistryResources extends OI4ApplicationResources
         // license text
         const licenseTextFile = StartupConfig.licenseTextFile();
         if (existsSync(licenseTextFile)) {
-            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({licenseId: string; licenseText: string})[];
+            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({ licenseId: string; licenseText: string })[];
             for (const text of texts) {
                 this.licenseText.set(text.licenseId, new LicenseText(text.licenseText));
             }
@@ -114,8 +111,7 @@ export class RegistryResources extends OI4ApplicationResources
             if (configFile && existsSync(configFile)) {
                 writeFileSync(configFile, Buffer.from(JSON.stringify(this.config, null, 4)));
             }
-        }
-        catch (e) {
+        } catch (e) {
             console.log(e);
         }
     }
@@ -134,7 +130,7 @@ export class RegistryResources extends OI4ApplicationResources
         }
 
         const logFileSize = Number(RegistryResources.getValue(config, 'logging', 'logFileSize'));
-        if (Number.isNaN(logFileSize) || !Number.isFinite(logFileSize) ||  logFileSize < 1024) {
+        if (Number.isNaN(logFileSize) || !Number.isFinite(logFileSize) || logFileSize < 1024) {
             console.log('Config setting logFileSize is invalid.');
             return;
         }
@@ -172,7 +168,7 @@ export class RegistryResources extends OI4ApplicationResources
         return ((config?.[groupName] as IContainerConfigGroupName)?.[settingName] as IContainerConfigConfigName)?.Value;
     }
 
-    private static areEqual(a: ISettings, b: ISettings): boolean  {
+    private static areEqual(a: ISettings, b: ISettings): boolean {
         return a.logging.auditLevel == b.logging.auditLevel &&
             a.logging.logFileSize == b.logging.logFileSize &&
             a.logging.logType == b.logging.logType &&

@@ -25,14 +25,12 @@ import {
     Resources,
     RTLicense,
     SubscriptionList,
-    SubscriptionListConfig
-} from '@oi4/oi4-oec-service-model';
-import {
+    SubscriptionListConfig,
     IOPCUADataSetMessage,
     IOPCUANetworkMessage,
     Oi4Identifier,
     OPCUABuilder
-} from '@oi4/oi4-oec-service-opcua-model';
+} from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
@@ -134,9 +132,9 @@ export class Registry extends EventEmitter {
         const mam = this.applicationResources.mam;
         await this.client.publish(`oi4/${mam.getServiceType()}/${this.oi4Id}/pub/mam/${this.oi4Id}`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                Source: this.oi4Id.toString(),
+                Source: this.oi4Id,
                 Payload: this.applicationResources.mam,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id.toString()),
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id),
             }], new Date(), DataSetClassIds.mam)),
         );
     }
@@ -352,9 +350,9 @@ export class Registry extends EventEmitter {
     }
 
     private updateResource(dataSetMessage: IOPCUADataSetMessage, update: (asset: IResourceObject) => void): void {
-        const oi4Id = Registry.parseIdentifier(dataSetMessage.Source);
+        const oi4Id = dataSetMessage.Source;
 
-        if (this.assetLookup.has(oi4Id)) {
+        if (oi4Id != undefined && this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
             update(asset.resources)
         }
@@ -368,27 +366,27 @@ export class Registry extends EventEmitter {
         };
 
         let topic: string;
-        let source: string;
+        let source: Oi4Identifier;
         let filter: string;
         switch (topicInfo.resource) {
             case Resources.EVENT:
                 if (topicInfo.filter !== undefined) {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}/${topicInfo.filter}`;
-                    source = topicInfo.category;
+                    source = topicInfo.source;
                     filter = topicInfo.filter;
                 } else {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}`;
-                    source = topicInfo.category;
+                    source = topicInfo.source;
                 }
                 break;
 
             default:
                 if (topicInfo.oi4Id !== undefined) {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.oi4Id}`
-                    source = topicInfo.oi4Id.toString();
+                    source = topicInfo.oi4Id;
                 } else {
                     topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}`;
-                    source = topicInfo.appId.toString();
+                    source = topicInfo.appId;
                 }
                 break;
 
@@ -399,7 +397,7 @@ export class Registry extends EventEmitter {
                 Source: source,
                 Filter: filter,
                 Payload: paginationGet,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(topicInfo.resource, this.oi4Id.toString()),
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(topicInfo.resource, this.oi4Id),
             }], new Date(), DataSetClassIds[topicInfo.resource])),
         );
 
@@ -436,7 +434,7 @@ export class Registry extends EventEmitter {
     private async processPublishedHealth(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
         await Registry.processMessage(networkMessage, async (m) => {
-                const oi4Id = Registry.parseIdentifier(m.Source);
+                const oi4Id = m.Source;
                 this.logger.log(`Got Health from ${oi4Id}.`);
 
                 const health = Health.clone(m.Payload);
@@ -477,7 +475,7 @@ export class Registry extends EventEmitter {
     async addToRegistry(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
 
         await Registry.processMessage(networkMessage, async (m) => {
-                const assetId = Registry.parseIdentifier(m.Source);
+                const assetId = m.Source;
 
                 if (this.getAsset(assetId)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
                     this.logger.log('--MasterAssetModel already in Registry - addToRegistry--', ESyslogEventFilter.debug);
@@ -509,7 +507,7 @@ export class Registry extends EventEmitter {
             this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
             return;
         }
-        const oi4Id = topicInfo.oi4Id !== undefined ? topicInfo.oi4Id : topicInfo.appId;
+        const oi4Id: Oi4Identifier = topicInfo.oi4Id !== undefined ? topicInfo.oi4Id : topicInfo.appId;
 
         if (this.getAsset(oi4Id)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
@@ -571,7 +569,7 @@ export class Registry extends EventEmitter {
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/config/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/pub/profile/${oi4Id}`);
 
-        newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id.toString());
+        newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
 
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
@@ -589,7 +587,7 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                Source: this.oi4Id.toString()
+                Source: this.oi4Id
             }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
     }
@@ -642,7 +640,7 @@ export class Registry extends EventEmitter {
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                     Payload: this.applicationResources.publicationList,
                     DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                    Source: this.oi4Id.toString(),
+                    Source: this.oi4Id,
                 }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
             );
             this.logger.log(`Deleted App: ${oi4Id}`, ESyslogEventFilter.warning);
@@ -671,7 +669,7 @@ export class Registry extends EventEmitter {
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
-                Source: this.oi4Id.toString()
+                Source: this.oi4Id
             }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
 
@@ -688,7 +686,7 @@ export class Registry extends EventEmitter {
         let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
-            conformityObject = await this.conformityValidator.checkConformity(asset.assetType, asset.topicPreamble, asset.oi4Id.toString(), resourceList);
+            conformityObject = await this.conformityValidator.checkConformity(asset.assetType, asset.topicPreamble, asset.oi4Id, resourceList);
             asset.conformityObject = conformityObject;
         }
         return conformityObject;

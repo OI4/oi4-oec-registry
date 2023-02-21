@@ -18,12 +18,12 @@ const applicationResources = new RegistryResources();
 const applicationFactory = new OI4ApplicationFactory(applicationResources);
 const registryApp = applicationFactory.createOI4Application();
 const port = startupConfig.edgeApplicationPort;
-const registry = new Registry(registryApp.mqttClient, applicationResources);
+const registry = new Registry(registryApp.messageBus.getClient(), applicationResources);
 const webProxy = new RegistryWebClient(registryApp, registry, port, pJson.version, pJson.license);
 
 const logLevel = startupConfig.logLevel;
 const publishingLevel = startupConfig.publishingLevel;
-const logger = new Logger(true, 'Registry-Entrypoint', logLevel, publishingLevel, registryApp.oi4Id, registryApp.serviceType, registryApp.client);
+const logger = new Logger(true, 'Registry-Entrypoint', logLevel, publishingLevel, registryApp.oi4Id, registryApp.serviceType, registryApp.messageBus.getClient());
 logger.level = ESyslogEventFilter.debug;
 logger.log(`Test print for level ${ESyslogEventFilter.debug}`, ESyslogEventFilter.debug);
 logger.log(`Test print for level ${ESyslogEventFilter.informational}`, ESyslogEventFilter.informational);
