@@ -16,3 +16,4 @@ out/**/*
 /.idea/
 .npmrc
 /packages/oi4-service-node/.idea/
+/work/

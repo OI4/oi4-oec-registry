@@ -6,10 +6,10 @@ services:
     container_name: oi4-oec-service-demo
     restart: on-failure
     volumes:
-      - "/my/local/path/to/oi4-oec-registry/mqtt:/etc/oi4/mqtt"
-      - "/my/local/path/to/oi4-oec-registry/certs:/etc/oi4/certs"
-      - "/my/local/path/to/oi4-oec-registry/secrets:/run/secrets"
-      - "/my/local/path/to/oi4-oec-registry/config:/etc/oi4/config"
+      - "/my/local/path/to/oi4-oec-registry-1.1.0-preview.1/mqtt:/etc/oi4/mqtt"
+      - "/my/local/path/to/oi4-oec-registry-1.1.0-preview.1/certs:/etc/oi4/certs"
+      - "/my/local/path/to/oi4-oec-registry-1.1.0-preview.1/secrets:/run/secrets"
+      - "/my/local/path/to/oi4-oec-registry-1.1.0-preview.1/config:/etc/oi4/config"
     ports:
       - "5798:5798"
       - "5799:5799"

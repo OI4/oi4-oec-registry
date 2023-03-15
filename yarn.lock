@@ -2458,7 +2458,7 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@oi4/oi4-oec-dnp-encoding@^1.1.0-preview.4":
+"@oi4/oi4-oec-dnp-encoding@1.1.0-preview.4", "@oi4/oi4-oec-dnp-encoding@^1.1.0-preview.4":
   version "1.1.0-preview.4"
   resolved "https://npm.pkg.github.com/download/@oi4/oi4-oec-dnp-encoding/1.1.0-preview.4/8bf065da352def7be049e185074e63f8c4a9069e#8bf065da352def7be049e185074e63f8c4a9069e"
   integrity sha512-TjgqvsOZRKCtBtC3S6DWnIK3plCunqZiWI122WDxOEdvcLF0OkA7Asp1lLmXHzjDip13HhSR6An55s1LdHvwjA==

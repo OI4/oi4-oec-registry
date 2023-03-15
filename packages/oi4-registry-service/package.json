@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@oi4/oi4-oec-service-node": "1.1.0-preview.4",
+    "@oi4/oi4-oec-dnp-encoding": "1.1.0-preview.4",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
