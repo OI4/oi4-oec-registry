@@ -1,19 +1,19 @@
 {
-  "Manufacturer":{"Locale":"en-US","Text":"OpenIndustry4"},
+  "Manufacturer":{"Locale":"en-US","Text":"Open Industry 4.0 Community"},
   "ManufacturerUri":"openindustry4.com",
-  "Model":{"Locale":"en-US","Text":"OECUtility"},
-  "ProductCode":"OECRegistry",
+  "Model":{"Locale":"en-US","Text":"OEC-Registry"},
+  "ProductCode":"OECREG",
   "HardwareRevision":"",
   "SoftwareRevision":"1.1.0",
-  "DeviceRevision":"1.1.0",
-  "DeviceManual":"1.0",
-  "DeviceClass":"Registry",
+  "DeviceRevision":"1",
+  "DeviceManual":"",
+  "DeviceClass":"Oi4.Registry",
   "SerialNumber":"F12AB34",
-  "ProductInstanceUri":"oi4/appid/service",
+  "ProductInstanceUri":"openindustry4.com/OEC-Registry/OECREG/F12AB34",
   "RevisionCounter":0,
   "Description":
   {
     "Locale":"en-US",
-    "Text":"AnexampleOI4service"
+    "Text":"An OI4 OEC Registry, provided by the OI4 community"
   }
 }
