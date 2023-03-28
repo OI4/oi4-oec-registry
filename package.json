@@ -26,7 +26,7 @@
     "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve packages/oi4-local-ui/build -s",
     "buildLocalUI": "cd ./packages/oi4-local-ui && npm run build",
     "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6",
-    "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-registry:${npm_package_version} --build-arg PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN} .",
+    "docker:build": "docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} --build-arg PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN} .",
     "docker:build:local": "docker build -t oi4/oi4-oec-registry:${npm_package_version} -t oi4/oi4-oec-registry:latest --build-arg PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN} .",
     "docker:build:snapshot": "docker build -t oi4/oi4-oec-registry:${npm_package_version} -t oi4/oi4-oec-registry:latest --build-arg PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN} --build-arg BUILD_ENV=snapshot .",
 
