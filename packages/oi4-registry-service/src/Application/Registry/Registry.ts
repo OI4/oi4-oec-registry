@@ -107,7 +107,7 @@ export class Registry extends EventEmitter {
         this.applicationResources = appResources;
 
         this.timeoutLookup = {};
-        this.oi4DeviceWildCard = 'oi4/+/+/+/+/+';
+        this.oi4DeviceWildCard = 'Oi4/+/+/+/+/+';
         this.globalEventList = [];
         this.assetLookup = new AssetLookup();
         this.maxAuditTrailElements = 100;
@@ -130,42 +130,21 @@ export class Registry extends EventEmitter {
         // --> We publish the mam again so that the registry detects 'itself' and to enforce validation of the registry
         // TODO: Instead publishing of the mam again we could also call addToRegistry for ourself
         const mam = this.applicationResources.mam;
-        await this.client.publish(`oi4/${mam.getServiceType()}/${this.oi4Id}/pub/mam/${this.oi4Id}`,
+        await this.client.publish(`Oi4/${mam.getServiceType()}/${this.oi4Id}/Pub/MAM/${this.oi4Id}`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Source: this.oi4Id,
                 Payload: this.applicationResources.mam,
                 DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id),
-            }], new Date(), DataSetClassIds.mam)),
+            }], new Date(), DataSetClassIds[Resources.MAM])),
         );
     }
 
     private async initSubscriptions(): Promise<void> {
-        // Subscribe to generic events
-        for (const levels of Object.values(EGenericEventFilter)) {
-            console.log(`Subbed initially to generic category - ${levels}`);
-            await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/generic/${levels}/#`);
-        }
-        // Subscribe to namur events
-        for (const levels of Object.values(ENamurEventFilter)) {
-            console.log(`Subbed initially to namur category - ${levels}`);
-            await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/ne107/${levels}/#`);
-        }
-        // Subscribe to syslog events
-        for (const levels of Object.values(ESyslogEventFilter)) {
-            console.log(`Subbed initially to syslog category - ${levels}`);
-            await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
-        }
-        // Subscribe to OPCUA events
-        for (const levels of Object.values(EOpcUaEventFilter)) {
-            console.log(`Subbed initially to syslog category - ${levels}`);
-            await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/opcSC/${levels}/#`);
-        }
 
-        await this.ownSubscribe(`${this.oi4DeviceWildCard}/set/mam/#`); // Explicit "set"
-        await this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/mam/#`); // Add Asset to Registry
-        await this.ownSubscribe(`${this.oi4DeviceWildCard}/del/mam/#`); // Delete Asset from Registry
-        await this.ownSubscribe(`${this.oi4DeviceWildCard}/pub/health/#`); // Add Asset to Registry
-        await this.ownSubscribe('oi4/Registry/+/+/+/+/get/mam/#');
+        await this.ownSubscribe('Oi4/+/+/+/+/+/Pub/#');
+        await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/MAM/#`); // Add Asset to Registry
+        await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/Health/#`); // Add Asset to Registry
+        await this.ownSubscribe('Oi4/Registry/+/+/+/+/Get/MAM/#');
     }
 
     /**
@@ -263,10 +242,10 @@ export class Registry extends EventEmitter {
         }
 
         // Safety-Check: DataSetClassId
-        if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
-            this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
-            return;
-        }
+        // if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
+        //     this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
+        //     return;
+        // }
 
         if (this.assetLookup.has(topicInfo.oi4Id)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
             const asset = this.assetLookup.get(topicInfo.oi4Id);
@@ -369,23 +348,25 @@ export class Registry extends EventEmitter {
         let source: Oi4Identifier;
         let filter: string;
         switch (topicInfo.resource) {
+
+            // TODO fix topics (source is missing)
             case Resources.EVENT:
                 if (topicInfo.filter !== undefined) {
-                    topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}/${topicInfo.filter}`;
+                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}/${topicInfo.category}/${topicInfo.filter}`;
                     source = topicInfo.source;
                     filter = topicInfo.filter;
                 } else {
-                    topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.category}`;
+                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}/${topicInfo.category}`;
                     source = topicInfo.source;
                 }
                 break;
 
             default:
                 if (topicInfo.oi4Id !== undefined) {
-                    topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}/${topicInfo.oi4Id}`
+                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}/${topicInfo.oi4Id}`
                     source = topicInfo.oi4Id;
                 } else {
-                    topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/${topicInfo.resource}`;
+                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}`;
                     source = topicInfo.appId;
                 }
                 break;
@@ -460,7 +441,7 @@ export class Registry extends EventEmitter {
                     if (topicInfo.appId === this.oi4Id) return;
 
                     const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resources.MAM]);
-                    const topic = `oi4/${topicInfo.serviceType}/${topicInfo.appId}/get/mam/${oi4Id}`;
+                    const topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/MAM/${oi4Id}`;
                     await this.client.publish(topic, JSON.stringify(networkMessage));
                     this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
                 }
@@ -541,7 +522,7 @@ export class Registry extends EventEmitter {
             resources: {
                 mam: masterAssetModel,
             },
-            topicPreamble: `oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
+            topicPreamble: `Oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
             conformityObject: {
                 oi4Id: EValidity.default,
                 validity: EValidity.default,
@@ -562,12 +543,12 @@ export class Registry extends EventEmitter {
         this.assetLookup.set(oi4Id, newAsset);
 
         // Subscribe to all changes regarding this application
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/health/${oi4Id}`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/license/${oi4Id}`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/rtLicense/${oi4Id}`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/licenseText/#`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/config/${oi4Id}`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/pub/profile/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Health/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/License/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/LicenseText/#`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Config/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Profile/${oi4Id}`);
 
         newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
 
@@ -583,10 +564,10 @@ export class Registry extends EventEmitter {
         this.applicationResources.addPublication(publicationList);
         // Publish the new publicationList according to spec
         await this.client.publish(
-            `oi4/Registry/${this.oi4Id}/pub/publicationList`,
+            `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
-                DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                DataSetWriterId: CDataSetWriterIdLookup['PublicationList'],
                 Source: this.oi4Id
             }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
@@ -624,19 +605,21 @@ export class Registry extends EventEmitter {
 
             this.applicationResources.removeSource(oi4Id);
 
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/event/+/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/license/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/rtLicense/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/config/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/profile/${oi4Id}`);
+
+// TODO fix event
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/+/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Health/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/License/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/LicenseText/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Config/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Profile/${oi4Id}`);
             this.assetLookup.delete(oi4Id);
             // Remove from publicationList
             this.removePublicationBySubResource(oi4Id.toString());
             // Publish the new publicationList according to spec
             this.client.publish(
-                `oi4/Registry/${this.oi4Id}/pub/publicationList`,
+                `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                     Payload: this.applicationResources.publicationList,
                     DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
@@ -654,18 +637,18 @@ export class Registry extends EventEmitter {
      */
     clearRegistry(): void {
         for (const asset of this.assetLookup) { // Unsubscribe topics of every asset
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/health/${asset.oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/license/${asset.oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/rtLicense/${asset.oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/licenseText/#`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/config/${asset.oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/pub/profile/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Health/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/License/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/RtLicense/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/LicenseText/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Config/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Profile/${asset.oi4Id}`);
             // Remove from publicationList
             this.removePublicationBySubResource(asset.oi4Id.toString());
         }
         // Publish the new publicationList according to spec
         this.client.publish(
-            `oi4/Registry/${this.oi4Id}/pub/publicationList`,
+            `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
                 DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
@@ -700,7 +683,7 @@ export class Registry extends EventEmitter {
     async resourceTimeout(oi4Id: Oi4Identifier): Promise<void> {
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
-            const topic = `${asset.topicPreamble}/get/$health/${oi4Id}`;
+            const topic = `${asset.topicPreamble}/Get/$Health/${oi4Id}`;
             this.logger.log(`Timeout - Get health on ${topic}.`, ESyslogEventFilter.warning);
 
             // remove the device
@@ -750,15 +733,18 @@ export class Registry extends EventEmitter {
     async updateAuditLevel(): Promise<void> {
         // First, clear all old eventLists
         this.globalEventList = [];
+
+        // TODO fix event topics
+
         // Then, unsubscribe from old Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Unsubscribed syslog trail from ${levels}`);
-            await this.ownUnsubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
+            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
         }
         // Then, resubscribe to new Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
-            await this.ownSubscribe(`oi4/+/+/+/+/+/pub/event/syslog/${levels}/#`);
+            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
             if (levels === this.applicationResources.settings.logging.auditLevel) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }
