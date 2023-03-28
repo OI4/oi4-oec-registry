@@ -32,8 +32,8 @@ export class RegistryResources extends OI4ApplicationResources {
         }
     };
 
-    constructor() {
-        super(StartupConfig.mamFile());
+    constructor(mamFile?: string) {
+        super(mamFile);
 
         this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resources) => {
             if (oi4Id.equals(this.oi4Id) && resource === Resources.CONFIG) {

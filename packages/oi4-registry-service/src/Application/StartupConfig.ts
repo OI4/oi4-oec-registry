@@ -12,10 +12,6 @@ export class StartupConfig {
         this.runFolder = runFolder;
     }
 
-    public static mamFile(): string {
-        return path.join(__dirname, 'Resources', 'mam.json');
-    }
-
     public static licenseFile(): string {
         return path.join(__dirname, 'Resources', 'license.json');
     }
@@ -89,6 +85,10 @@ export class StartupConfig {
      * @returns The file name of the certificate file that is used for the REST-API.
      */
     public get certFile(): string {
-        return `${this.etcFolder}/oi4/registry_cert.pem`;
+        return `${this.etcFolder}/oi4/certs/registry_cert.pem`;
+    }
+
+    public get mamFile(): string {
+        return `${this.etcFolder}/oi4/config/mam.json`;
     }
 }

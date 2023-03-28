@@ -14,7 +14,7 @@ import {StartupConfig} from './Application/StartupConfig';
 
 
 const startupConfig = new StartupConfig();
-const applicationResources = new RegistryResources();
+const applicationResources = new RegistryResources(startupConfig.mamFile);
 const applicationFactory = new OI4ApplicationFactory(applicationResources);
 const registryApp = applicationFactory.createOI4Application();
 const port = startupConfig.edgeApplicationPort;
