@@ -1,6 +1,7 @@
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 import path from 'path';
 import { copyFileSync, existsSync,  mkdirSync } from 'fs';
+import os from 'os';
 
 export class StartupConfig {
 
@@ -77,7 +78,7 @@ export class StartupConfig {
      * @returns The file name of the key file that is used for the REST-API.
      */
     public get keyFile(): string {
-        return `${this.runFolder}/secrets/registry_private_key.pem`;
+        return `${this.runFolder}/secrets/mqtt_private_key.pem`;
     }
 
     /**
@@ -85,7 +86,7 @@ export class StartupConfig {
      * @returns The file name of the certificate file that is used for the REST-API.
      */
     public get certFile(): string {
-        return `${this.etcFolder}/oi4/certs/registry_cert.pem`;
+        return `${this.etcFolder}/oi4/certs/${os.hostname()}.pem`;
     }
 
     public get mamFile(): string {
