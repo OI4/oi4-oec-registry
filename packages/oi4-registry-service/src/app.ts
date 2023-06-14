@@ -1,5 +1,5 @@
 import {OI4ApplicationFactory} from '@oi4/oi4-oec-service-node';
-import {Logger} from '@oi4/oi4-oec-service-logger';
+import {logger, initializeLogger} from '@oi4/oi4-oec-service-logger';
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 import {RegistryWebClient} from './Application/WebClient/RegistryWebClient';
 import {Swagger} from './Application/WebClient/Swagger';
@@ -33,7 +33,8 @@ const webProxy = new RegistryWebClient(
 
 const logLevel = startupConfig.logLevel;
 const publishingLevel = startupConfig.publishingLevel;
-const logger = new Logger(
+
+initializeLogger(
     true,
     'Registry-Entrypoint',
     logLevel,
@@ -42,7 +43,6 @@ const logger = new Logger(
     registryApp.serviceType,
     registryApp.messageBus.getClient()
 );
-logger.level = ESyslogEventFilter.debug;
 logger.log(
     `Test print for level ${ESyslogEventFilter.debug}`,
     ESyslogEventFilter.debug
@@ -75,7 +75,6 @@ logger.log(
     `Test print for level ${ESyslogEventFilter.emergency}`,
     ESyslogEventFilter.emergency
 );
-logger.level = logLevel;
 
 if (startupConfig.useOpenAPI) {
     const swagger = new Swagger(webProxy.webClient);
