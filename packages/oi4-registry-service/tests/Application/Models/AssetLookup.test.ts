@@ -1,7 +1,6 @@
 import {AssetLookup} from '../../../src/Application/Models/AssetLookup';
 import {IAsset} from '../../../src/Application/Models/IRegistry';
-import {EOPCUALocale, Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
-import {EAssetType, Resources} from '@oi4/oi4-oec-service-model';
+import {EAssetType, Resources, EOPCUALocale, Oi4Identifier} from '@oi4/oi4-oec-service-model';
 import {EValidity} from '@oi4/oi4-oec-service-conformity-validator';
 
 let objectUnderTest: AssetLookup;
@@ -73,7 +72,7 @@ describe('Unit test for AssetLookup', () => {
         expect(objectUnderTest.size).toBe(2);
 
         const assets: IAsset[] = [];
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment,@typescript-eslint/ban-ts-ignore
         // @ts-ignore
         for (const asset of objectUnderTest) {
             assets.push(asset);

@@ -32,8 +32,11 @@ export class RegistryResources extends OI4ApplicationResources {
         }
     };
 
-    constructor(mamFile?: string) {
-        super(mamFile);
+    private readonly startupConfig: StartupConfig;
+
+    constructor(startupConfig: StartupConfig) {
+        super(startupConfig.mamFileLocation);
+        this.startupConfig = startupConfig;
 
         this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resources) => {
             if (oi4Id.equals(this.oi4Id) && resource === Resources.CONFIG) {
@@ -76,7 +79,7 @@ export class RegistryResources extends OI4ApplicationResources {
 
     private loadLicenses(): void {
         // license
-        const licenseFile = StartupConfig.licenseFile();
+        const licenseFile = this.startupConfig.licenseFile;
         if (existsSync(licenseFile)) {
             const texts = JSON.parse(readFileSync(licenseFile, 'utf-8'));
             for (const text of texts) {
@@ -86,7 +89,7 @@ export class RegistryResources extends OI4ApplicationResources {
         }
 
         // license text
-        const licenseTextFile = StartupConfig.licenseTextFile();
+        const licenseTextFile = this.startupConfig.licenseTextFile;
         if (existsSync(licenseTextFile)) {
             const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({ licenseId: string; licenseText: string })[];
             for (const text of texts) {
@@ -96,7 +99,7 @@ export class RegistryResources extends OI4ApplicationResources {
     }
 
     private loadConfig(): boolean {
-        const configFile = StartupConfig.configFile();
+        const configFile = this.startupConfig.configFile();
         if (configFile && existsSync(configFile)) {
             this.config = JSON.parse(readFileSync(configFile, 'utf-8'));
             return true;
@@ -107,7 +110,7 @@ export class RegistryResources extends OI4ApplicationResources {
 
     private writeConfig(): void {
         try {
-            const configFile = StartupConfig.configFile();
+            const configFile = this.startupConfig.configFile();
             if (configFile && existsSync(configFile)) {
                 writeFileSync(configFile, Buffer.from(JSON.stringify(this.config, null, 4)));
             }

@@ -8,9 +8,6 @@ import {
     DataSetWriterIdManager,
     EAssetType,
     EDeviceHealth,
-    EGenericEventFilter,
-    ENamurEventFilter,
-    EOpcUaEventFilter,
     ESyslogEventFilter,
     Health,
     IContainerConfig,
@@ -50,32 +47,35 @@ interface PaginationPub {
 
 export class Registry extends EventEmitter {
     private readonly assetLookup: AssetLookup;
+    private readonly oi4DeviceWildCard: string;
+    private readonly oi4Id: Oi4Identifier;
+    private readonly applicationResources: RegistryResources;
+    private readonly maxAuditTrailElements: number;
+    private readonly timeoutLookup: any;
+
     private client: mqtt.AsyncClient;
     private globalEventList: IAssetEvent[];
     private builder: OPCUABuilder;
     private logger: Logger;
-    private readonly oi4DeviceWildCard: string;
-    private readonly oi4Id: Oi4Identifier;
     private queue: SequentialTaskQueue;
     private logToFileEnabled: ELogType;
     private logHappened: boolean;
-    private readonly applicationResources: RegistryResources;
-    private readonly maxAuditTrailElements: number;
     private fileLogger: FileLogger;
 
     private flushTimeout: any;
 
     // Timeout container TODO: types
-    private readonly timeoutLookup: any;
     private conformityValidator: ConformityValidator;
 
     /**
      * The constructor of the Registry
      * @param client The global mqtt client used to avoid multiple client connections inside the container
      * @param appResources The containerState of the OI4-Service holding information about the oi4Id etc.
+     * @param startupConfig
      */
-    constructor(client: mqtt.AsyncClient, appResources: RegistryResources) {
+    constructor(client: mqtt.AsyncClient, appResources: RegistryResources, startupConfig: StartupConfig) {
         super();
+
         this.assetLookup = new AssetLookup();
         this.oi4Id = appResources.oi4Id;
         this.logToFileEnabled = appResources.settings.logging.logType;
@@ -96,7 +96,6 @@ export class Registry extends EventEmitter {
             }
         });
 
-        const startupConfig = new StartupConfig();
         const logLevel = startupConfig.logLevel;
         const publishingLevel = startupConfig.publishingLevel;
 

@@ -14,6 +14,7 @@ import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
 
 import namur_normal_0 from './Images/namur_normal_0.png';
 import namur_failure_1 from './Images/namur_failure_1.png';
+import namur_off_spec_3 from './Images/namur_off_spec_3.png';
 
 import { MuiThemeProvider, createTheme, withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
@@ -171,6 +172,7 @@ class OI4Base extends React.Component {
             updatingConformity: false,
             filterWord: '',
             brokerState: false,
+            backendState: false,
             brokerStateRaw: 'empty',
         };
 
@@ -263,6 +265,25 @@ class OI4Base extends React.Component {
         this.setState({ filterWord: ev.target.value });
     }
 
+    getBrokerState() {
+        if (!this.state.backendState) {
+            return {
+                text: "---",
+                namur: namur_off_spec_3
+            };
+        } else if (this.state.brokerState) {
+            return {
+                text: "Connected",
+                namur: namur_normal_0
+            };
+        } else {
+            return {
+                text: "Disconnected",
+                namur: namur_failure_1
+            };
+        }
+    }
+
     /**
      * Main render method of the entrypoint
      * @memberof OI4Base
@@ -278,6 +299,7 @@ class OI4Base extends React.Component {
         //     if (JSON.stringify(item.payload).includes(this.state.filterWord)) return true;
         //     return false;
         //   });
+        const brokerState = this.getBrokerState();
         return (
             <React.Fragment>
                 <MuiThemeProvider theme={ this.state.theme }>
@@ -292,8 +314,8 @@ class OI4Base extends React.Component {
                                     <Typography variant='h6'>Message Bus:</Typography>
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         {/* eslint-disable-next-line react/jsx-first-prop-new-line */}
-                                        {this.state.brokerState === true ? <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Connected</Typography> : <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Disconnected</Typography>}
-                                        {this.state.brokerState === true ? <img src={namur_normal_0} alt="Namur" height='25px' width='25px' /> : <img src={namur_failure_1} alt="Namur" height='25px' width='25px' />}
+                                        <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>{brokerState.text}</Typography>
+                                        <img src={brokerState.namur} alt="Namur" height='25px' width='25px' />
                                     </div>
                                 </div>
                                 <Checkbox
@@ -557,9 +579,11 @@ class OI4Base extends React.Component {
             .then(data => {
                 const newValue = (data === 'true');
                 this.setState({ brokerState: newValue });
+                this.setState({ backendState: true });
                 this.setState({ brokerStateRaw: data });
             })
             .catch(err => {
+                this.setState({ backendState: false });
                 _winstonLogger.info(err);
                 reject(err);
             });

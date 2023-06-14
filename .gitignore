@@ -17,3 +17,4 @@ out/**/*
 .npmrc
 /packages/oi4-service-node/.idea/
 /work/
+/oi4-oec-dnp-encoding/

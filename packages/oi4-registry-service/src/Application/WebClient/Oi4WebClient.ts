@@ -33,7 +33,7 @@ export class Oi4WebClient extends EventEmitter {
     private readonly version: string;
     private readonly license: string;
 
-    constructor(application: IOI4Application, port = 5799, version: string, license: string) {
+    constructor(application: IOI4Application, port = 5799, version: string, license: string, startupConfig: StartupConfig) {
         super();
 
         this.oi4Id = application.oi4Id;
@@ -44,7 +44,6 @@ export class Oi4WebClient extends EventEmitter {
         this.version = version;
         this.license = license;
 
-        const startupConfig = new StartupConfig();
         this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.logLevel, startupConfig.publishingLevel, application.oi4Id, application.serviceType);
         this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
 
