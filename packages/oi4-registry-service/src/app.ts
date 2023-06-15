@@ -5,7 +5,7 @@ import {RegistryWebClient} from './Application/WebClient/RegistryWebClient';
 import {Swagger} from './Application/WebClient/Swagger';
 import {RegistryResources} from './Application/RegistryResources';
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment,@typescript-eslint/ban-ts-ignore
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import pJson from '../package.json';
 // -------- Registry Application
@@ -13,6 +13,7 @@ import {Registry} from './Application/Registry/Registry';
 import {basePath, StartupConfig} from './Application/StartupConfig';
 
 const startupConfig = new StartupConfig(basePath);
+
 const applicationResources = new RegistryResources(startupConfig);
 const applicationFactory = new OI4ApplicationFactory(applicationResources, startupConfig.settingsPaths);
 const registryApp = applicationFactory.createOI4Application();
@@ -31,18 +32,6 @@ const webProxy = new RegistryWebClient(
     startupConfig
 );
 
-const logLevel = startupConfig.logLevel;
-const publishingLevel = startupConfig.publishingLevel;
-
-initializeLogger(
-    true,
-    'Registry-Entrypoint',
-    logLevel,
-    publishingLevel,
-    registryApp.oi4Id,
-    registryApp.serviceType,
-    registryApp.messageBus.getClient()
-);
 logger.log(
     `Test print for level ${ESyslogEventFilter.debug}`,
     ESyslogEventFilter.debug

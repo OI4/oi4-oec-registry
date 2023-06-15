@@ -45,7 +45,7 @@ exec node ./src/app.js & cd ../oi4-local-ui
 if [ "$USE_HTTPS" = "true" ];
 then
   echo "USE_HTTPS true detected..."
-  FILE=/run/secrets/mqtt_private_key.pem
+  FILE=/run/secrets/http_private_key.pem
 	if [ -f "$FILE" ];
     then
 		echo "$FILE exists, serving https without creating own certificate"
@@ -53,9 +53,9 @@ then
 		echo "$FILE does not exist! creating own certificate..."
 		mkdir -p /etc/oi4/certs
 		mkdir -p /run/secrets/
-		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /run/secrets/mqtt_private_key.pem -out /etc/oi4/certs/$HOSTNAME.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
+		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /run/secrets/mqtt_private_key.pem -out /etc/oi4/certs/$HOSTNAME.http.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
 	fi
-	exec npx http-server -S -C /etc/oi4/certs/$HOSTNAME.pem -K /run/secrets/mqtt_private_key.pem --cors -p 5798 build &
+	exec npx http-server -S -C /etc/oi4/certs/$HOSTNAME.pem -K /run/secrets/http_private_key.pem --cors -p 5798 build &
 else
    echo "USE_HTTPS other than true detected...serving without https"
    exec npx http-server --cors -p 5798 build &
