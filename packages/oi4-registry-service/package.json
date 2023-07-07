@@ -22,6 +22,9 @@
     "url": "git+ssh://git@github.com/OI4/oi4-registry.git"
   },
   "dependencies": {
+    "@oi4/oi4-oec-dnp-encoding": "1.1.0-preview.7",
+    "@oi4/oi4-oec-service-model": "1.1.0-preview.7",
+    "@oi4/oi4-oec-service-node": "1.1.0-preview.7",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
@@ -30,7 +33,6 @@
     "express": "^4.17.3",
     "glossy": "^0.1.7",
     "http-server": "^14.1.0",
-    "lerna": "^7.1.1",
     "lodash": "^4.17.21",
     "sequential-task-queue": "^1.2.1",
     "swagger-ui-express": "^4.3.0",
@@ -39,9 +41,6 @@
     "winston-syslog": "^2.5.0"
   },
   "devDependencies": {
-    "@oi4/oi4-oec-dnp-encoding": "1.1.0-preview.7",
-    "@oi4/oi4-oec-service-model": "1.1.0-preview.7",
-    "@oi4/oi4-oec-service-node": "1.1.0-preview.7",
     "@types/cors": "^2.8.12",
     "@types/dotenv": "^8.2.0",
     "@types/express": "^4.17.13",
@@ -66,8 +65,6 @@
     "clean": "rm -rf ./dist && rm -rf tsconfig.tsbuildinfo",
     "cleanContainer": "yarn run clean && rm -rf ./docker_node_modules",
     "build": "yarn run clean && tsc -b tsconfig.json",
-    "prepareContainer": "./scripts/prepareContainer.sh",
-    "prepareContainer_bak": "yarn run cleanContainer && yarn install --production=true --modules-folder ./docker_node_modules && yarn run build",
     "start": "node dist/app.js"
   },
   "bugs": {

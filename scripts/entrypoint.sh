@@ -34,8 +34,8 @@ fi
 
 # Run deploy script
 echo "Run deploy script"
-chmod +x "/usr/oi4-registry-service/scripts/deploy-config-ui.sh"
-/usr/oi4-registry-service/scripts/deploy-config-ui.sh
+chmod +x "/usr/packages/oi4-registry-service/scripts/deploy-config-ui.sh"
+/usr/packages/oi4-registry-service/scripts/deploy-config-ui.sh
 
 # Run applications as services in the background now
 echo "Starting OI4-Registry-Service and LocalUI"
@@ -53,9 +53,9 @@ then
 		echo "$FILE does not exist! creating own certificate..."
 		mkdir -p /etc/oi4/certs
 		mkdir -p /run/secrets/
-		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /run/secrets/mqtt_private_key.pem -out /etc/oi4/certs/$HOSTNAME.http.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
+		openssl req -newkey rsa:2048 -new -nodes -x509 -days 300 -keyout /run/secrets/http_private_key.pem -out /etc/oi4/certs/$HOSTNAME.http.pem -subj "/C=CH/C=DE/ST=BL/O=Oi4MembersTest/OU=Org/CN=localhost"
 	fi
-	exec npx http-server -S -C /etc/oi4/certs/$HOSTNAME.pem -K /run/secrets/http_private_key.pem --cors -p 5798 build &
+	exec npx http-server -S -C /etc/oi4/certs/$HOSTNAME.http.pem -K /run/secrets/http_private_key.pem --cors -p 5798 build &
 else
    echo "USE_HTTPS other than true detected...serving without https"
    exec npx http-server --cors -p 5798 build &
