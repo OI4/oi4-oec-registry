@@ -240,12 +240,11 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        // TODO re-enable
         // Safety-Check: DataSetClassId
-        // if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
-        //     this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
-        //     return;
-        // }
+        if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
+            this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
+            return;
+        }
 
         if (this.assetLookup.has(topicInfo.oi4Id)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
             const asset = this.assetLookup.get(topicInfo.oi4Id);

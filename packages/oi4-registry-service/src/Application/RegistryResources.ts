@@ -91,9 +91,9 @@ export class RegistryResources extends OI4ApplicationResources {
         // license text
         const licenseTextFile = this.startupConfig.licenseTextFile;
         if (existsSync(licenseTextFile)) {
-            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({ licenseId: string; licenseText: string })[];
+            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({ LicenseId: string; LicenseText: string })[];
             for (const text of texts) {
-                this.licenseText.set(text.licenseId, new LicenseText(text.licenseText));
+                this.licenseText.set(text.LicenseId, new LicenseText(text.LicenseText));
             }
         }
     }
@@ -120,25 +120,25 @@ export class RegistryResources extends OI4ApplicationResources {
     }
 
     private static getSettingsFromConfig(config: IContainerConfig): ISettings | undefined {
-        const auditLevel = ESyslogEventFilter[RegistryResources.getValue(config, 'logging', 'auditLevel') as keyof typeof ESyslogEventFilter];
+        const auditLevel = ESyslogEventFilter[RegistryResources.getValue(config, 'Logging', 'AuditLevel') as keyof typeof ESyslogEventFilter];
         if (auditLevel === undefined) {
             console.log('Config setting auditLevel is invalid.');
             return;
         }
 
-        const logType = ELogType[RegistryResources.getValue(config, 'logging', 'logType') as keyof typeof ELogType];
+        const logType = ELogType[RegistryResources.getValue(config, 'Logging', 'LogType') as keyof typeof ELogType];
         if (logType === undefined) {
             console.log('Config setting logType is invalid.');
             return;
         }
 
-        const logFileSize = Number(RegistryResources.getValue(config, 'logging', 'logFileSize'));
+        const logFileSize = Number(RegistryResources.getValue(config, 'Logging', 'LogFileSize'));
         if (Number.isNaN(logFileSize) || !Number.isFinite(logFileSize) || logFileSize < 1024) {
             console.log('Config setting logFileSize is invalid.');
             return;
         }
 
-        const developmentModeString = RegistryResources.getValue(config, 'registry', 'developmentMode');
+        const developmentModeString = RegistryResources.getValue(config, 'Registry', 'DevelopmentMode');
         if (developmentModeString != 'true' && developmentModeString != 'false') {
             console.log('Config setting developmentMode is invalid.');
             return;
@@ -146,7 +146,7 @@ export class RegistryResources extends OI4ApplicationResources {
 
         const developmentMode = developmentModeString === 'true';
 
-        const showRegistryString = RegistryResources.getValue(config, 'registry', 'showRegistry');
+        const showRegistryString = RegistryResources.getValue(config, 'Registry', 'ShowRegistry');
         if (showRegistryString != 'true' && showRegistryString != 'false') {
             console.log('Config setting showRegistry is invalid.');
             return;
