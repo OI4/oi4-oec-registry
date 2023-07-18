@@ -38,10 +38,10 @@ import {StartupConfig} from '../StartupConfig';
 import {AssetLookup} from '../Models/AssetLookup';
 
 interface PaginationPub {
-    totalCount: number;
-    perPage: number;
-    page: number;
-    hasNext: boolean;
+    TotalCount: number;
+    PerPage: number;
+    Page: number;
+    HasNext: boolean;
 }
 
 
@@ -240,6 +240,7 @@ export class Registry extends EventEmitter {
             return;
         }
 
+        // TODO re-enable
         // Safety-Check: DataSetClassId
         // if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
         //     this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
@@ -285,19 +286,19 @@ export class Registry extends EventEmitter {
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => {
                     const rtLicense = new RTLicense();
                     Object.assign(rtLicense, m.Payload);
-                    r.rtLicense = rtLicense;
+                    r.RtLicense = rtLicense;
                 }));
                 break;
             case Resources.LICENSE_TEXT:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.licenseText = LicenseText.clone(m.Payload)));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.LicenseText = LicenseText.clone(m.Payload)));
                 break;
 
             case Resources.CONFIG:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.config = JSON.parse(JSON.stringify(m.Payload))));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Config = JSON.parse(JSON.stringify(m.Payload))));
                 break;
 
             case Resources.PROFILE:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.profile = Profile.clone(m.Payload)));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Profile = Profile.clone(m.Payload)));
                 break;
         }
     }
@@ -307,13 +308,13 @@ export class Registry extends EventEmitter {
 
         for (const dataSetMessage of input.Messages) {
 
-            if (typeof dataSetMessage.Payload.page !== 'undefined') { // found pagination
+            if (typeof dataSetMessage.Payload.Page !== 'undefined') { // found pagination
                 paginationPub =
                     {
-                        totalCount: dataSetMessage.Payload.totalCount,
-                        perPage: dataSetMessage.Payload.perPage,
-                        page: dataSetMessage.Payload.page,
-                        hasNext: dataSetMessage.Payload.hasNext
+                        TotalCount: dataSetMessage.Payload.TotalCount,
+                        PerPage: dataSetMessage.Payload.PerPage,
+                        Page: dataSetMessage.Payload.Page,
+                        HasNext: dataSetMessage.Payload.HasNext
                     };
 
                 continue;
@@ -322,7 +323,7 @@ export class Registry extends EventEmitter {
             proc(dataSetMessage);
         }
 
-        if (pagination !== undefined && paginationPub !== undefined && paginationPub.hasNext) {
+        if (pagination !== undefined && paginationPub !== undefined && paginationPub.HasNext) {
             pagination(paginationPub);
         }
     }
@@ -339,8 +340,8 @@ export class Registry extends EventEmitter {
     private async requestNextPage(pagination: PaginationPub, topicInfo: TopicInfo): Promise<void> {
 
         const paginationGet = {
-            perPage: pagination.perPage, // get same amout of data
-            page: ++pagination.page // get next page
+            perPage: pagination.PerPage, // get same amout of data
+            page: ++pagination.Page // get next page
         };
 
         let topic: string;
@@ -432,9 +433,8 @@ export class Registry extends EventEmitter {
 
                         const asset = this.assetLookup.get(oi4Id);
                         asset.lastMessage = new Date().toISOString();
-                        asset.resources.health = health;
+                        asset.resources.Health = health;
                     }
-
                     this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
                 } else {
                     if (topicInfo.appId === this.oi4Id) return;
@@ -519,7 +519,7 @@ export class Registry extends EventEmitter {
             lastMessage: registeredAt,
             registeredAt: registeredAt,
             resources: {
-                mam: masterAssetModel,
+                MAM: masterAssetModel,
             },
             topicPreamble: `Oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
             conformityObject: {

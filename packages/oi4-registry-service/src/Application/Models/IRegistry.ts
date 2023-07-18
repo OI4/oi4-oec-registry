@@ -43,11 +43,11 @@ export interface IAssetEvent {
 export interface IResourceObject {
     [key: string]: any;
 
-    mam: MasterAssetModel;
-    health?: Health;
-    rtLicense?: RTLicense;
-    license?: License;
-    config?: IContainerConfig;
-    profile?: Profile;
-    licenseText?: LicenseText;
+    MAM: MasterAssetModel;
+    Health?: Health;
+    RtLicense?: RTLicense;
+    License?: License;
+    Config?: IContainerConfig;
+    Profile?: Profile;
+    LicenseText?: LicenseText;
 }
