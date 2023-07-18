@@ -844,8 +844,8 @@ class OI4Base extends React.Component {
     async getBackendConfig() {
         const regConfData = await this.retrieveBackendConfig();
         const backendConfig = {
-            showRegistry: regConfData.registry.showRegistry.value === 'true',
-            developmentMode: regConfData.registry.developmentMode.value === 'true',
+            showRegistry: regConfData.Registry.ShowRegistry.value === 'true',
+            developmentMode: regConfData.Registry.DevelopmentMode.value === 'true',
         };
         this.setState({ backendConfig: backendConfig });
     }

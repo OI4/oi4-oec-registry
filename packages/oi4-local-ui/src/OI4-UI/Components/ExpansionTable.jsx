@@ -140,10 +140,10 @@ class ExpansionTable extends React.Component {
                             // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
                             // (nodejs type inference) then parse it to float, add it together and convert it to a string
                         >
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.text}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.text}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').Manufacturer.Text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').Model.Text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').DeviceClass}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').SerialNumber}</TableCell>
                           <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
                           <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
                           <TableCell align="right">
@@ -308,12 +308,12 @@ class ExpansionTable extends React.Component {
     } else {
       return 'wrong type selected';
     }
-    if ('health' in lookup[oi4Id].resources) {
-      if ('health' in lookup[oi4Id].resources.health) {
-        return lookup[oi4Id].resources.health.health;
+    if ('Health' in lookup[oi4Id].resources) {
+      if ('Health' in lookup[oi4Id].resources.Health) {
+        return lookup[oi4Id].resources.Health.Health;
       }
     }
-    return 'Error - getHealth: health string not found in lookup';
+    return 'Error - getHealth: Health string not found in lookup';
   }
 
   /**
