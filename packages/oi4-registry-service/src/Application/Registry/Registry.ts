@@ -10,6 +10,7 @@ import {
     EDeviceHealth,
     ESyslogEventFilter,
     Health,
+    IEvent,
     IContainerConfig,
     IOI4Resource,
     License,
@@ -26,7 +27,9 @@ import {
     IOPCUADataSetMessage,
     IOPCUANetworkMessage,
     Oi4Identifier,
-    OPCUABuilder
+    OPCUABuilder,
+    EventCategory,
+    StatusEvent
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
@@ -140,7 +143,6 @@ export class Registry extends EventEmitter {
 
     private async initSubscriptions(): Promise<void> {
 
-        await this.ownSubscribe('Oi4/+/+/+/+/+/Pub/#');
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/MAM/#`); // Add Asset to Registry
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/Health/#`); // Add Asset to Registry
         await this.ownSubscribe('Oi4/Registry/+/+/+/+/Get/MAM/#');
@@ -393,16 +395,17 @@ export class Registry extends EventEmitter {
         }
 
         await Registry.processMessage(networkMessage, (m) => {
-                const parsedPayload = m.Payload;
+                const parsedPayload : IEvent = m.Payload;
+                const topicParts = topicInfo.topic.split('/');
 
                 const assetEvent: IAssetEvent = {
-                    origin: parsedPayload.origin ?? topicInfo.oi4Id,
-                    level: topicInfo.filter,
-                    number: parsedPayload.number,
-                    category: topicInfo.category,
-                    description: parsedPayload.description,
-                    details: parsedPayload.details,
-                    timestamp: parsedPayload.timestamp
+                    origin: m.Source.toString(),
+                    level: topicParts[topicParts.length - 1],
+                    number: parsedPayload.Number,
+                    category: parsedPayload.Category,
+                    description: parsedPayload.Description,
+                    details: parsedPayload.Details,
+                    timestamp: m.Timestamp ?? new Date().toISOString()
                 }
 
                 this.globalEventList.push(assetEvent);
@@ -541,6 +544,7 @@ export class Registry extends EventEmitter {
         this.assetLookup.set(oi4Id, newAsset);
 
         // Subscribe to all changes regarding this application
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Event/${oi4Id}/#`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Health/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/License/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
@@ -553,7 +557,6 @@ export class Registry extends EventEmitter {
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
         publicationList.Resource = Resources.MAM;
-        // publicationList.oi4Identifier = topicInfo.appId;
         publicationList.DataSetWriterId = 0;
         publicationList.Config = PublicationListConfig.NONE_0;
         publicationList.Interval = 0;
@@ -604,8 +607,7 @@ export class Registry extends EventEmitter {
             this.applicationResources.removeSource(oi4Id);
 
 
-// TODO fix event
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/+/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/${oi4Id}/#`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Health/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/License/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
@@ -732,17 +734,17 @@ export class Registry extends EventEmitter {
         // First, clear all old eventLists
         this.globalEventList = [];
 
-        // TODO fix event topics
+        // TODO: Whats the purpose of the below code?
 
         // Then, unsubscribe from old Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Unsubscribed syslog trail from ${levels}`);
-            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
+            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
         }
         // Then, resubscribe to new Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
-            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
+            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
             if (levels === this.applicationResources.settings.logging.auditLevel) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }
