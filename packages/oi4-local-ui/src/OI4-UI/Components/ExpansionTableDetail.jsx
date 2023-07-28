@@ -66,8 +66,8 @@ class ExpansionTableDetail extends React.Component {
     // A list of mandatory resources so we can decide which ones we display
     // TODO cfz: Update this list
     this.mandatoryResource = {
-      application: ['health', 'license', 'licenseText', 'mam', 'profile', 'publicationList'],
-      device: ['health', 'mam', 'profile'],
+      application: ['Health', 'License', 'LicenseText', 'MAM', 'Profile', 'PublicationList'],
+      device: ['Health', 'MAM', 'Profile'],
     };
   }
 
@@ -78,7 +78,7 @@ class ExpansionTableDetail extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-        <Grid container justify='space-evenly' spacing={2}>
+        <Grid container justifyContent='space-evenly' spacing={2}>
           <Grid item xs={5}>
             <h3>Detailed MasterAssetModel:
               <span style={{ marginRight: '1%' }}>
@@ -87,7 +87,7 @@ class ExpansionTableDetail extends React.Component {
                       size='small'
                       color='default'
                       onClick={() => {
-                        navigator.clipboard.writeText(JSON.stringify(this.props.asset.resources.mam, null, 2)).then(() => {
+                        navigator.clipboard.writeText(JSON.stringify(this.props.asset.resources.MAM, null, 2)).then(() => {
                           this.setState({ copySnackOpen: true });
                         });
                       }}
@@ -115,13 +115,13 @@ class ExpansionTableDetail extends React.Component {
               </span>
             </h3>
             <Paper className={classes.paper}>
-              {this.ownJsonViewer(this.props.asset.resources.mam)}
+              {this.ownJsonViewer(this.props.asset.resources.MAM)}
             </Paper>
           </Grid>
           {this.props.expertMode ? <Grid item xs>
                 <h3>Detailed Profile (Debugging):</h3>
                 <Paper className={classes.paper}>
-                  {this.ownJsonViewer(this.props.asset.resources.profile)}
+                  {this.ownJsonViewer(this.props.asset.resources.Profile)}
                 </Paper>
               </Grid>
               : null}
@@ -140,7 +140,7 @@ class ExpansionTableDetail extends React.Component {
           <Grid item xs>
             <h3>Detailed Health:</h3>
             <Paper className={classes.paper}>
-              {this.detailedHealthViewer(this.props.getResourceObject(this.props.oi4Id, 'health'))}
+              {this.detailedHealthViewer(this.props.getResourceObject(this.props.oi4Id, 'Health'))}
             </Paper>
             {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
           </Grid>
@@ -191,8 +191,8 @@ class ExpansionTableDetail extends React.Component {
    */
   detailedHealthViewer(healthObject) {
     return <div>
-      <div><span style={{ fontWeight: 'bold' }}>NE107 Status: </span>{healthObject.health}({this.displayNamurHealth(healthObject.health, 20, 20)})</div>
-      <div><span style={{ fontWeight: 'bold' }}>Health score[%]: </span>{healthObject.healthScore}</div>
+      <div><span style={{ fontWeight: 'bold' }}>NE107 Status: </span>{healthObject.Health}({this.displayNamurHealth(healthObject.Health, 20, 20)})</div>
+      <div><span style={{ fontWeight: 'bold' }}>Health score[%]: </span>{healthObject.HealthScore}</div>
     </div>;
   }
 
@@ -237,21 +237,16 @@ class ExpansionTableDetail extends React.Component {
         return <div>
           <b>oi4Identifier: </b>{conformityObject.oi4Id}
           {
-            Object.keys(conformityObject.resource).map((resources) => {
+            Object.keys(conformityObject.resources).map((resource) => {
               let resourceColor = this.props.fontColor;
               let resourceWeight = 400;
-              if (conformityObject.nonProfileResourceList.includes(resources)) {
+              if (conformityObject.nonProfileResourceList.includes(resource)) {
                 resourceColor = 'red';
               }
-              if (this.mandatoryResource[assetType].includes(resources)) {
+              if (this.mandatoryResource[assetType].includes(resource)) {
                 resourceWeight = 600;
               }
-              // if (conformityObject.resource[resources].validityError) {
-              //   return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}, Error: {conformityObject.resource[resources].validityError}</div>;
-              // } else {
-              //   return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
-              // }
-              return <div key={`Conformity-${resources}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resources}: {conformityObject.resource[resources].validity}</div>;
+              return <div key={`Conformity-${resource}`} style={{ fontWeight: resourceWeight, color: resourceColor }}>{resource}: {conformityObject.resources[resource].validity}</div>;
             })
           }
         </div>;
@@ -273,8 +268,8 @@ class ExpansionTableDetail extends React.Component {
     if (oi4Id in conformityObject) {
       conformityObj[oi4Id].oi4Id = validityLookup[conformityObject[oi4Id].oi4Id];
       conformityObj[oi4Id].validity = validityLookup[conformityObject[oi4Id].validity];
-      Object.keys(conformityObject[oi4Id].resource).forEach((resource) => {
-        conformityObj[oi4Id].resource[resource].validity = validityLookup[conformityObject[oi4Id].resource[resource].validity];
+      Object.keys(conformityObject[oi4Id].resources).forEach((resource) => {
+        conformityObj[oi4Id].resources[resource].validity = validityLookup[conformityObject[oi4Id].resources[resource].validity];
       });
       return conformityObj[oi4Id];
     } else {

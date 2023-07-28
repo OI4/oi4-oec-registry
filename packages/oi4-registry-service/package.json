@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4-registry-service",
-  "version": "1.1.0-preview.2",
+  "version": "1.1.0-preview.3",
   "description": "Acts as the application in a running OI4 container",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
@@ -19,11 +19,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:OI4/oi4-registry.git"
+    "url": "git+ssh://git@github.com/OI4/oi4-registry.git"
   },
   "dependencies": {
-    "@oi4/oi4-oec-service-node": "1.1.0-preview.6",
-    "@oi4/oi4-oec-dnp-encoding": "1.1.0-preview.6",
+    "@oi4/oi4-oec-dnp-encoding": "1.1.0-preview.7",
+    "@oi4/oi4-oec-service-model": "1.1.0-preview.7",
+    "@oi4/oi4-oec-service-node": "1.1.0-preview.7",
     "@types/ws": "^8.5.2",
     "ajv": "^6.12.6",
     "async-mqtt": "^2.6.2",
@@ -31,12 +32,13 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "glossy": "^0.1.7",
+    "http-server": "^14.1.0",
+    "lodash": "^4.17.21",
     "sequential-task-queue": "^1.2.1",
     "swagger-ui-express": "^4.3.0",
     "uuid": "^8.3.2",
     "winston": "^3.6.0",
-    "winston-syslog": "^2.5.0",
-    "lodash": "^4.17.21"
+    "winston-syslog": "^2.5.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
@@ -61,7 +63,15 @@
     "test": "jest ",
     "tsc": "tsc",
     "clean": "rm -rf ./dist && rm -rf tsconfig.tsbuildinfo",
+    "cleanContainer": "yarn run clean && rm -rf ./docker_node_modules",
     "build": "yarn run clean && tsc -b tsconfig.json",
     "start": "node dist/app.js"
+  },
+  "bugs": {
+    "url": "https://github.com/OI4/oi4-registry/issues"
+  },
+  "homepage": "https://github.com/OI4/oi4-registry#readme",
+  "directories": {
+    "test": "tests"
   }
 }

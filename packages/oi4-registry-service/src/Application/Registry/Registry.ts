@@ -8,11 +8,9 @@ import {
     DataSetWriterIdManager,
     EAssetType,
     EDeviceHealth,
-    EGenericEventFilter,
-    ENamurEventFilter,
-    EOpcUaEventFilter,
     ESyslogEventFilter,
     Health,
+    IEvent,
     IContainerConfig,
     IOI4Resource,
     License,
@@ -29,7 +27,9 @@ import {
     IOPCUADataSetMessage,
     IOPCUANetworkMessage,
     Oi4Identifier,
-    OPCUABuilder
+    OPCUABuilder,
+    EventCategory,
+    StatusEvent
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
@@ -41,41 +41,44 @@ import {StartupConfig} from '../StartupConfig';
 import {AssetLookup} from '../Models/AssetLookup';
 
 interface PaginationPub {
-    totalCount: number;
-    perPage: number;
-    page: number;
-    hasNext: boolean;
+    TotalCount: number;
+    PerPage: number;
+    Page: number;
+    HasNext: boolean;
 }
 
 
 export class Registry extends EventEmitter {
     private readonly assetLookup: AssetLookup;
+    private readonly oi4DeviceWildCard: string;
+    private readonly oi4Id: Oi4Identifier;
+    private readonly applicationResources: RegistryResources;
+    private readonly maxAuditTrailElements: number;
+    private readonly timeoutLookup: any;
+
     private client: mqtt.AsyncClient;
     private globalEventList: IAssetEvent[];
     private builder: OPCUABuilder;
     private logger: Logger;
-    private readonly oi4DeviceWildCard: string;
-    private readonly oi4Id: Oi4Identifier;
     private queue: SequentialTaskQueue;
     private logToFileEnabled: ELogType;
     private logHappened: boolean;
-    private readonly applicationResources: RegistryResources;
-    private readonly maxAuditTrailElements: number;
     private fileLogger: FileLogger;
 
     private flushTimeout: any;
 
     // Timeout container TODO: types
-    private readonly timeoutLookup: any;
     private conformityValidator: ConformityValidator;
 
     /**
      * The constructor of the Registry
      * @param client The global mqtt client used to avoid multiple client connections inside the container
      * @param appResources The containerState of the OI4-Service holding information about the oi4Id etc.
+     * @param startupConfig
      */
-    constructor(client: mqtt.AsyncClient, appResources: RegistryResources) {
+    constructor(client: mqtt.AsyncClient, appResources: RegistryResources, startupConfig: StartupConfig) {
         super();
+
         this.assetLookup = new AssetLookup();
         this.oi4Id = appResources.oi4Id;
         this.logToFileEnabled = appResources.settings.logging.logType;
@@ -96,7 +99,6 @@ export class Registry extends EventEmitter {
             }
         });
 
-        const startupConfig = new StartupConfig();
         const logLevel = startupConfig.logLevel;
         const publishingLevel = startupConfig.publishingLevel;
 
@@ -141,7 +143,6 @@ export class Registry extends EventEmitter {
 
     private async initSubscriptions(): Promise<void> {
 
-        await this.ownSubscribe('Oi4/+/+/+/+/+/Pub/#');
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/MAM/#`); // Add Asset to Registry
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/Health/#`); // Add Asset to Registry
         await this.ownSubscribe('Oi4/Registry/+/+/+/+/Get/MAM/#');
@@ -242,10 +243,10 @@ export class Registry extends EventEmitter {
         }
 
         // Safety-Check: DataSetClassId
-        // if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
-        //     this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
-        //     return;
-        // }
+        if (networkMessage.DataSetClassId !== DataSetClassIds[topicInfo.resource]) {
+            this.logger.log(`Error in pre-check, dataSetClassId mismatch, got ${networkMessage.DataSetClassId}, expected ${DataSetClassIds[topicInfo.resource]}`, ESyslogEventFilter.warning);
+            return;
+        }
 
         if (this.assetLookup.has(topicInfo.oi4Id)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
             const asset = this.assetLookup.get(topicInfo.oi4Id);
@@ -286,19 +287,19 @@ export class Registry extends EventEmitter {
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => {
                     const rtLicense = new RTLicense();
                     Object.assign(rtLicense, m.Payload);
-                    r.rtLicense = rtLicense;
+                    r.RtLicense = rtLicense;
                 }));
                 break;
             case Resources.LICENSE_TEXT:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.licenseText = LicenseText.clone(m.Payload)));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.LicenseText = LicenseText.clone(m.Payload)));
                 break;
 
             case Resources.CONFIG:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.config = JSON.parse(JSON.stringify(m.Payload))));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Config = JSON.parse(JSON.stringify(m.Payload))));
                 break;
 
             case Resources.PROFILE:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.profile = Profile.clone(m.Payload)));
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Profile = Profile.clone(m.Payload)));
                 break;
         }
     }
@@ -308,13 +309,13 @@ export class Registry extends EventEmitter {
 
         for (const dataSetMessage of input.Messages) {
 
-            if (typeof dataSetMessage.Payload.page !== 'undefined') { // found pagination
+            if (typeof dataSetMessage.Payload.Page !== 'undefined') { // found pagination
                 paginationPub =
                     {
-                        totalCount: dataSetMessage.Payload.totalCount,
-                        perPage: dataSetMessage.Payload.perPage,
-                        page: dataSetMessage.Payload.page,
-                        hasNext: dataSetMessage.Payload.hasNext
+                        TotalCount: dataSetMessage.Payload.TotalCount,
+                        PerPage: dataSetMessage.Payload.PerPage,
+                        Page: dataSetMessage.Payload.Page,
+                        HasNext: dataSetMessage.Payload.HasNext
                     };
 
                 continue;
@@ -323,7 +324,7 @@ export class Registry extends EventEmitter {
             proc(dataSetMessage);
         }
 
-        if (pagination !== undefined && paginationPub !== undefined && paginationPub.hasNext) {
+        if (pagination !== undefined && paginationPub !== undefined && paginationPub.HasNext) {
             pagination(paginationPub);
         }
     }
@@ -340,8 +341,8 @@ export class Registry extends EventEmitter {
     private async requestNextPage(pagination: PaginationPub, topicInfo: TopicInfo): Promise<void> {
 
         const paginationGet = {
-            perPage: pagination.perPage, // get same amout of data
-            page: ++pagination.page // get next page
+            perPage: pagination.PerPage, // get same amout of data
+            page: ++pagination.Page // get next page
         };
 
         let topic: string;
@@ -394,16 +395,17 @@ export class Registry extends EventEmitter {
         }
 
         await Registry.processMessage(networkMessage, (m) => {
-                const parsedPayload = m.Payload;
+                const parsedPayload : IEvent = m.Payload;
+                const topicParts = topicInfo.topic.split('/');
 
                 const assetEvent: IAssetEvent = {
-                    origin: parsedPayload.origin ?? topicInfo.oi4Id,
-                    level: topicInfo.filter,
-                    number: parsedPayload.number,
-                    category: topicInfo.category,
-                    description: parsedPayload.description,
-                    details: parsedPayload.details,
-                    timestamp: parsedPayload.timestamp
+                    origin: m.Source.toString(),
+                    level: topicParts[topicParts.length - 1],
+                    number: parsedPayload.Number,
+                    category: parsedPayload.Category,
+                    description: parsedPayload.Description,
+                    details: parsedPayload.Details,
+                    timestamp: m.Timestamp ?? new Date().toISOString()
                 }
 
                 this.globalEventList.push(assetEvent);
@@ -433,9 +435,8 @@ export class Registry extends EventEmitter {
 
                         const asset = this.assetLookup.get(oi4Id);
                         asset.lastMessage = new Date().toISOString();
-                        asset.resources.health = health;
+                        asset.resources.Health = health;
                     }
-
                     this.logger.log(`Setting health of ${oi4Id} to: ${JSON.stringify(health)}`);
                 } else {
                     if (topicInfo.appId === this.oi4Id) return;
@@ -520,7 +521,7 @@ export class Registry extends EventEmitter {
             lastMessage: registeredAt,
             registeredAt: registeredAt,
             resources: {
-                mam: masterAssetModel,
+                MAM: masterAssetModel,
             },
             topicPreamble: `Oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
             conformityObject: {
@@ -543,6 +544,7 @@ export class Registry extends EventEmitter {
         this.assetLookup.set(oi4Id, newAsset);
 
         // Subscribe to all changes regarding this application
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Event/${oi4Id}/#`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Health/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/License/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
@@ -555,7 +557,6 @@ export class Registry extends EventEmitter {
         // Update own publicationList with new Asset
         const publicationList = new PublicationList();
         publicationList.Resource = Resources.MAM;
-        // publicationList.oi4Identifier = topicInfo.appId;
         publicationList.DataSetWriterId = 0;
         publicationList.Config = PublicationListConfig.NONE_0;
         publicationList.Interval = 0;
@@ -606,8 +607,7 @@ export class Registry extends EventEmitter {
             this.applicationResources.removeSource(oi4Id);
 
 
-// TODO fix event
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/+/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/${oi4Id}/#`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Health/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/License/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
@@ -734,17 +734,17 @@ export class Registry extends EventEmitter {
         // First, clear all old eventLists
         this.globalEventList = [];
 
-        // TODO fix event topics
+        // TODO: Whats the purpose of the below code?
 
         // Then, unsubscribe from old Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Unsubscribed syslog trail from ${levels}`);
-            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
+            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
         }
         // Then, resubscribe to new Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Resubbed to syslog category - ${levels}`);
-            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/Syslog/${levels}/#`);
+            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
             if (levels === this.applicationResources.settings.logging.auditLevel) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }

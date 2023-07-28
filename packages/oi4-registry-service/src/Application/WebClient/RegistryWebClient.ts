@@ -6,12 +6,13 @@ import {Application, Oi4Identifier} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import { RegistryResources } from '../RegistryResources';
 import { IAsset } from '../Models/IRegistry';
+import {StartupConfig} from '../StartupConfig';
 
 export class RegistryWebClient extends Oi4WebClient {
 
-    constructor(application: IOI4Application, registry: Registry, port = 5799, version: string, license: string)
+    constructor(application: IOI4Application, registry: Registry, port = 5799, version: string, license: string, startupConfig: StartupConfig)
     {
-        super(application, port, version, license);
+        super(application, port, version, license, startupConfig);
 
         this.client.get('/brokerState', (brokerReq, brokerResp) => {
 
@@ -174,7 +175,7 @@ export class RegistryWebClient extends Oi4WebClient {
         }
     }
 
-    private static convert(assets: IAsset[]) {
+    private static convert(assets: IAsset[]): {} {
         if (assets.length === 0) {
             return {};
         }
