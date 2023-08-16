@@ -30,4 +30,4 @@ echo "****************************"
 echo "**  Install oi4-local-ui  **"
 echo "****************************"
 cp ./packages/oi4-local-ui/package.json ./build/container/packages/oi4-local-ui/package.json
-cp -r ./packages/oi4-local-ui/build ./build/container/packages/oi4-local-ui/build/
+cp -r ./packages/oi4-local-ui/build ./build/container/packages/oi4-local-ui/

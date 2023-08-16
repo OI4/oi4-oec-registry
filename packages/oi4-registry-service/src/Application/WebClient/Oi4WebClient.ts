@@ -61,12 +61,12 @@ export class Oi4WebClient extends EventEmitter {
         //this.client.options('*', cors());
 
         if (startupConfig.useHttps) { // we should use HTTPS, check for key/cert
-            if (fs.existsSync(startupConfig.certFile) && fs.existsSync(startupConfig.keyFile)) {
+            if (fs.existsSync(startupConfig.httpCertFile) && fs.existsSync(startupConfig.httpKeyFile)) {
                 this.logger.log('Key and Cert exist, using HTTPS for Express...', ESyslogEventFilter.warning);
                 https.createServer(
                     {
-                        key: fs.readFileSync(startupConfig.keyFile),
-                        cert: fs.readFileSync(startupConfig.certFile),
+                        key: fs.readFileSync(startupConfig.httpKeyFile),
+                        cert: fs.readFileSync(startupConfig.httpCertFile),
                     },
                     this.client)
                     .listen(port, () => {
