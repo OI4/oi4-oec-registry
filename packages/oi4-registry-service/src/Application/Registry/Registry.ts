@@ -10,26 +10,25 @@ import {
     EDeviceHealth,
     ESyslogEventFilter,
     Health,
-    IEvent,
     IContainerConfig,
+    IEvent,
     IOI4Resource,
+    IOPCUADataSetMessage,
+    IOPCUANetworkMessage,
     License,
     LicenseText,
     MasterAssetModel,
     Methods,
+    Oi4Identifier,
+    OPCUABuilder,
     Profile,
     PublicationList,
     PublicationListConfig,
     Resources,
     RTLicense,
+    ServiceTypes,
     SubscriptionList,
-    SubscriptionListConfig,
-    IOPCUADataSetMessage,
-    IOPCUANetworkMessage,
-    Oi4Identifier,
-    OPCUABuilder,
-    EventCategory,
-    StatusEvent
+    SubscriptionListConfig
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
@@ -128,17 +127,31 @@ export class Registry extends EventEmitter {
         await this.initSubscriptions();
         this.client.on('message', this.processMqttMessage);
 
+        const topicInfo = {
+            appId: this.oi4Id,
+            method: Methods.PUB,
+            resource: Resources.MAM,
+            oi4Id: this.oi4Id,
+            serviceType: ServiceTypes.REGISTRY,
+        } as TopicInfo;
+        const networkMessage = this.builder.buildOPCUANetworkMessage([{
+            Source: this.oi4Id,
+            Payload: this.applicationResources.mam,
+            DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id),
+        }], new Date(), DataSetClassIds[Resources.MAM]);
+        await this.addToRegistry(topicInfo, networkMessage);
+
         // In most cases the mam for the registry was already published via the OI4 service node component
         // --> We publish the mam again so that the registry detects 'itself' and to enforce validation of the registry
         // TODO: Instead publishing of the mam again we could also call addToRegistry for ourself
-        const mam = this.applicationResources.mam;
-        await this.client.publish(`Oi4/${mam.getServiceType()}/${this.oi4Id}/Pub/MAM/${this.oi4Id}`,
-            JSON.stringify(this.builder.buildOPCUANetworkMessage([{
-                Source: this.oi4Id,
-                Payload: this.applicationResources.mam,
-                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id),
-            }], new Date(), DataSetClassIds[Resources.MAM])),
-        );
+        // const mam = this.applicationResources.mam;
+        // await this.client.publish(`Oi4/${mam.getServiceType()}/${this.oi4Id}/Pub/MAM/${this.oi4Id}`,
+        //     JSON.stringify(this.builder.buildOPCUANetworkMessage([{
+        //         Source: this.oi4Id,
+        //         Payload: this.applicationResources.mam,
+        //         DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.MAM, this.oi4Id),
+        //     }], new Date(), DataSetClassIds[Resources.MAM])),
+        // );
     }
 
     private async initSubscriptions(): Promise<void> {
@@ -220,6 +233,11 @@ export class Registry extends EventEmitter {
             return;
         }
 
+        // // Skip PUB messages of the registry itself
+        // if (topicInfo.serviceType === ServiceTypes.REGISTRY && topicInfo.method === Methods.PUB) {
+        //     return;
+        // }
+
         let networkMessage: IOPCUANetworkMessage;
         try {
             networkMessage = JSON.parse(message.toString());
@@ -239,6 +257,7 @@ export class Registry extends EventEmitter {
         }
         if (!schemaResult) {
             this.logger.log('Error in pre-check (crash-safety) schema validation, please run asset through conformity validation or increase logLevel', ESyslogEventFilter.warning);
+            this.logger.log(`Errors: ${this.builder.jsonValidator.errors}`, ESyslogEventFilter.debug)
             return;
         }
 
@@ -395,7 +414,7 @@ export class Registry extends EventEmitter {
         }
 
         await Registry.processMessage(networkMessage, (m) => {
-                const parsedPayload : IEvent = m.Payload;
+                const parsedPayload: IEvent = m.Payload;
                 const topicParts = topicInfo.topic.split('/');
 
                 const assetEvent: IAssetEvent = {
@@ -739,12 +758,12 @@ export class Registry extends EventEmitter {
         // Then, unsubscribe from old Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
             console.log(`Unsubscribed syslog trail from ${levels}`);
-            await this.ownUnsubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
+            await this.ownUnsubscribe('Oi4/+/+/+/+/+/Pub/Event/#');
         }
         // Then, resubscribe to new Audit Trail
         for (const levels of Object.values(ESyslogEventFilter)) {
-            console.log(`Resubbed to syslog category - ${levels}`);
-            await this.ownSubscribe(`Oi4/+/+/+/+/+/Pub/Event/#`);
+            console.log(`Resubscribe to syslog category - ${levels}`);
+            await this.ownSubscribe('Oi4/+/+/+/+/+/Pub/Event/#');
             if (levels === this.applicationResources.settings.logging.auditLevel) {
                 return; // We matched our configured auditLevel, returning to not sub to redundant info...
             }

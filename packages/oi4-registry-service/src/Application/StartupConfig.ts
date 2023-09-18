@@ -20,7 +20,7 @@ export const settingsPaths = (base: string): ISettingsPaths => {
     return isLocal ? {
         mqttSettings: {
             brokerConfig: `${base}/mqtt/broker.json`,
-            caCertificate: `${base}/docker_configs/certs/ca.pem`,
+            caCertificate: `${base}/certs/ca.pem`,
             // privateKey: `${basePath}/secrets/mqtt_private_key.pem`,
             privateKey: undefined,
             // clientCertificate: `${basePath}/certs/oi4-oec-service-demo.pem`,

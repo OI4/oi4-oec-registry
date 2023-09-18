@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4registry",
-  "version": "1.1.0-preview.3",
+  "version": "1.1.0-preview.4",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
@@ -11,11 +11,12 @@
     "packages/*"
   ],
   "dependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "ajv": "^8.12.0"
   },
   "devDependencies": {
     "dotenv": "^16.0.0",
-    "lerna": "^4.0.0"
+    "lerna": "^7.1.5"
   },
   "scripts": {
     "bootstrap": "lerna bootstrap",

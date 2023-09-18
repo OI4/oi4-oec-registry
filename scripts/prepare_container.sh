@@ -19,6 +19,7 @@ echo "************************************"
 cp ./scripts/deploy-config-ui.sh ./build/container/packages/oi4-registry-service/scripts/deploy-config-ui.sh
 cp ./scripts/entrypoint.sh ./build/container/packages/oi4-registry-service/scripts/entrypoint.sh
 cp ./packages/oi4-registry-service/package.json ./build/container/packages/oi4-registry-service/package.json
+cp ./packages/oi4-registry-service/.npmrc ./build/container/packages/oi4-registry-service/.npmrc
 cp -r ./packages/oi4-registry-service/dist/ ./build/container/packages/oi4-registry-service/src/
 cp -r ./packages/oi4-registry-service/public ./build/container/packages/oi4-registry-service/public
 cd ./build/container/packages/oi4-registry-service || exit
