@@ -9,7 +9,7 @@ import {
 } from '@oi4/oi4-oec-service-node';
 
 import path from 'path';
-import { copyFileSync, existsSync,  mkdirSync } from 'fs';
+import {copyFileSync, existsSync, mkdirSync} from 'fs';
 import * as os from 'os';
 
 export const isLocal = process.argv.length > 2 && process.argv[2] === 'local';
@@ -96,6 +96,10 @@ export class StartupConfig {
 
     public get publishingLevel(): ESyslogEventFilter {
         return process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning;
+    }
+
+    public get logLevelUi(): ESyslogEventFilter {
+        return process.env.OI4_EDGE_EVENT_LEVEL as ESyslogEventFilter | ESyslogEventFilter.warning
     }
 
     /**

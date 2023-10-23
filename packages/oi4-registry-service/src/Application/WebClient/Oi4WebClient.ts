@@ -1,23 +1,23 @@
 import {EventEmitter} from 'events';
+
+import {Logger} from '@oi4/oi4-oec-service-logger';
+import {
+    ESyslogEventFilter,
+    IContainerConfig,
+    IOI4ApplicationResources,
+    IOPCUAMetaData,
+    IOPCUANetworkMessage,
+    Oi4Identifier,
+    OPCUABuilder
+} from '@oi4/oi4-oec-service-model';
+import {IOI4Application} from '@oi4/oi4-oec-service-node';
+
+import {StartupConfig} from '../StartupConfig';
 import express = require('express');
 import bodyParser = require('body-parser');
 import cors = require('cors');
 import fs = require('fs');
 import https = require('https');
-
-import {Logger} from '@oi4/oi4-oec-service-logger';
-import {
-    ESyslogEventFilter,
-    IOI4ApplicationResources,
-    IContainerConfig,
-    OPCUABuilder,
-    IOPCUAMetaData,
-    IOPCUANetworkMessage,
-    Oi4Identifier
-} from '@oi4/oi4-oec-service-model';
-import {IOI4Application} from '@oi4/oi4-oec-service-node';
-
-import {StartupConfig} from '../StartupConfig';
 
 
 export class Oi4WebClient extends EventEmitter {
@@ -44,8 +44,8 @@ export class Oi4WebClient extends EventEmitter {
         this.version = version;
         this.license = license;
 
-        this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.logLevel, startupConfig.publishingLevel, application.oi4Id, application.serviceType);
-        this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.warning);
+        this.logger = new Logger(true, 'Registry-WebProxy', startupConfig.logLevelUi, startupConfig.publishingLevel, application.oi4Id, application.serviceType);
+        this.logger.log(`WebProxy: standard route: ${this.topicPreamble}`, ESyslogEventFilter.informational);
 
         this.client = express();
         this.client.use((initReq, initRes, initNext) => {
@@ -54,7 +54,6 @@ export class Oi4WebClient extends EventEmitter {
             initRes.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
             initRes.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
             initNext();
-            console.log(initRes);
         });
         this.client.use(cors());
         this.client.use(bodyParser.json());
@@ -62,7 +61,7 @@ export class Oi4WebClient extends EventEmitter {
 
         if (startupConfig.useHttps) { // we should use HTTPS, check for key/cert
             if (fs.existsSync(startupConfig.httpCertFile) && fs.existsSync(startupConfig.httpKeyFile)) {
-                this.logger.log('Key and Cert exist, using HTTPS for Express...', ESyslogEventFilter.warning);
+                this.logger.log('Key and Cert exist, using HTTPS for Express...', ESyslogEventFilter.informational);
                 https.createServer(
                     {
                         key: fs.readFileSync(startupConfig.httpKeyFile),
@@ -70,18 +69,18 @@ export class Oi4WebClient extends EventEmitter {
                     },
                     this.client)
                     .listen(port, () => {
-                        this.logger.log('WebProxy of Registry listening on port over HTTPS', ESyslogEventFilter.warning);
+                        this.logger.log('WebProxy of Registry listening on port over HTTPS', ESyslogEventFilter.informational);
                     });
             } else {
-                this.logger.log('Key and / or Cert dont exist..fallback to HTTP', ESyslogEventFilter.warning);
+                this.logger.log('Key and / or Cert dont exist..fallback to HTTP', ESyslogEventFilter.informational);
                 this.client.listen(port, () => {
-                    this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESyslogEventFilter.warning);
+                    this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESyslogEventFilter.informational);
                 });
             }
         } else { // No environment variable found, use HTTP
-            this.logger.log('USE_HTTPS not set to "true" or not found..fallback to HTTP', ESyslogEventFilter.warning);
+            this.logger.log('USE_HTTPS not set to "true" or not found..fallback to HTTP', ESyslogEventFilter.informational);
             this.client.listen(port, () => {
-                this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESyslogEventFilter.warning);
+                this.logger.log(`WebProxy of Registry listening on ${port} over HTTP`, ESyslogEventFilter.informational);
             });
         }
 

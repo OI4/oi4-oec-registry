@@ -1,5 +1,5 @@
 import {OI4ApplicationFactory} from '@oi4/oi4-oec-service-node';
-import {logger, initializeLogger} from '@oi4/oi4-oec-service-logger';
+import {logger} from '@oi4/oi4-oec-service-logger';
 import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 import {RegistryWebClient} from './Application/WebClient/RegistryWebClient';
 import {Swagger} from './Application/WebClient/Swagger';

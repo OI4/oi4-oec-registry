@@ -1,7 +1,7 @@
 #!/bin/bash
 rm -rf ./build
 
-mkdir -p ./build/container/packages/oi4-local-ui/build
+mkdir -p ./build/container/packages/oi4-registy-ui/build
 mkdir -p ./build/container/packages/oi4-registry-service/src
 mkdir -p ./build/container/packages/oi4-registry-service/scripts
 
@@ -30,5 +30,5 @@ cd ../../../..
 echo "****************************"
 echo "**  Install oi4-local-ui  **"
 echo "****************************"
-cp ./packages/oi4-local-ui/package.json ./build/container/packages/oi4-local-ui/package.json
-cp -r ./packages/oi4-local-ui/build ./build/container/packages/oi4-local-ui/
+cp ./packages/oi4-registy-ui/package.json ./build/container/packages/oi4-registy-ui/package.json
+cp -r ./packages/oi4-registy-ui/build ./build/container/packages/oi4-registy-ui/

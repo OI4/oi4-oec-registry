@@ -115,7 +115,7 @@ const _winstonLogger = winston.createLogger({
         }),
         winston.format.errors({ stack: true }),
         winston.format.splat(),
-        winston.format.label({ label: 'oi4-local-ui' }),
+        winston.format.label({ label: 'oi4-registry-ui' }),
     ),
     transports: [
         new winston.transports.Console({})
