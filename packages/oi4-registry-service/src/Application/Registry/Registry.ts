@@ -3,7 +3,6 @@ import mqtt = require('async-mqtt'); /*tslint:disable-line*/
 import {EventEmitter} from 'events';
 import {SequentialTaskQueue} from 'sequential-task-queue';
 import {
-    CDataSetWriterIdLookup,
     DataSetClassIds,
     DataSetWriterIdManager,
     EAssetType,
@@ -128,6 +127,7 @@ export class Registry extends EventEmitter {
         this.client.on('message', this.processMqttMessage);
 
         const topicInfo = {
+            topic: '',
             appId: this.oi4Id,
             method: Methods.PUB,
             resource: Resources.MAM,
@@ -267,8 +267,8 @@ export class Registry extends EventEmitter {
             return;
         }
 
-        if (this.assetLookup.has(topicInfo.oi4Id)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
-            const asset = this.assetLookup.get(topicInfo.oi4Id);
+        if (this.assetLookup.has(topicInfo.source)) { // If we've got this oi4Id in our lookup, we update its "life-sign", even if the payload might be wrong later on
+            const asset = this.assetLookup.get(topicInfo.source);
             asset.lastMessage = new Date().toISOString();
         }
 
@@ -382,9 +382,9 @@ export class Registry extends EventEmitter {
                 break;
 
             default:
-                if (topicInfo.oi4Id !== undefined) {
-                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}/${topicInfo.oi4Id}`
-                    source = topicInfo.oi4Id;
+                if (topicInfo.source !== undefined) {
+                    topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}/${topicInfo.source}`
+                    source = topicInfo.source;
                 } else {
                     topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/${topicInfo.resource}`;
                     source = topicInfo.appId;
@@ -508,7 +508,7 @@ export class Registry extends EventEmitter {
             this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
             return;
         }
-        const oi4Id: Oi4Identifier = topicInfo.oi4Id !== undefined ? topicInfo.oi4Id : topicInfo.appId;
+        const oi4Id: Oi4Identifier = topicInfo.source !== undefined ? topicInfo.source : topicInfo.appId;
 
         if (this.getAsset(oi4Id)) { // If many Mams come in quick succession, we have no chance of checking duplicates prior to this line
             this.logger.log('--MasterAssetModel already in Registry - addDevice--', ESyslogEventFilter.debug);
@@ -587,7 +587,7 @@ export class Registry extends EventEmitter {
             `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
-                DataSetWriterId: CDataSetWriterIdLookup['PublicationList'],
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.PUBLICATION_LIST, this.oi4Id),
                 Source: this.oi4Id
             }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
@@ -641,7 +641,7 @@ export class Registry extends EventEmitter {
                 `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
                 JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                     Payload: this.applicationResources.publicationList,
-                    DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                    DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.PUBLICATION_LIST, this.oi4Id),
                     Source: this.oi4Id,
                 }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
             );
@@ -670,7 +670,7 @@ export class Registry extends EventEmitter {
             `Oi4/Registry/${this.oi4Id}/Pub/PublicationList`,
             JSON.stringify(this.builder.buildOPCUANetworkMessage([{
                 Payload: this.applicationResources.publicationList,
-                DataSetWriterId: CDataSetWriterIdLookup['publicationList'],
+                DataSetWriterId: DataSetWriterIdManager.getDataSetWriterId(Resources.PUBLICATION_LIST, this.oi4Id),
                 Source: this.oi4Id
             }], new Date(), DataSetClassIds[Resources.PUBLICATION_LIST])),
         );
