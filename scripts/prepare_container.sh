@@ -1,9 +1,8 @@
 #!/bin/bash
 rm -rf ./build
 
-mkdir -p ./build/container/packages/oi4-local-ui/build
-mkdir -p ./build/container/packages/oi4-registry-service/src
-mkdir -p ./build/container/packages/oi4-registry-service/scripts
+mkdir -p ./build/container/packages/oi4-local-ui
+mkdir -p ./build/container/packages/oi4-registry-service
 
 echo "***************************"
 echo "**  Init parent package  **"
