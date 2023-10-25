@@ -24,9 +24,8 @@ cp ./packages/oi4-registry-service/.npmrc ./build/container/packages/oi4-registr
 cp -r ./packages/oi4-registry-service/dist/ ./build/container/packages/oi4-registry-service/src
 cp -r ./packages/oi4-registry-service/public/ ./build/container/packages/oi4-registry-service/public
 cd ./build/container/packages/oi4-registry-service || exit
-echo "build:"
-ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
 yarn install --production
+echo "Prepared oi4-registry-service for container creation"
 cd ../../../..
 
 # To avoid loadig all the dependencies of the ui, execute this as last
@@ -35,7 +34,4 @@ echo "**  Install oi4-local-ui  **"
 echo "****************************"
 cp ./packages/oi4-local-ui/package.json ./build/container/packages/oi4-local-ui/package.json
 cp -r ./packages/oi4-local-ui/build ./build/container/packages/oi4-local-ui/
-
-cd ./packages/oi4-registry-service/dist/
-echo "dist:"
-ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+echo "Prepared oi4-local-ui for container creation"
