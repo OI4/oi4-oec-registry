@@ -37,10 +37,6 @@ jobs:
       # Publish to github docker repo if this version is not published
       - name: publish
         run: export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
-      - name: prepareContainer
-        run: npm run prepareContainer
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       - name: Prepare Docker build
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
