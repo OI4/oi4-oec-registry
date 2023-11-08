@@ -7,11 +7,14 @@ import {
     License,
     LicenseText,
     Oi4Identifier,
+    OI4ResourceEvent,
     Resources
 } from '@oi4/oi4-oec-service-model';
 import {ELogType, ISettings} from './Models/ISettings';
 import {existsSync, readFileSync, writeFileSync} from 'fs';
 import {StartupConfig} from './StartupConfig';
+
+export const settingChangedEvent = 'settingsChanged';
 
 export class RegistryResources extends OI4ApplicationResources {
     private static readonly AUDIT_LEVEL_DEFAULT = ESyslogEventFilter.warning;
@@ -38,7 +41,7 @@ export class RegistryResources extends OI4ApplicationResources {
         super(startupConfig.mamFileLocation);
         this.startupConfig = startupConfig;
 
-        this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resources) => {
+        this.on(OI4ResourceEvent.RESOURCE_CHANGED, (oi4Id: Oi4Identifier, resource: Resources) => {
             if (oi4Id.equals(this.oi4Id) && resource === Resources.CONFIG) {
                 const oldSettings = this._settings;
                 const newSettings = RegistryResources.getSettingsFromConfig(this.config);
@@ -48,7 +51,7 @@ export class RegistryResources extends OI4ApplicationResources {
                     }
 
                     this.settings = newSettings;
-                    this.emit('settingsChanged', oldSettings, this._settings);
+                    this.eventEmitter.emit(settingChangedEvent, oldSettings, this._settings);
                 }
             }
         })

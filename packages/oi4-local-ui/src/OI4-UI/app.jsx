@@ -666,7 +666,7 @@ class OI4Base extends React.Component {
                 if (wasUpdated) {
                     this.setState({ listOfDevices: listOfDevices }); // FIXME: Potentially dangerous
                 }
-                this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
+                this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc});
             })
             .catch(err => {
                 _winstonLogger.info(err);
@@ -844,8 +844,8 @@ class OI4Base extends React.Component {
     async getBackendConfig() {
         const regConfData = await this.retrieveBackendConfig();
         const backendConfig = {
-            showRegistry: regConfData.Registry.ShowRegistry.value === 'true',
-            developmentMode: regConfData.Registry.DevelopmentMode.value === 'true',
+            showRegistry: regConfData.registry.showRegistry.value === 'true',
+            developmentMode: regConfData.registry.developmentMode.value === 'true',
         };
         this.setState({ backendConfig: backendConfig });
     }

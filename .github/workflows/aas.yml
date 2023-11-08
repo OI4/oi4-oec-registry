@@ -1,0 +1,50 @@
+name: snapshot
+
+env:
+  CI: true
+on:
+  push:
+    branches:
+      - aas-addon
+    tags:
+      - "!*"
+jobs:
+  aas-snapshot:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          registry-url: 'https://npm.pkg.github.com'
+      - name: install
+        run: |
+          yarn install
+        env:
+          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      # Build packages
+      - name: build
+        run: |
+          yarn build
+        env:
+          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      # No test so far -> skip them for now
+      #- name: test
+      #  run: npm test
+      # Publish to github docker repo if this version is not published
+      - name: publish
+        run: export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      - name: Prepare Docker build
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          npm run docker:prepare
+          docker buildx inspect --bootstrap
+      - name: Docker Login
+        run: echo ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+      - name: Docker Build & Push
+        run: npm run docker:build:snapshot
+        env:
+          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}

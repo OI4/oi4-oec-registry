@@ -27,14 +27,15 @@ import {
     RTLicense,
     ServiceTypes,
     SubscriptionList,
-    SubscriptionListConfig
+    SubscriptionListConfig,
+    AAS
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
 import {ELogType, ISettings} from '../Models/ISettings';
-import {RegistryResources} from '../RegistryResources';
+import {RegistryResources, settingChangedEvent} from '../RegistryResources';
 import {StartupConfig} from '../StartupConfig';
 import {AssetLookup} from '../Models/AssetLookup';
 
@@ -81,7 +82,7 @@ export class Registry extends EventEmitter {
         this.oi4Id = appResources.oi4Id;
         this.logToFileEnabled = appResources.settings.logging.logType;
         // Config section
-        appResources.on('settingsChanged', (oldSettings: ISettings, newSettings: ISettings) => {
+        appResources.eventEmitter.on(settingChangedEvent, (oldSettings: ISettings, newSettings: ISettings) => {
             if (oldSettings.logging.logType === ELogType.enabled) {
                 this.flushTimeout = setTimeout(() => this.flushToLogfile(), 60000);
             }
@@ -158,6 +159,7 @@ export class Registry extends EventEmitter {
 
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/MAM/#`); // Add Asset to Registry
         await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/Health/#`); // Add Asset to Registry
+        await this.ownSubscribe(`${this.oi4DeviceWildCard}/Pub/AAS/#`); // Add Asset to Registry
         await this.ownSubscribe('Oi4/Registry/+/+/+/+/Get/MAM/#');
     }
 
@@ -274,12 +276,12 @@ export class Registry extends EventEmitter {
 
         switch (topicInfo.method) {
             case Methods.PUB:
-                await this.executePubActions(topicInfo, networkMessage);
+                await this.processPubActions(topicInfo, networkMessage);
                 break;
         }
     }
 
-    private async executePubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
+    private async processPubActions(topicInfo: TopicInfo, networkMessage: IOPCUANetworkMessage): Promise<void> {
         if (topicInfo.method !== Methods.PUB) {
             throw new Error('Invalid argument topicInfo. Method must be TopicMethods.PUB.')
         }
@@ -312,13 +314,17 @@ export class Registry extends EventEmitter {
             case Resources.LICENSE_TEXT:
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.LicenseText = LicenseText.clone(m.Payload)));
                 break;
-
             case Resources.CONFIG:
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Config = JSON.parse(JSON.stringify(m.Payload))));
                 break;
-
             case Resources.PROFILE:
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Profile = Profile.clone(m.Payload)));
+                break;
+            case Resources.AAS:
+                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.AAS = AAS.clone(m.Payload)));
+                break;
+            default:
+                this.logger.log(`${topicInfo.resource} not supported and will be skipped`, ESyslogEventFilter.informational);
                 break;
         }
     }
@@ -415,7 +421,7 @@ export class Registry extends EventEmitter {
 
         await Registry.processMessage(networkMessage, (m) => {
                 const parsedPayload: IEvent = m.Payload;
-                const topicParts = topicInfo.topic.split('/');
+                const topicParts = topicInfo.toString().split('/');
 
                 const assetEvent: IAssetEvent = {
                     origin: m.Source.toString(),
@@ -502,7 +508,7 @@ export class Registry extends EventEmitter {
      * @param masterAssetModel The MasterAssetModel of the device
      */
     async addAsset(topicInfo: TopicInfo, masterAssetModel: MasterAssetModel): Promise<void> {
-        this.logger.log(`----------- ADDING ASSET ----------:  ${topicInfo.topic}`, ESyslogEventFilter.informational);
+        this.logger.log(`----------- ADDING ASSET ----------:  ${topicInfo.toString()}`, ESyslogEventFilter.informational);
 
         if (Object.keys(masterAssetModel).length === 0) {
             this.logger.log('Critical Error: MAM of device to be added is empty', ESyslogEventFilter.error);
@@ -526,7 +532,8 @@ export class Registry extends EventEmitter {
                 rtLicense: undefined,
                 config: undefined,
                 publicationList: undefined,
-                subscriptionList: undefined
+                subscriptionList: undefined,
+                aas: undefined
             };
 
             this.applicationResources.addSource(source);
@@ -570,6 +577,7 @@ export class Registry extends EventEmitter {
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/LicenseText/#`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Config/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Profile/${oi4Id}`);
+        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/AAS/${oi4Id}`);
 
         newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
 
@@ -633,6 +641,7 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/LicenseText/#`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Config/${oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Profile/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/AAS/${oi4Id}`);
             this.assetLookup.delete(oi4Id);
             // Remove from publicationList
             this.removePublicationBySubResource(oi4Id.toString());
@@ -662,6 +671,7 @@ export class Registry extends EventEmitter {
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/LicenseText/#`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Config/${asset.oi4Id}`);
             this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Profile/${asset.oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/AAS/${asset.oi4Id}`);
             // Remove from publicationList
             this.removePublicationBySubResource(asset.oi4Id.toString());
         }
