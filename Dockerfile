@@ -1,4 +1,4 @@
-FROM node:16-alpine3.15 as build_base
+FROM alpine:3.18 as build_base
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
