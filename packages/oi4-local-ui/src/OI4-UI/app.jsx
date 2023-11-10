@@ -25,8 +25,6 @@ import AppBar from '@material-ui/core/AppBar';
 
 import MaterialTable from 'material-table';
 
-import winston from 'winston';
-
 import {
     Typography,
     Accordion,
@@ -108,20 +106,6 @@ const styles = theme => ({
     },
 });
 
-const _winstonLogger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp({
-             format: 'YYYY-MM-DD HH:mm:ss'
-        }),
-        winston.format.errors({ stack: true }),
-        winston.format.splat(),
-        winston.format.label({ label: 'oi4-local-ui' }),
-    ),
-    transports: [
-        new winston.transports.Console({})
-    ]
-});
-
 class OI4Base extends React.Component {
     constructor(props) {
         super(props);
@@ -139,8 +123,8 @@ class OI4Base extends React.Component {
             this.port = serviceEndpoint.port || 5799;
             this.platform = serviceEndpoint.platform;
         }
-        _winstonLogger.info(`Window.location.hostname: ${this.address}`);
-        _winstonLogger.info(`Window.location.port: ${this.port}`);
+        console.info(`Window.location.hostname: ${this.address}`);
+        console.info(`Window.location.port: ${this.port}`);
 
         // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
         // the local UI and the cockpit frontend.
@@ -226,22 +210,22 @@ class OI4Base extends React.Component {
         setTimeout(() => { // Retrieve license and version from backend
             this.fetch.get('/packageVersion')
                 .then(data => {
-                    _winstonLogger.info(data);
+                    console.info(data);
                     this.version = data;
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                     reject(err);
                 });
 
             this.fetch.get('/packageLicense')
                 .then(data => {
-                    _winstonLogger.info(data);
+                    console.info(data);
                     this.license = data;
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                     reject(err);
                 });
@@ -409,11 +393,11 @@ class OI4Base extends React.Component {
             if (typeof object[property] === type) { // eslint-disable-line
                 return true;
             } else {
-                _winstonLogger.info('Object does have property, but its not the correct type');
+                console.info('Object does have property, but its not the correct type');
                 return false;
             }
         } else {
-            _winstonLogger.info('Object does not have this property');
+            console.info('Object does not have this property');
             return false;
         }
     }
@@ -584,7 +568,7 @@ class OI4Base extends React.Component {
             })
             .catch(err => {
                 this.setState({ backendState: false });
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -597,7 +581,7 @@ class OI4Base extends React.Component {
      */
     updateConformity(fullTopic, oi4Id) {
         this.setState({ updatingConformity: true });
-        _winstonLogger.info(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id}`);
+        console.info(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id}`);
         if (this.state.backendConfig.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
             this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
                 .then(data => {
@@ -609,7 +593,7 @@ class OI4Base extends React.Component {
                     this.setState({ conformityLookup: confLookup, updatingConformity: false });
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                 });
         } else { // If not, retrieve only mandatory conformity values
@@ -623,7 +607,7 @@ class OI4Base extends React.Component {
                     this.setState({ conformityLookup: confLookup, updatingConformity: false });
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                 });
         }
@@ -669,7 +653,7 @@ class OI4Base extends React.Component {
                 this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -706,7 +690,7 @@ class OI4Base extends React.Component {
                 });
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -728,8 +712,8 @@ class OI4Base extends React.Component {
                             if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
                                 if (typeof resourceObject === 'object' && resourceObject !== null) {
                                     if ('err' in resourceObject) {
-                                        _winstonLogger.info(`Received Error in updateRegistryResource (${resource})`);
-                                        _winstonLogger.info(resourceObject);
+                                        console.info(`Received Error in updateRegistryResource (${resource})`);
+                                        console.info(resourceObject);
                                     }
                                 } else {
                                     applicationLookupLoc[oi4Id][resource] = resourceObject;
@@ -738,12 +722,12 @@ class OI4Base extends React.Component {
                             this.setState({ applicationLookup: applicationLookupLoc });
                         })
                         .catch(err => {
-                            // _winstonLogger.info(`Error ${err} with Resource ${resource}`);
+                            // console.info(`Error ${err} with Resource ${resource}`);
                             reject(err);
                         });
                 } else { // If we don't have it in our lookup, we can return!
                     if (typeof this.state.conformityLookup[oi4Id].resource[resource] !== 'undefined') {
-                        // _winstonLogger.info(`The resource ${resource} could not be requested yet, because we are waiting for conformity`);
+                        // console.info(`The resource ${resource} could not be requested yet, because we are waiting for conformity`);
                         return;
                     }
                     this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
@@ -757,7 +741,7 @@ class OI4Base extends React.Component {
                             this.setState({ applicationLookup: applicationLookupLoc });
                         })
                         .catch(err => {
-                            _winstonLogger.info(`Error ${err} with Resource ${resource}`);
+                            console.info(`Error ${err} with Resource ${resource}`);
                             reject(err);
                         });
                 }
@@ -772,10 +756,10 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     clearAssetById(oi4Id) {
-        _winstonLogger.info('Clear Asset by Id clicked');
+        console.info('Clear Asset by Id clicked');
         this.fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
             .then(data => {
-                _winstonLogger.info(data);
+                console.info(data);
             });
     }
 
@@ -790,7 +774,7 @@ class OI4Base extends React.Component {
                 this.setState({ health: JSON.parse(data) });
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -802,11 +786,11 @@ class OI4Base extends React.Component {
     updateOi4Id() {
         this.fetch.get('')
             .then(data => {
-                _winstonLogger.info(data);
+                console.info(data);
                 this.setState({ oi4Id: JSON.parse(data) });
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
                 reject(err);
             });
@@ -832,7 +816,7 @@ class OI4Base extends React.Component {
             const regConfData = JSON.parse(data); // Format from backend!
             return regConfData;
         } catch (err) {
-            _winstonLogger.info(err);
+            console.info(err);
             throw err;
         }
     }
@@ -860,7 +844,7 @@ class OI4Base extends React.Component {
                 this.setState({ globalEventTrail: JSON.parse(data) });
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }

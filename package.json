@@ -37,7 +37,7 @@
     "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
   },
   "engines": {
-    "node": ">=16.0.0 <18.0.0",
+    "node": ">=18.0.0 <20.0.0",
     "yarn": ">=1.22.0 <2"
   }
 }
