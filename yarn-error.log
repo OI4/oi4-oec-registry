@@ -1,0 +1,76 @@
+Arguments: 
+  /Users/ariaranjbar/.nvm/versions/node/v18.12.0/bin/node /Users/ariaranjbar/.nvm/versions/node/v18.12.0/bin/yarn install
+
+PATH: 
+  /Users/ariaranjbar/miniconda3/bin:/Users/ariaranjbar/miniconda3/condabin:/Users/ariaranjbar/.nvm/versions/node/v18.12.0/bin:/Users/ariaranjbar/.sdkman/candidates/java/current/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.12.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: Failed to replace env in config: ${PACKAGES_AUTH_TOKEN}
+      at /Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:94933:13
+      at String.replace (<anonymous>)
+      at envReplace (/Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:94928:16)
+      at Function.normalizeConfig (/Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:31938:69)
+      at NpmRegistry.<anonymous> (/Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:31968:34)
+      at Generator.next (<anonymous>)
+      at step (/Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /Users/ariaranjbar/.nvm/versions/node/v18.12.0/lib/node_modules/yarn/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "@oi4/oi4registry",
+    "version": "1.1.0-preview.6.aas",
+    "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
+    "author": "Open Industry 4.0 Alliance - Community",
+    "license": "MIT",
+    "private": true,
+    "keywords": [],
+    "repository": "git@github.com:OI4/oi4-registry.git",
+    "workspaces": [
+      "packages/*"
+    ],
+    "dependencies": {
+      "http-server": "^14.1.1",
+      "ajv": "^8.12.0"
+    },
+    "devDependencies": {
+      "dotenv": "^16.0.0",
+      "lerna": "^7.1.5"
+    },
+    "scripts": {
+      "bootstrap": "lerna bootstrap",
+      "clean": "lerna clean",
+      "build": "lerna run build",
+      "install": "lerna run install",
+      "test": "jest",
+      "prepareContainer": "./scripts/prepare_container.sh",
+      "testLocalUI": "echo \"Check your browser for port 5000\" && npx serve packages/oi4-local-ui/build -s",
+      "buildLocalUI": "cd ./packages/oi4-local-ui && npm run build",
+      "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6",
+      "docker:build": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} .",
+      "docker:build:local": "yarn run prepareContainer && docker build -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:latest .",
+      "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:aas-snapshot .",
+  
+      "serveLocalUI": "cd ./packages/oi4-local-ui && serve build/",
+      "buildAll": "cd ./packages/oi4-local-ui && npm run build && cd ../packages/oi4-registry-service && npm run tsc && cd ..",
+      "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
+    },
+    "engines": {
+      "node": ">=18.0.0 <20.0.0",
+      "yarn": ">=1.22.0 <2"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
