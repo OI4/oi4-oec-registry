@@ -1,15 +1,15 @@
 {
-  "Manufacturer":{"Locale":"en-US","Text":"Open Industry 4.0 Community"},
-  "ManufacturerUri":"openindustry4.com",
-  "Model":{"Locale":"en-US","Text":"OEC-Registry"},
-  "ProductCode":"OECREG",
+  "Manufacturer":{"Locale":"en-US","Text":"ACME Corporation"},
+  "ManufacturerUri":"acme.com",
+  "Model":{"Locale":"en-US","Text":"OEC Utility"},
+  "ProductCode":"OEC-ACME-Registry",
   "HardwareRevision":"",
-  "SoftwareRevision":"1.1.0",
+  "SoftwareRevision":"1.1",
   "DeviceRevision":"1",
-  "DeviceManual":"",
+  "DeviceManual":"1.0",
   "DeviceClass":"Oi4.Registry",
   "SerialNumber":"F12AB34",
-  "ProductInstanceUri":"openindustry4.com/OEC-Registry/OECREG/F12AB34",
+  "ProductInstanceUri":"oi4/appid/service",
   "RevisionCounter":0,
   "Description":
   {
