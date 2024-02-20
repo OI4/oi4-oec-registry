@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4registry",
-  "version": "1.1.0-preview.6.aas",
+  "version": "1.1.0-preview.6",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
@@ -37,7 +37,7 @@
     "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
   },
   "engines": {
-    "node": ">=18.0.0 <20.0.0",
+    "node": ">=20.0.0 <22.0.0",
     "yarn": ">=1.22.0 <2"
   }
 }

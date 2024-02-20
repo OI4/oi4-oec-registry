@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4-local-ui",
-  "version": "1.1.0-preview.6.aas",
+  "version": "1.1.0-preview.6",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
   "private": true,
@@ -18,6 +18,9 @@
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "^4.11.3",
     "@mui/styles": "^5.14.17",
+    "@mui/material": "^5.2.3",
+    "@mui/lab": "^5.0.0-alpha.165",
+    "@emotion/styled": "^11.3.0",
     "cockpit": "^0.1.1",
     "lodash": "^4.17.15",
     "material-table": "^2.0.5",

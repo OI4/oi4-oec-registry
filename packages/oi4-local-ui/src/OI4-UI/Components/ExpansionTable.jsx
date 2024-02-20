@@ -367,7 +367,7 @@ class ExpansionTable extends React.Component {
   displayAASIcon(oi4Id, height = '25', width = '25') {
     const lookup = this.props.assetLookup;
     if ('AAS' in lookup[oi4Id].resources) {
-      return <img src={aas_img} alt="Namur" height={height} width={width} />;
+      return <img src={aas_img} alt="AAS" height={height} width={width} />;
     }
     return '';
   }

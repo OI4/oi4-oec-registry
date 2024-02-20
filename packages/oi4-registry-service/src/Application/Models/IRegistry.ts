@@ -8,7 +8,6 @@ import {
     Profile,
     RTLicense,
     Oi4Identifier,
-    AAS
 } from '@oi4/oi4-oec-service-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 
@@ -51,5 +50,4 @@ export interface IResourceObject {
     Config?: IContainerConfig;
     Profile?: Profile;
     LicenseText?: LicenseText;
-    AAS?: AAS;
 }

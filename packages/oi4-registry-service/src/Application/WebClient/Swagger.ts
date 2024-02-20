@@ -1,7 +1,6 @@
 import express = require('express');
 import swaggerUi from 'swagger-ui-express';
 
-
 export class Swagger
 {
     private readonly _client: express.Application;

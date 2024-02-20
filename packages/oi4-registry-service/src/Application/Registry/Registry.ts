@@ -28,7 +28,6 @@ import {
     ServiceTypes,
     SubscriptionList,
     SubscriptionListConfig,
-    AAS
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
 import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
@@ -320,9 +319,9 @@ export class Registry extends EventEmitter {
             case Resources.PROFILE:
                 await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.Profile = Profile.clone(m.Payload)));
                 break;
-            case Resources.AAS:
-                await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.AAS = AAS.clone(m.Payload)));
-                break;
+            // case Resources.AAS:
+            //     await Registry.processMessage(networkMessage, (m) => this.updateResource(m, (r) => r.AAS = AAS.clone(m.Payload)));
+            //     break;
             default:
                 this.logger.log(`${topicInfo.resource} not supported and will be skipped`, ESyslogEventFilter.informational);
                 break;
@@ -533,7 +532,8 @@ export class Registry extends EventEmitter {
                 config: undefined,
                 publicationList: undefined,
                 subscriptionList: undefined,
-                aas: undefined
+                referenceDesignation: undefined,
+                //aas: undefined
             };
 
             this.applicationResources.addSource(source);
