@@ -144,6 +144,13 @@ class ExpansionTableDetail extends React.Component {
             </Paper>
             {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
           </Grid>
+          <Grid item xs>
+            <h3>Asset Administration Shell AAS:</h3>
+            <Paper className={classes.paper}>
+              {this.detailedAASViewer(this.props.getResourceObject(this.props.oi4Id, 'AAS'))}
+            </Paper>
+            {this.displayOrigin(this.props.lookupType, this.props.oi4Id, classes)}
+          </Grid>
         </Grid>
     );
   }
@@ -197,6 +204,19 @@ class ExpansionTableDetail extends React.Component {
   }
 
   /**
+   * Displayed the entire health object in human readable form
+   * @param {object} aasObject - The AAS object that is to be converted
+   * @returns The AAS in human readable form
+   * @memberof ExpansionTableDetail
+   */
+  detailedAASViewer(aasObject) {
+    return <div>
+      <div><span style={{ fontWeight: 'bold' }}>AAS ID: </span>{aasObject.AASId}</div>
+      <div><span style={{ fontWeight: 'bold' }}>Global Asset ID: </span>{aasObject.GlobalAssetId}</div>
+    </div>;
+  }
+
+  /**
    * Displays a JSON-Object in a relatively simple manner by recursing over the object
    * @param {object} jsonObject - the object that is to be displayed
    * @param {number} idx - the depthLevel that we are displaying with the viewer
@@ -215,7 +235,7 @@ class ExpansionTableDetail extends React.Component {
         if (typeof jsonObject[keys] === 'object' && jsonObject[keys] !== null) {
           return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {this.ownJsonViewer(jsonObject[keys], idx + 1)}</div>;
         } else {
-          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: {'Test'}</div>;
+          return <div key={`JsonViewer-${keys}`} style={{ marginLeft: `${(idx + 5).toString()}%` }}><span style={{ fontWeight: 'bold' }}>{keys}</span>: Test</div>;
         }
       });
     } else {

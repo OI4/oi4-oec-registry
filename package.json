@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4registry",
-  "version": "1.1.0-preview.5",
+  "version": "1.1.0-preview.6",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
@@ -30,14 +30,14 @@
     "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6",
     "docker:build": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} .",
     "docker:build:local": "yarn run prepareContainer && docker build -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:latest .",
-    "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:snapshot .",
+    "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:aas-snapshot .",
 
     "serveLocalUI": "cd ./packages/oi4-local-ui && serve build/",
     "buildAll": "cd ./packages/oi4-local-ui && npm run build && cd ../packages/oi4-registry-service && npm run tsc && cd ..",
     "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
   },
   "engines": {
-    "node": ">=16.0.0 <18.0.0",
+    "node": ">=20.0.0 <22.0.0",
     "yarn": ">=1.22.0 <2"
   }
 }

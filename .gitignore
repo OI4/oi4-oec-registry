@@ -17,5 +17,7 @@ out/**/*
 /.idea/
 /packages/oi4-service-node/.idea/
 
+# Other
 /work/
 /oi4-oec-dnp-encoding/
+/docker_configs/

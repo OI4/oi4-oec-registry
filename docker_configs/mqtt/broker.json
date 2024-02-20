@@ -1,4 +1,4 @@
 {
-  "address": "192.168.178.46",
-  "secure_port": 8883
+  "Address": "127.0.0.1",
+  "SecurePort": 8883
 }

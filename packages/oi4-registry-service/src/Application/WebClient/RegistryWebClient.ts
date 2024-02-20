@@ -2,7 +2,7 @@ import mqtt = require('async-mqtt');
 import {Oi4WebClient} from './Oi4WebClient';
 import {Registry} from '../Registry/Registry';
 import {MqttSettings, IOI4Application} from '@oi4/oi4-oec-service-node';
-import {Application, Oi4Identifier} from '@oi4/oi4-oec-service-model';
+import {profileApplication, Oi4Identifier} from '@oi4/oi4-oec-service-model';
 import {ConformityValidator, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import { RegistryResources } from '../RegistryResources';
 import { IAsset } from '../Models/IRegistry';
@@ -138,7 +138,7 @@ export class RegistryWebClient extends Oi4WebClient {
             let conformityObject: IConformity = ConformityValidator.initializeValidityObject();
             try {
                 const oi4Id = this.parseIdentifier(conformityReq.params.oi4Id);
-                conformityObject = await registry.updateConformityInDevice(oi4Id, Application.full);
+                conformityObject = await registry.updateConformityInDevice(oi4Id, profileApplication.full);
             } catch (err) {
                 console.log(`Got error in conformity REST request: ${err}`);
             }
@@ -175,7 +175,7 @@ export class RegistryWebClient extends Oi4WebClient {
         }
     }
 
-    private static convert(assets: IAsset[]): {} {
+    private static convert(assets: IAsset[]): object {
         if (assets.length === 0) {
             return {};
         }

@@ -7,7 +7,7 @@ import {
     MasterAssetModel,
     Profile,
     RTLicense,
-    Oi4Identifier
+    Oi4Identifier,
 } from '@oi4/oi4-oec-service-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 
