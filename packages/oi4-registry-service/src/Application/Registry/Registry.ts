@@ -577,7 +577,7 @@ export class Registry extends EventEmitter {
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/LicenseText/#`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Config/${oi4Id}`);
         this.ownSubscribe(`${newAsset.topicPreamble}/Pub/Profile/${oi4Id}`);
-        this.ownSubscribe(`${newAsset.topicPreamble}/Pub/AAS/${oi4Id}`);
+        //this.ownSubscribe(`${newAsset.topicPreamble}/Pub/AAS/${oi4Id}`);
 
         newAsset.conformityObject = await this.conformityValidator.checkConformity(assetType, newAsset.topicPreamble, oi4Id);
 

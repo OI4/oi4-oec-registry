@@ -3,7 +3,7 @@
   "version": "1.1.0-preview.6",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
-  "private": true,
+  "private": false,
   "keywords": [
     "oi4",
     "oec",
@@ -12,6 +12,9 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:OI4/oi4-conformity-validator-base.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
