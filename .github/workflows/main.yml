@@ -31,7 +31,6 @@ jobs:
       #- name: test
       #  run: npm test
       # Publish to github docker repo if this version is not published
-      - name: publish
       - name: Prepare Docker build
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
