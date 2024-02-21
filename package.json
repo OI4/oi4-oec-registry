@@ -19,7 +19,6 @@
     "lerna": "^7.1.5"
   },
   "scripts": {
-    "bootstrap": "lerna bootstrap",
     "clean": "lerna clean",
     "build": "lerna run build",
     "install": "lerna run install",

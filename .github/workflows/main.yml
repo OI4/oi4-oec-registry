@@ -23,20 +23,15 @@ jobs:
       - name: install
         run: |
           yarn install
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       # Build packages
       - name: build
         run: |
           yarn build
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       # No test so far -> skip them for now
       #- name: test
       #  run: npm test
       # Publish to github docker repo if this version is not published
       - name: publish
-        run: export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       - name: Prepare Docker build
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
