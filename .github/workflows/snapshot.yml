@@ -16,35 +16,30 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          registry-url: 'https://npm.pkg.github.com'
       - name: install
         run: |
           yarn install
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       # Build packages
       - name: build
         run: |
           yarn build
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
       # No test so far -> skip them for now
       #- name: test
       #  run: npm test
-      # Publish to github docker repo if this version is not published
-      - name: publish
-        run: export PACKAGES_AUTH_TOKEN=${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}
+      # Publish to Docker Hub if this version is not published
       - name: Prepare Docker build
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
           npm run docker:prepare
           docker buildx inspect --bootstrap
       - name: Docker Login
-        run: echo ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker Build & Push
+        uses: docker/build-push-action@v5
         run: npm run docker:build:snapshot
-        env:
-          PACKAGES_AUTH_TOKEN: ${{ secrets.OI4_REGISTRY_GITHUB_ACTION }}

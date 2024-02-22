@@ -114,3 +114,5 @@ out
 .DS_Store
 ./prepare.sh
 */coverage
+/build/
+/docker_configs/

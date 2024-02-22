@@ -32,7 +32,7 @@
     "docker:prepare": "docker buildx create --name oi4-builder --driver docker-container --use --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6",
     "docker:build": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} .",
     "docker:build:local": "yarn run prepareContainer && docker build -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:latest .",
-    "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t ghcr.io/oi4/oi4-oec-registry:${npm_package_version} -t ghcr.io/oi4/oi4-oec-registry:aas-snapshot .",
+    "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t docker.io/oi4/oi4-oec-registry:${npm_package_version} .",
 
     "serveLocalUI": "cd ./packages/oi4-local-ui && serve build/",
     "buildAll": "cd ./packages/oi4-local-ui && npm run build && cd ../packages/oi4-registry-service && npm run tsc && cd ..",
