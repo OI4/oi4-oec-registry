@@ -55,7 +55,7 @@ export class StartupConfig {
             try {
                 mkdirSync(configFolder, {recursive: true});
 
-                const templatePath = path.join(__dirname, 'Resources', 'config');
+                const templatePath = path.join(__dirname, 'Resources', 'config.json');
                 copyFileSync(templatePath, configFile);
             } catch (err) {
                 console.error(err);
