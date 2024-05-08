@@ -15,7 +15,6 @@ COPY ./build/etc ./
 
 WORKDIR /usr
 COPY ./build/container ./
-RUN ls /etc -R
 
 WORKDIR /usr/packages/oi4-registry-service
 
