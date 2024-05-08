@@ -1,8 +1,8 @@
 {
-  "Manufacturer":{"Locale":"en-US","Text":"ACME Corporation"},
-  "ManufacturerUri":"acme.com",
+  "Manufacturer":{"Locale":"en-US","Text":"Open Industry 4.0 Alliance Community"},
+  "ManufacturerUri":"openindustry4.com",
   "Model":{"Locale":"en-US","Text":"OEC Utility"},
-  "ProductCode":"OEC-ACME-Registry",
+  "ProductCode":"OEC-Registry",
   "HardwareRevision":"",
   "SoftwareRevision":"1.1",
   "DeviceRevision":"1",

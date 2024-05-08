@@ -10,6 +10,9 @@ RUN apk add --update openssl && rm -rf /var/cache/apk/*
 ENV UI_SRC_PATH=/usr/packages/oi4-local-ui/build
 
 # -------COPY resources
+WORKDIR /etc
+COPY ./build/etc ./
+
 WORKDIR /usr
 COPY ./build/container ./
 RUN ls /etc -R
