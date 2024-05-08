@@ -12,7 +12,6 @@ ENV UI_SRC_PATH=/usr/packages/oi4-local-ui/build
 # -------COPY resources
 WORKDIR /usr
 COPY ./build/container ./
-RUN ls /usr -R
 
 WORKDIR /usr/packages/oi4-registry-service
 
