@@ -5,6 +5,7 @@ mkdir -p ./build/container/packages/oi4-local-ui
 mkdir -p ./build/container/packages/oi4-registry-service
 mkdir -p ./build/container/packages/oi4-registry-service/scripts
 mkdir -p ./build/etc/oi4/config
+mkdir -p ./build/etc/oi4/app
 
 echo "***************************"
 echo "**  Init parent package  **"
