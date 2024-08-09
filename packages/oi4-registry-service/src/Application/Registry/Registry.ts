@@ -333,6 +333,11 @@ export class Registry extends EventEmitter {
 
         for (const dataSetMessage of input.Messages) {
 
+            const source = dataSetMessage.Source
+            if (source !== undefined && typeof  source === 'string') {
+                dataSetMessage.Source = Oi4Identifier.fromString(source);
+            }
+
             if (typeof dataSetMessage.Payload.Page !== 'undefined') { // found pagination
                 paginationPub =
                     {
@@ -442,6 +447,7 @@ export class Registry extends EventEmitter {
 
         await Registry.processMessage(networkMessage, async (m) => {
                 const oi4Id = m.Source;
+                const oi4IdString = oi4Id.toString()
                 this.logger.log(`Got Health from ${oi4Id}.`);
 
                 const health = Health.clone(m.Payload);
@@ -449,13 +455,13 @@ export class Registry extends EventEmitter {
                 if (this.assetLookup.has(oi4Id)) {
                     this.logger.log(`Resetting timeout from health for oi4Id: ${oi4Id}`, ESyslogEventFilter.warning);
                     // This timeout will be called regardless of enable-setting. Every 60 seconds we need to manually poll health
-                    clearTimeout(this.timeoutLookup[oi4Id.toString()]);
+                    clearTimeout(this.timeoutLookup[oi4IdString]);
 
                     if (health.Health === EDeviceHealth.FAILURE_1 && health.HealthScore === 0) {
                         this.logger.log(`Kill-Message detected in Asset: ${oi4Id}, setting availability to false.`, ESyslogEventFilter.warning);
                         await this.removeDevice(oi4Id);
                     } else {
-                        this.timeoutLookup[oi4Id.toString()] = setTimeout(() => this.resourceTimeout(oi4Id), 65000);
+                        this.timeoutLookup[oi4IdString] = setTimeout(() => this.resourceTimeout(oi4Id), 65000);
 
                         const asset = this.assetLookup.get(oi4Id);
                         asset.lastMessage = new Date().toISOString();
@@ -466,7 +472,7 @@ export class Registry extends EventEmitter {
                     if (topicInfo.appId === this.oi4Id) return;
 
                     const networkMessage = this.builder.buildOPCUANetworkMessage([], new Date, DataSetClassIds[Resources.MAM]);
-                    const topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/MAM/${oi4Id}`;
+                    const topic = `Oi4/${topicInfo.serviceType}/${topicInfo.appId}/Get/MAM/${oi4IdString}`;
                     await this.client.publish(topic, JSON.stringify(networkMessage));
                     this.logger.log(`Got a health from unknown Asset, requesting mam on ${topic}`, ESyslogEventFilter.debug);
                 }
