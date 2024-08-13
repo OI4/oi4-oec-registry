@@ -30,7 +30,7 @@ import {
     SubscriptionListConfig,
 } from '@oi4/oi4-oec-service-model';
 import {Logger} from '@oi4/oi4-oec-service-logger';
-import {FileLogger, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
+import {FileLogger, oi4Namespace, TopicInfo, TopicParser} from '@oi4/oi4-oec-service-node';
 import {ConformityValidator, EValidity, IConformity} from '@oi4/oi4-oec-service-conformity-validator';
 import {IAsset, IAssetEvent, IResourceObject} from '../Models/IRegistry';
 import {ELogType, ISettings} from '../Models/ISettings';
@@ -370,7 +370,7 @@ export class Registry extends EventEmitter {
     private async requestNextPage(pagination: PaginationPub, topicInfo: TopicInfo): Promise<void> {
 
         const paginationGet = {
-            perPage: pagination.PerPage, // get same amout of data
+            perPage: pagination.PerPage, // get same amount of data
             page: ++pagination.Page // get next page
         };
 
@@ -555,7 +555,7 @@ export class Registry extends EventEmitter {
             resources: {
                 MAM: masterAssetModel,
             },
-            topicPreamble: `Oi4/${topicInfo.serviceType}/${topicInfo.appId}`,
+            topicPreamble: `${oi4Namespace}/${topicInfo.serviceType}/${topicInfo.appId}`,
             conformityObject: {
                 oi4Id: EValidity.default,
                 validity: EValidity.default,
