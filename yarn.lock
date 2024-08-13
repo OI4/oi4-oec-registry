@@ -2571,51 +2571,53 @@
   dependencies:
     "@octokit/openapi-types" "^18.0.0"
 
-"@oi4/oi4-oec-dnp-encoding@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-dnp-encoding/-/oi4-oec-dnp-encoding-1.1.0-preview.12.tgz#42fad55b082867c7ec580f69ae666c59ee9e403c"
-  integrity sha512-e1gyS7q0rAZf00Im/V86xuJ+77tsipMIBFdMxp8qk9bH4uGERi6ID/iARboaUZbvhSSsyonTMsFx55bXJi1cvQ==
+"@oi4/oi4-oec-dnp-encoding@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-dnp-encoding/-/oi4-oec-dnp-encoding-1.1.0-preview.13.tgz#716193db1c1a87eba12a25d92813b2ccdff16431"
+  integrity sha512-eaUY8aBOKOEi47iYON3oTNcyyV15prVdJAbI4tuFVkhLtDAgnzUuV/RV2cIPSaGAu38g6S471dyL0u+4AqDswA==
 
-"@oi4/oi4-oec-json-schemas@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-json-schemas/-/oi4-oec-json-schemas-1.1.0-preview.12.tgz#4df8425ff31e437c575c379437fa088e4bb473a1"
-  integrity sha512-a4Y1C1R+rD+GpDERxMwlitjEdbp3iXap5eYq9jO3PNLYkBVHWa5XbxlYxssBJjkVXmLtn/b1MHDd6jFnvbwSOw==
+"@oi4/oi4-oec-json-schemas@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-json-schemas/-/oi4-oec-json-schemas-1.1.0-preview.13.tgz#794bb85690335d9aa390928fdd785724ae01db69"
+  integrity sha512-AvSAB8po7rBF+d+eOeqUgZnU1isjYTfjSHwqxkjdVy0UBkrFrgba2zQrEozXbWLKd8fPkV4JaBxkhy7tyZdHhQ==
 
-"@oi4/oi4-oec-service-conformity-validator@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-conformity-validator/-/oi4-oec-service-conformity-validator-1.1.0-preview.12.tgz#004875c9867e641bf53e35939e30fdb66ac1cd3d"
-  integrity sha512-6t3FkUMmt+OrOeGh5q051apVXkTU9ZG3G9YnT9WQokIEClUTH2WRGIptw+311jKEzeLSAJbJDkpPQWFhxrrhuQ==
+"@oi4/oi4-oec-service-conformity-validator@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-conformity-validator/-/oi4-oec-service-conformity-validator-1.1.0-preview.13.tgz#0e958f2e4aee692defd6438440a528a19ae0f46e"
+  integrity sha512-DkO1n5yS2s6wxJE7s79Hj0SKsQkLJyG64gsRebf4/ym3tcdxw+uBoRIqm+ruOIqfKkMzJ30n4Gg5MTWrpM3Ciw==
   dependencies:
-    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.12"
+    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.13"
     async-mqtt "^2.5.0"
 
-"@oi4/oi4-oec-service-logger@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-logger/-/oi4-oec-service-logger-1.1.0-preview.12.tgz#50dcda032b60ae913d153d854d101526134dd149"
-  integrity sha512-GoVbM8k3xdPbRo2zff+OZ2YMNY5XAtjckjaRZ2kUh1/YVeNFd+bPccGl8rlybOTivVg3FqngzXcRi3W9l+RPHQ==
+"@oi4/oi4-oec-service-logger@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-logger/-/oi4-oec-service-logger-1.1.0-preview.13.tgz#26a0a55f05fbb6e13c10b182e7a2a23441e9dc39"
+  integrity sha512-r7Xxox8KJxhHIopWmiiGttWqsRdID2kEIJBfX55srcqEcm35TE/p8kbI5NWmxL8TRP+sDrTqTuruSjNOwlzXyg==
   dependencies:
-    "@oi4/oi4-oec-service-model" "^1.1.0-preview.12"
+    "@oi4/oi4-oec-service-model" "^1.1.0-preview.13"
     async-mqtt "^2.5.0"
     uuid "^9.0.1"
     winston "^3.10.0"
     winston-syslog "^2.7.0"
 
-"@oi4/oi4-oec-service-model@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-model/-/oi4-oec-service-model-1.1.0-preview.12.tgz#acf324aa51fbe3662f5e1d6f72b5ed801a387d91"
-  integrity sha512-hj3Mc2FqkJ1TMFsX2s1PBhgax2GwrP9a51UQpc3LzoSt30rO5Ah6aGkk0m7z5XUBllalxFf0qbEtM+iQv/Kpsw==
+"@oi4/oi4-oec-service-model@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-model/-/oi4-oec-service-model-1.1.0-preview.13.tgz#603369455dbc8b1d6a0969863842526c54d2ad1a"
+  integrity sha512-NqmAKXge2fIvQO8Co/Ula4LNWBBgFteMqGzQg3F7FYl8sRT0gK4RZtb+LYOv7eFmx6LAdR0e/TX9UttOHb92FQ==
   dependencies:
-    "@oi4/oi4-oec-dnp-encoding" "^1.1.0-preview.12"
-    "@oi4/oi4-oec-json-schemas" "^1.1.0-preview.12"
+    "@oi4/oi4-oec-dnp-encoding" "^1.1.0-preview.13"
+    "@oi4/oi4-oec-json-schemas" "^1.1.0-preview.13"
+    ajv "^8.12.0"
+    ajv-formats "^2.1.1"
 
-"@oi4/oi4-oec-service-node@^1.1.0-preview.12":
-  version "1.1.0-preview.12"
-  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-node/-/oi4-oec-service-node-1.1.0-preview.12.tgz#c602565aa5467e8f86a814dccfd36f303819da03"
-  integrity sha512-sLLKcKSmkK6lVNvqSFJA1ty56hbIuaZXtofJQrXB2f5n7UBU1nlgSnokmQyyJo7qQ0txIw3vaIzKZuFtvsMVOw==
+"@oi4/oi4-oec-service-node@^1.1.0-preview.13":
+  version "1.1.0-preview.13"
+  resolved "https://registry.yarnpkg.com/@oi4/oi4-oec-service-node/-/oi4-oec-service-node-1.1.0-preview.13.tgz#c65c1654419380abb24e63f0b74db2334a52c30d"
+  integrity sha512-SWcjhrN69U0XdKVjC7TH+wHg5Q3VGgODcHIC9XGFT4V9tDbD9LU9fdmu1Oq5wkTlV3WikVOellv2Fr519TEaLg==
   dependencies:
-    "@oi4/oi4-oec-service-conformity-validator" "^1.1.0-preview.12"
-    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.12"
-    "@oi4/oi4-oec-service-model" "^1.1.0-preview.12"
+    "@oi4/oi4-oec-service-conformity-validator" "^1.1.0-preview.13"
+    "@oi4/oi4-oec-service-logger" "^1.1.0-preview.13"
+    "@oi4/oi4-oec-service-model" "^1.1.0-preview.13"
     cors "^2.8.5"
     dotenv "^16.3.1"
 
