@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { withStyles } from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/core/styles';
 
 import aas_img from '../Images/OI4_AAS_logo.png';
 import namur_normal_0 from '../Images/namur_normal_0.png';
@@ -14,32 +14,25 @@ import PropTypes from 'prop-types';
 import MaterialTable from 'material-table';
 
 import {
-  Typography,
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Collapse,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Collapse,
-  IconButton,
   TextField,
-  InputAdornment,
-  Grid,
-  Snackbar,
   Tooltip,
+  Typography,
 } from '@material-ui/core';
 
-import {
-  ExpandMore,
-  ExpandLess,
-  Delete,
-  Search,
-  FileCopy,
-  Close,
-} from '@material-ui/icons';
+import {Close, Delete, ExpandLess, ExpandMore, FileCopy, Search,} from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail.jsx';
 
@@ -86,7 +79,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Main render method of the ExpansionTable
-   * @memberof OI4Base
    */
   render() {
     const { classes } = this.props;
@@ -96,7 +88,7 @@ class ExpansionTable extends React.Component {
             <AccordionSummary expandIcon={<ExpandMore />}>
               <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
               <TextField
-                  id='filterText'
+                  id={`filterText-${this.props.lookupType}`}
                   value={this.state.filterWord}
                   onChange={this.handleFilterChange.bind(this)}
                   onClick={(ev) => ev.stopPropagation()}
@@ -253,7 +245,7 @@ class ExpansionTable extends React.Component {
   filterAssets() {
     // TODO: This was a bit hard to get back into, maybe it can be simplified
     // Filter assetList to be displayed
-    const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
+    return Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
         .filter((key) => {
           if (this.state.filterWord === '') {
             return true;
@@ -280,7 +272,6 @@ class ExpansionTable extends React.Component {
           obj[key] = this.props.assetLookup[key];
           return obj;
         }, {});
-    return filteredAssets;
   }
 
   /**

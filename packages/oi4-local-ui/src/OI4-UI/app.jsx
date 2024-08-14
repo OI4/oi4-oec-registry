@@ -303,6 +303,7 @@ class OI4Base extends React.Component {
                                     </div>
                                 </div>
                                 <Checkbox
+                                    id={'darkModeSwitch'}
                                     icon={<BrightnessHigh />}
                                     checkedIcon={<Brightness3 />}
                                     checked={this.state.darkActivated}

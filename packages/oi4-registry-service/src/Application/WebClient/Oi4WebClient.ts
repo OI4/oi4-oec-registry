@@ -54,7 +54,7 @@ export class Oi4WebClient extends EventEmitter {
             initRes.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
             initRes.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
             initNext();
-            console.log(initRes);
+            //console.log(initRes);
         });
         this.client.use(cors());
         this.client.use(bodyParser.json());

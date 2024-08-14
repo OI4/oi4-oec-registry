@@ -116,3 +116,4 @@ out
 */coverage
 /build/
 /docker_configs/
+/packages/oi4-registry-service/build/
