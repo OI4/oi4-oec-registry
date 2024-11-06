@@ -12,6 +12,12 @@ The OEC Registry is the first container to start on the bus and monitors onboard
 - (one time) yarn run docker:prepare
 - yarn run docker:build:local
 
+To run the build docker image locally:
+```
+cd docker/configs/oi4-oec-registry
+docker compose up -d
+```
+
 ## Wiki
 Most of the previous entries of this README were moved to the Wiki portion of the Repository ([Click](https://github.com/OI4/oi4-registry/wiki))
 
