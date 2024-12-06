@@ -1,4 +1,4 @@
 {
-  "Address": "oi4-oec-broker",
+  "Address": "localhost",
   "SecurePort": 8883
 }

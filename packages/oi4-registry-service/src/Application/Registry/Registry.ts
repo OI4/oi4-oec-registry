@@ -640,14 +640,14 @@ export class Registry extends EventEmitter {
             this.applicationResources.removeSource(oi4Id);
 
 
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Event/${oi4Id}/#`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Health/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/License/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/RtLicense/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/LicenseText/#`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Config/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/Profile/${oi4Id}`);
-            this.ownUnsubscribe(`${asset.topicPreamble}/Pub/AAS/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.EVENT}/${oi4Id}/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.HEALTH}/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.LICENSE}/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.RT_LICENSE}/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.LICENSE_TEXT}/#`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.CONFIG}/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/${Resources.PROFILE}/${oi4Id}`);
+            this.ownUnsubscribe(`${asset.topicPreamble}/${Methods.PUB}/AAS/${oi4Id}`);
             this.assetLookup.delete(oi4Id);
             // Remove from publicationList
             this.removePublicationBySubResource(oi4Id.toString());
@@ -718,7 +718,7 @@ export class Registry extends EventEmitter {
     async resourceTimeout(oi4Id: Oi4Identifier): Promise<void> {
         if (this.assetLookup.has(oi4Id)) {
             const asset = this.assetLookup.get(oi4Id);
-            const topic = `${asset.topicPreamble}/Get/$Health/${oi4Id}`;
+            const topic = `${asset.topicPreamble}/${Methods.GET}/${Resources.HEALTH}/${oi4Id}`;
             this.logger.log(`Timeout - Get health on ${topic}.`, ESyslogEventFilter.warning);
 
             // remove the device
