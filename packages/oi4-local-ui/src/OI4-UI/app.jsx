@@ -161,7 +161,7 @@ class OI4Base extends React.Component {
             brokerState: false,
             backendState: false,
             brokerStateRaw:  'false',
-            brokerAddressRaw:  this.address,
+            serviceAddressRaw:  this.address,
         };
 
         this.license = '';
@@ -249,12 +249,12 @@ class OI4Base extends React.Component {
         this.activeIntervals.forEach(element => clearInterval(element));
     }
 
-    handleBrokerAddressChange(ev) {
-        this.setState({brokerAddressRaw: ev.target.value});
+    handleServiceAddressChange(ev) {
+        this.setState({serviceAddressRaw: ev.target.value});
     }
 
-    saveMessageBus() {
-        let raw = this.state.brokerAddressRaw;
+    saveServiceAddress() {
+        let raw = this.state.serviceAddressRaw;
         if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
             raw = `https://${raw}`;
         }
@@ -263,7 +263,6 @@ class OI4Base extends React.Component {
         }
 
         this.address = raw;
-        console.log(`Saving MessageBus with value: ${this.address}`);
         fetch = new CommonFetch(this.address);
         this.updateAll();
     }
@@ -324,19 +323,17 @@ class OI4Base extends React.Component {
                                 <div style={{marginRight: '5px'}}>
                                     <Box m={1}>
                                         <TextField
-                                            label="Message Bus"
+                                            label="Service Address"
                                             color="secondary"
-                                            value={this.state.brokerAddressRaw}
-                                            //value={this.state.brokerStateRaw}
-                                            //editable={true}
-                                            onChange={this.handleBrokerAddressChange.bind(this)}
+                                            value={this.state.serviceAddressRaw}
+                                            onChange={this.handleServiceAddressChange.bind(this)}
                                             InputProps={{
                                                 endAdornment: (
                                                     <InputAdornment position="end">
                                                         <IconButton
                                                             edge="end"
                                                             color="secondary"
-                                                            onClick={this.saveMessageBus.bind(this)}>
+                                                            onClick={this.saveServiceAddress.bind(this)}>
                                                             <ArrowCircleRightIcon/>
                                                         </IconButton>
                                                     </InputAdornment>
