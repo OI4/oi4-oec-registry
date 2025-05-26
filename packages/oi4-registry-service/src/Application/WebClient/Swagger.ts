@@ -18,6 +18,11 @@ export class Swagger
             customCss: '.swagger-ui .topbar { display: none }'
         };
 
-        this._client.use('/api', swaggerUi.serveFiles(null, options), swaggerUi.setup(null, options));
+        //this._client.use('/api', swaggerUi.serveFiles(null, options), swaggerUi.setup(null, options));
+        this._client.use(
+            '/api',
+            ...(swaggerUi.serveFiles(null, options) as unknown as express.RequestHandler[]),
+            swaggerUi.setup(null, options)
+        );
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@oi4/oi4registry",
-  "version": "1.1.0-preview.9",
+  "version": "1.1.0-preview.10",
   "description": "A registry that keeps track of all running Open Industry 4.0 Alliance application",
   "author": "Open Industry 4.0 Alliance - Community",
   "license": "MIT",
@@ -14,12 +14,12 @@
     "access": "public"
   },
   "dependencies": {
-    "http-server": "^14.1.1",
-    "ajv": "^8.12.0"
+    "ajv": "^8.12.0",
+    "http-server": "^14.1.1"
   },
   "devDependencies": {
     "dotenv": "^16.0.0",
-    "lerna": "^7.1.5"
+    "lerna": "^8.2.2"
   },
   "scripts": {
     "clean": "lerna clean",
@@ -33,13 +33,13 @@
     "docker:build": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t docker.io/oi4a/oi4-oec-registry:${npm_package_version} .",
     "docker:build:local": "yarn run prepareContainer && docker build -t docker.io/oi4a/oi4-oec-registry:${npm_package_version} -t docker.io/oi4a/oi4-oec-registry:latest .",
     "docker:build:snapshot": "yarn run prepareContainer && docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 -t docker.io/oi4a/oi4-oec-registry:${npm_package_version} -t docker.io/oi4a/oi4-oec-registry:latest .",
-
     "serveLocalUI": "cd ./packages/oi4-local-ui && serve build/",
     "buildAll": "cd ./packages/oi4-local-ui && npm run build && cd ../packages/oi4-registry-service && npm run tsc && cd ..",
     "installAll": "cd ./packages/oi4-local-ui && npm install && cd ../oi4-registry-service && npm install && cd .."
   },
   "engines": {
-    "node": ">=20.0.0 <22.0.0",
-    "yarn": ">=1.22.0 <2"
-  }
+    "node": ">=22.0.0 <25.0.0",
+    "yarn": ">=4 <5"
+  },
+  "packageManager": "yarn@4.9.1"
 }

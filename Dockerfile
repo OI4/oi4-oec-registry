@@ -1,4 +1,4 @@
-FROM node:20-alpine as build_base
+FROM node:20-alpine AS build_base
 
 # -------INSTALL OPENSSL
 RUN apk add --update openssl && rm -rf /var/cache/apk/*
