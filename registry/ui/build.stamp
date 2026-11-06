@@ -1,0 +1,30 @@
+# The build stamp of the Registry Web UI (ADR-0029 §10): sha256 of every
+# input and of every built file. Written by ui/build.sh after
+# `npm ci --ignore-scripts && npm run build`, do not edit:
+#   go run ./internal/uipolicy/cmd/uigen (from oec/registry)
+# The gate recomputes it: changed inputs without a new dist/ fail.
+705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da  .gitattributes
+09c4a11b13c942f6a64860240a7677202b7871850f7372c7bbccc9836369461f  .npmrc
+b55e0e462de465f8ba78f0600fe2ff8ef0f51f436bf0269c7fb612b1f8dc41ba  build.sh
+b96ed334e2ddfec8fcbe6fa379290b4981dfe375dad78c5733d34a864479e64b  index.html
+3b6b3216f80d85c997a48da117d657dfad57b9d90a713ea3b4772babdcbfca77  package-lock.json
+e3e1b5bcc5c12f953c0f49f8b5967bc5715fd3c2216efdf65921dcffd92cea64  package.json
+fc6b4e524019ebd1602235b4a098742c78005e61c7748d0c497f5d6e18a3d6d9  public/favicon.svg
+bdab242ea41a571b2873ab0dbad97da374b567a96d7ce96a042440beb3bf1fbc  src/App.tsx
+de5fadb592843c4ca669cfcfdf8127e39694e93c2f93316ac7d65ca8a9be87fd  src/AssetDetail.tsx
+399d6b3a3da428cd0f01df04978d041abf160aba22b1dff503d0660d20b675bc  src/AssetTable.tsx
+8db445f43d834f9409f4ffd95c3103a0e9e7f54d49844cadc37046170bb790b6  src/EventList.tsx
+c3c8ec9cfcf521ccc453efb39e11689e157e6c51e1d0644a9dba336b437dd555  src/HealthChart.tsx
+1c71705ef7b79cc3840d6932021558dc105157d109e7c4e5d5b744c4b1cde1a5  src/api.ts
+c081ebb3d2fad1116b8bf7506f936c8f5187b18903747e60785139ec32667831  src/env.d.ts
+4e4e58530159d6b62483d8731d51b17108da226c036da78202f5fd27a36627c8  src/format.ts
+04a0b443cfd5c98705b8c775b5d399cbb610332d1b9e331d8d14ab25d157c5c1  src/live.ts
+a0b7e38c498ecaeaa380e72e173a8e05b72e214a651708f0d2afad895a080b22  src/main.tsx
+df8bd511f75bcb5fb35ed2bfdf975fec189fbbc68a471b6e9060ace535e1396f  src/parts.tsx
+d78421d482c27e970da8b7d518cdbafe815b86ee550bfac7d470fdd16a13cdc5  src/style.css
+17f5d4959aa0d4b0307393b3b2628b58d20a35283adf55aaedb74c9b7ca5e82a  tsconfig.json
+b9e8ec22ba4d116d93813530b2369da9256ee77da93df6b57a81814e70f0af2c  vite.config.mjs
+c323c996bada85efac77fe2ec337a740e960546452567bc3c366d47f6edc329d  dist/assets/index-BmcCRV2R.js
+da54eace08ad95ddaed6b8c7375d48c63c82a9c727f8d50b84a60f582884f125  dist/assets/style-CVsI0Mdg.css
+fc6b4e524019ebd1602235b4a098742c78005e61c7748d0c497f5d6e18a3d6d9  dist/favicon.svg
+9fd5e05b74006756e2ca70f2d74b0235df1f0e3e6ee05fc48a061675991903bb  dist/index.html

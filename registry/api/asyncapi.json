@@ -1,0 +1,2839 @@
+{
+  "asyncapi": "3.1.0",
+  "id": "urn:oi4:oec:registry",
+  "info": {
+    "title": "OEC Registry – MQTT interface",
+    "version": "0.1.0",
+    "description": "The MQTT interface of the OEC Registry D5 (ADR-0029 §8): the Registry services of MG A1 (REQ-REG-002), the interface of an application of Messaging Level 3 served by the SDK on its own AppId (its lifecycle MG 6.3, Get of every resource, Set and Del of the writable ones, its own Config `registry`, a persistent ReferenceDesignation, Call/NewDataSetWriterId) and the subscriptions and read-only Get requests it uses to collect the MAM, Health, Profile, Events, PublicationList and SubscriptionList of the participants (REQ-REG-001, ADR-0008, ADR-0029 §4). Increment 2 (C-087). Payloads are the NetworkMessages of the OEC JSON Schema D1, referenced by their $id.",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit"
+    },
+    "externalDocs": {
+      "description": "OEC Messaging Guideline, Annex A1 OEC Registry",
+      "url": "https://github.com/OI4/oi4-oec-documentation"
+    }
+  },
+  "defaultContentType": "application/json",
+  "servers": {
+    "broker": {
+      "host": "{broker}:8883",
+      "protocol": "secure-mqtt",
+      "protocolVersion": "3.1.1",
+      "description": "The Message Bus of the OEC platform; address and port from broker.json (RIG 4.1.1, MG 6.2.2), TLS, QoS and retain as in MG 6.3.",
+      "variables": {
+        "broker": {
+          "description": "Address of the broker (DNS name or IP address of broker.json)."
+        }
+      }
+    }
+  },
+  "channels": {
+    "pubMam": {
+      "address": "Oi4v2/Registry/{appId}/Pub/MAM",
+      "description": "The MAM of the registry itself (MG 9.1.1) and of the available assets (MG A1): its Birth, heartbeat or change without ReplyTo, the answers to Get/MAM with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubMam": {
+          "$ref": "#/components/messages/pubMam"
+        }
+      }
+    },
+    "pubMamSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/MAM/{source}",
+      "description": "The MAM of the registry itself (MG 9.1.1) and of the available assets (MG A1): its Birth, heartbeat or change without ReplyTo, the answers to Get/MAM/<Source> with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubMam": {
+          "$ref": "#/components/messages/pubMam"
+        }
+      }
+    },
+    "pubHealth": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Health",
+      "description": "The Health of the registry itself (MG 9.1.2) and of the available assets (MG A1): its Birth, heartbeat or change without ReplyTo, the answers to Get/Health with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubHealth": {
+          "$ref": "#/components/messages/pubHealth"
+        }
+      }
+    },
+    "pubHealthSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Health/{source}",
+      "description": "The Health of the registry itself (MG 9.1.2) and of the available assets (MG A1): its Birth, heartbeat or change without ReplyTo, the answers to Get/Health/<Source> with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubHealth": {
+          "$ref": "#/components/messages/pubHealth"
+        }
+      }
+    },
+    "pubConfig": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Config",
+      "description": "The Config of the registry (MG 9.1.3): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubConfig": {
+          "$ref": "#/components/messages/pubConfig"
+        }
+      }
+    },
+    "pubConfigSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Config/{source}",
+      "description": "The Config of the registry (MG 9.1.3): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubConfig": {
+          "$ref": "#/components/messages/pubConfig"
+        }
+      }
+    },
+    "pubConfigSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Config/{source}/{filter}",
+      "description": "The Config of the registry (MG 9.1.3): published by the SDK, and the answers to Get with ReplyTo – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the context name of the Config DataSet (MG 7.3, REQ-RES-CONFIG-015), topic-encoded."
+        }
+      },
+      "messages": {
+        "pubConfig": {
+          "$ref": "#/components/messages/pubConfig"
+        }
+      }
+    },
+    "pubData": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Data",
+      "description": "The Data of the registry (MG 9.1.4): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
+        }
+      }
+    },
+    "pubDataSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Data/{source}",
+      "description": "The Data of the registry (MG 9.1.4): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
+        }
+      }
+    },
+    "pubDataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Data/{source}/{filter}",
+      "description": "The Data of the registry (MG 9.1.4): published by the SDK, and the answers to Get with ReplyTo – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
+        }
+      }
+    },
+    "pubMetadataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Metadata/{source}/{filter}",
+      "description": "The Metadata of the registry (MG 9.1.5): published by the SDK, and the answers to Get with ReplyTo – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "pubMetadata": {
+          "$ref": "#/components/messages/pubMetadata"
+        }
+      }
+    },
+    "pubEventSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Event/{source}/{filter}",
+      "description": "The Events of the registry (MG 9.1.6): Status events answering requests and Syslog events of its local log – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the Category of the Event and its further levels, e.g. Status/Good or Syslog/Error (MG 9.1.6); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubEvent": {
+          "$ref": "#/components/messages/pubEvent"
+        }
+      }
+    },
+    "pubProfile": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Profile",
+      "description": "The Profile of the registry (MG 9.1.7): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubProfile": {
+          "$ref": "#/components/messages/pubProfile"
+        }
+      }
+    },
+    "pubProfileSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/Profile/{source}",
+      "description": "The Profile of the registry (MG 9.1.7): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubProfile": {
+          "$ref": "#/components/messages/pubProfile"
+        }
+      }
+    },
+    "pubPublicationList": {
+      "address": "Oi4v2/Registry/{appId}/Pub/PublicationList",
+      "description": "The PublicationList of the registry (MG 9.1.8): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "pubPublicationListSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/PublicationList/{source}",
+      "description": "The PublicationList of the registry (MG 9.1.8): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "pubPublicationListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/PublicationList/{source}/{filter}",
+      "description": "The PublicationList of the registry (MG 9.1.8): published by the SDK, and the answers to Get with ReplyTo – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "pubSubscriptionList": {
+      "address": "Oi4v2/Registry/{appId}/Pub/SubscriptionList",
+      "description": "The SubscriptionList of the registry (MG 9.1.9): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "pubSubscriptionListSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/SubscriptionList/{source}",
+      "description": "The SubscriptionList of the registry (MG 9.1.9): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "pubSubscriptionListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Pub/SubscriptionList/{source}/{filter}",
+      "description": "The SubscriptionList of the registry (MG 9.1.9): published by the SDK, and the answers to Get with ReplyTo – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "pubReferenceDesignation": {
+      "address": "Oi4v2/Registry/{appId}/Pub/ReferenceDesignation",
+      "description": "The ReferenceDesignation of the registry (MG 9.1.10): published by the SDK, and the answers to Get with ReplyTo.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubReferenceDesignation": {
+          "$ref": "#/components/messages/pubReferenceDesignation"
+        }
+      }
+    },
+    "pubReferenceDesignationSource": {
+      "address": "Oi4v2/Registry/{appId}/Pub/ReferenceDesignation/{source}",
+      "description": "The ReferenceDesignation of the registry (MG 9.1.10): published by the SDK, and the answers to Get with ReplyTo – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubReferenceDesignation": {
+          "$ref": "#/components/messages/pubReferenceDesignation"
+        }
+      }
+    },
+    "getMam": {
+      "address": "Oi4v2/Registry/{appId}/Get/MAM",
+      "description": "Registry service: requests the MAM of the registry and of every available asset (MG A1, REQ-REG-002).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getMam": {
+          "$ref": "#/components/messages/getMam"
+        }
+      }
+    },
+    "getMamSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/MAM/{source}",
+      "description": "Registry service: requests the MAM of the registry and of every available asset (MG A1, REQ-REG-002) – of the asset named by the Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getMam": {
+          "$ref": "#/components/messages/getMam"
+        }
+      }
+    },
+    "getHealth": {
+      "address": "Oi4v2/Registry/{appId}/Get/Health",
+      "description": "Registry service: requests the Health of the registry and of every available asset (MG A1, REQ-REG-002).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getHealth": {
+          "$ref": "#/components/messages/getHealth"
+        }
+      }
+    },
+    "getHealthSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/Health/{source}",
+      "description": "Registry service: requests the Health of the registry and of every available asset (MG A1, REQ-REG-002) – of the asset named by the Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getHealth": {
+          "$ref": "#/components/messages/getHealth"
+        }
+      }
+    },
+    "getConfig": {
+      "address": "Oi4v2/Registry/{appId}/Get/Config",
+      "description": "A request to the registry for its Config (MG 9.1.3).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getConfig": {
+          "$ref": "#/components/messages/getConfig"
+        }
+      }
+    },
+    "getConfigSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/Config/{source}",
+      "description": "A request to the registry for its Config (MG 9.1.3) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getConfig": {
+          "$ref": "#/components/messages/getConfig"
+        }
+      }
+    },
+    "getConfigSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Get/Config/{source}/{filter}",
+      "description": "A request to the registry for its Config (MG 9.1.3) – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the context name of the Config DataSet (MG 7.3, REQ-RES-CONFIG-015), topic-encoded."
+        }
+      },
+      "messages": {
+        "getConfig": {
+          "$ref": "#/components/messages/getConfig"
+        }
+      }
+    },
+    "getData": {
+      "address": "Oi4v2/Registry/{appId}/Get/Data",
+      "description": "A request to the registry for its Data (MG 9.1.4).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getData": {
+          "$ref": "#/components/messages/getData"
+        }
+      }
+    },
+    "getDataSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/Data/{source}",
+      "description": "A request to the registry for its Data (MG 9.1.4) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getData": {
+          "$ref": "#/components/messages/getData"
+        }
+      }
+    },
+    "getDataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Get/Data/{source}/{filter}",
+      "description": "A request to the registry for its Data (MG 9.1.4) – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "getData": {
+          "$ref": "#/components/messages/getData"
+        }
+      }
+    },
+    "getMetadataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Get/Metadata/{source}/{filter}",
+      "description": "A request to the registry for its Metadata (MG 9.1.5) – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "getMetadata": {
+          "$ref": "#/components/messages/getMetadata"
+        }
+      }
+    },
+    "getProfile": {
+      "address": "Oi4v2/Registry/{appId}/Get/Profile",
+      "description": "A request to the registry for its Profile (MG 9.1.7).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getProfile": {
+          "$ref": "#/components/messages/getProfile"
+        }
+      }
+    },
+    "getProfileSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/Profile/{source}",
+      "description": "A request to the registry for its Profile (MG 9.1.7) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getProfile": {
+          "$ref": "#/components/messages/getProfile"
+        }
+      }
+    },
+    "getPublicationList": {
+      "address": "Oi4v2/Registry/{appId}/Get/PublicationList",
+      "description": "A request to the registry for its PublicationList (MG 9.1.8).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getPublicationList": {
+          "$ref": "#/components/messages/getPublicationList"
+        }
+      }
+    },
+    "getPublicationListSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/PublicationList/{source}",
+      "description": "A request to the registry for its PublicationList (MG 9.1.8) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getPublicationList": {
+          "$ref": "#/components/messages/getPublicationList"
+        }
+      }
+    },
+    "getPublicationListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Get/PublicationList/{source}/{filter}",
+      "description": "A request to the registry for its PublicationList (MG 9.1.8) – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "getPublicationList": {
+          "$ref": "#/components/messages/getPublicationList"
+        }
+      }
+    },
+    "getSubscriptionList": {
+      "address": "Oi4v2/Registry/{appId}/Get/SubscriptionList",
+      "description": "A request to the registry for its SubscriptionList (MG 9.1.9).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getSubscriptionList": {
+          "$ref": "#/components/messages/getSubscriptionList"
+        }
+      }
+    },
+    "getSubscriptionListSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/SubscriptionList/{source}",
+      "description": "A request to the registry for its SubscriptionList (MG 9.1.9) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getSubscriptionList": {
+          "$ref": "#/components/messages/getSubscriptionList"
+        }
+      }
+    },
+    "getSubscriptionListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Get/SubscriptionList/{source}/{filter}",
+      "description": "A request to the registry for its SubscriptionList (MG 9.1.9) – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "getSubscriptionList": {
+          "$ref": "#/components/messages/getSubscriptionList"
+        }
+      }
+    },
+    "getReferenceDesignation": {
+      "address": "Oi4v2/Registry/{appId}/Get/ReferenceDesignation",
+      "description": "A request to the registry for its ReferenceDesignation (MG 9.1.10).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getReferenceDesignation": {
+          "$ref": "#/components/messages/getReferenceDesignation"
+        }
+      }
+    },
+    "getReferenceDesignationSource": {
+      "address": "Oi4v2/Registry/{appId}/Get/ReferenceDesignation/{source}",
+      "description": "A request to the registry for its ReferenceDesignation (MG 9.1.10) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getReferenceDesignation": {
+          "$ref": "#/components/messages/getReferenceDesignation"
+        }
+      }
+    },
+    "setConfigSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Set/Config/{source}/{filter}",
+      "description": "A request to the registry to write its Config (MG 9.1.3); answered with a Status event and, if accepted, the new content – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the context name of the Config DataSet (MG 7.3, REQ-RES-CONFIG-015), topic-encoded."
+        }
+      },
+      "messages": {
+        "setConfig": {
+          "$ref": "#/components/messages/setConfig"
+        }
+      }
+    },
+    "setDataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Set/Data/{source}/{filter}",
+      "description": "A request to the registry to write its Data (MG 9.1.4); answered with a Status event and, if accepted, the new content – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "setData": {
+          "$ref": "#/components/messages/setData"
+        }
+      }
+    },
+    "setMetadataSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Set/Metadata/{source}/{filter}",
+      "description": "A request to the registry to write its Metadata (MG 9.1.5); answered with a Status event and, if accepted, the new content – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the tag of the Data DataSet (MG 7.3), topic-encoded."
+        }
+      },
+      "messages": {
+        "setMetadata": {
+          "$ref": "#/components/messages/setMetadata"
+        }
+      }
+    },
+    "setPublicationListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Set/PublicationList/{source}/{filter}",
+      "description": "A request to the registry to write its PublicationList (MG 9.1.8); answered with a Status event and, if accepted, the new content – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "setPublicationList": {
+          "$ref": "#/components/messages/setPublicationList"
+        }
+      }
+    },
+    "setSubscriptionListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Set/SubscriptionList/{source}/{filter}",
+      "description": "A request to the registry to write its SubscriptionList (MG 9.1.9); answered with a Status event and, if accepted, the new content – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "setSubscriptionList": {
+          "$ref": "#/components/messages/setSubscriptionList"
+        }
+      }
+    },
+    "setReferenceDesignationSource": {
+      "address": "Oi4v2/Registry/{appId}/Set/ReferenceDesignation/{source}",
+      "description": "A request to the registry to write its ReferenceDesignation (MG 9.1.10); answered with a Status event and, if accepted, the new content – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "setReferenceDesignation": {
+          "$ref": "#/components/messages/setReferenceDesignation"
+        }
+      }
+    },
+    "delSubscriptionListSourceFilter": {
+      "address": "Oi4v2/Registry/{appId}/Del/SubscriptionList/{source}/{filter}",
+      "description": "A request to the registry to delete from its SubscriptionList (MG 9.1.9); answered with a Status event – of one Source and Filter.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "delSubscriptionList": {
+          "$ref": "#/components/messages/delSubscriptionList"
+        }
+      }
+    },
+    "delReferenceDesignationSource": {
+      "address": "Oi4v2/Registry/{appId}/Del/ReferenceDesignation/{source}",
+      "description": "A request to the registry to delete from its ReferenceDesignation (MG 9.1.10); answered with a Status event – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "delReferenceDesignation": {
+          "$ref": "#/components/messages/delReferenceDesignation"
+        }
+      }
+    },
+    "callNewDataSetWriterId": {
+      "address": "Oi4v2/Registry/{appId}/Call/NewDataSetWriterId",
+      "description": "A request of the service NewDataSetWriterId of the registry (MG 9.2.1).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "callNewDataSetWriterId": {
+          "$ref": "#/components/messages/callNewDataSetWriterId"
+        }
+      }
+    },
+    "callNewDataSetWriterIdSource": {
+      "address": "Oi4v2/Registry/{appId}/Call/NewDataSetWriterId/{source}",
+      "description": "A request of the service NewDataSetWriterId of the registry (MG 9.2.1) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "callNewDataSetWriterId": {
+          "$ref": "#/components/messages/callNewDataSetWriterId"
+        }
+      }
+    },
+    "replyNewDataSetWriterId": {
+      "address": "Oi4v2/Registry/{appId}/Reply/NewDataSetWriterId",
+      "description": "The reply of the registry to Call/NewDataSetWriterId (MG 9.2.1).",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "replyNewDataSetWriterId": {
+          "$ref": "#/components/messages/replyNewDataSetWriterId"
+        }
+      }
+    },
+    "replyNewDataSetWriterIdSource": {
+      "address": "Oi4v2/Registry/{appId}/Reply/NewDataSetWriterId/{source}",
+      "description": "The reply of the registry to Call/NewDataSetWriterId (MG 9.2.1) – of one Source.",
+      "parameters": {
+        "appId": {
+          "description": "The AppId: the Identification Link of the OEC Registry itself, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "replyNewDataSetWriterId": {
+          "$ref": "#/components/messages/replyNewDataSetWriterId"
+        }
+      }
+    },
+    "otherPubMam": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/MAM",
+      "description": "The MAM published by any application about itself or a represented asset; a MAM about itself without ReplyTo is its Birth (REQ-REG-001) (subscribed as Oi4v2/+/+/Pub/MAM/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubMam": {
+          "$ref": "#/components/messages/pubMam"
+        }
+      }
+    },
+    "otherPubMamSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/MAM/{source}",
+      "description": "The MAM published by any application about itself or a represented asset; a MAM about itself without ReplyTo is its Birth (REQ-REG-001) (subscribed as Oi4v2/+/+/Pub/MAM/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubMam": {
+          "$ref": "#/components/messages/pubMam"
+        }
+      }
+    },
+    "otherPubHealth": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Health",
+      "description": "The Health published by any application about itself or a represented asset (REQ-REG-001) (subscribed as Oi4v2/+/+/Pub/Health/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubHealth": {
+          "$ref": "#/components/messages/pubHealth"
+        }
+      }
+    },
+    "otherPubHealthSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Health/{source}",
+      "description": "The Health published by any application about itself or a represented asset (REQ-REG-001) (subscribed as Oi4v2/+/+/Pub/Health/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubHealth": {
+          "$ref": "#/components/messages/pubHealth"
+        }
+      }
+    },
+    "otherPubProfile": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Profile",
+      "description": "The Profile of any application or represented asset (ADR-0029 §4: observed Messaging level) (subscribed as Oi4v2/+/+/Pub/Profile/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubProfile": {
+          "$ref": "#/components/messages/pubProfile"
+        }
+      }
+    },
+    "otherPubProfileSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Profile/{source}",
+      "description": "The Profile of any application or represented asset (ADR-0029 §4: observed Messaging level) (subscribed as Oi4v2/+/+/Pub/Profile/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubProfile": {
+          "$ref": "#/components/messages/pubProfile"
+        }
+      }
+    },
+    "otherPubEventSourceFilter": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Event/{source}/{filter}",
+      "description": "The Events of every participant (ADR-0029 §4: the Event trail) (subscribed as Oi4v2/+/+/Pub/Event/#) – of one Source and Filter.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the Category of the Event and its further levels, e.g. Status/Good or Syslog/Error (MG 9.1.6); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubEvent": {
+          "$ref": "#/components/messages/pubEvent"
+        }
+      }
+    },
+    "otherPubPublicationList": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/PublicationList",
+      "description": "The PublicationList of any application (ADR-0029 §4: publisher relation) (subscribed as Oi4v2/+/+/Pub/PublicationList/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "otherPubPublicationListSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/PublicationList/{source}",
+      "description": "The PublicationList of any application (ADR-0029 §4: publisher relation) (subscribed as Oi4v2/+/+/Pub/PublicationList/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "otherPubPublicationListSourceFilter": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/PublicationList/{source}/{filter}",
+      "description": "The PublicationList of any application (ADR-0029 §4: publisher relation) (subscribed as Oi4v2/+/+/Pub/PublicationList/#) – of one Source and Filter.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubPublicationList": {
+          "$ref": "#/components/messages/pubPublicationList"
+        }
+      }
+    },
+    "otherPubSubscriptionList": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/SubscriptionList",
+      "description": "The SubscriptionList of any application (ADR-0029 §4) (subscribed as Oi4v2/+/+/Pub/SubscriptionList/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "otherPubSubscriptionListSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/SubscriptionList/{source}",
+      "description": "The SubscriptionList of any application (ADR-0029 §4) (subscribed as Oi4v2/+/+/Pub/SubscriptionList/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "otherPubSubscriptionListSourceFilter": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/SubscriptionList/{source}/{filter}",
+      "description": "The SubscriptionList of any application (ADR-0029 §4) (subscribed as Oi4v2/+/+/Pub/SubscriptionList/#) – of one Source and Filter.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: a resource and optionally its Filter, e.g. MAM or Event/Status/Good (MG 9.1.8, 9.1.9); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubSubscriptionList": {
+          "$ref": "#/components/messages/pubSubscriptionList"
+        }
+      }
+    },
+    "otherGetMam": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Get/MAM",
+      "description": "The registry asks an application for the MAM of itself and its represented assets when it comes online or a MAM or Health is missing (ADR-0029 §4, read-only, ADR-0008); the answers arrive on the Pub channels of the application.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getMam": {
+          "$ref": "#/components/messages/getMam"
+        }
+      }
+    },
+    "otherGetHealth": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Get/Health",
+      "description": "The registry asks an application for the Health of itself and its represented assets when it comes online or a MAM or Health is missing (ADR-0029 §4, read-only, ADR-0008); the answers arrive on the Pub channels of the application.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getHealth": {
+          "$ref": "#/components/messages/getHealth"
+        }
+      }
+    },
+    "otherGetProfile": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Get/Profile",
+      "description": "The registry asks an application for the Profile of itself and its represented assets when it comes online or a MAM or Health is missing (ADR-0029 §4, read-only, ADR-0008); the answers arrive on the Pub channels of the application.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getProfile": {
+          "$ref": "#/components/messages/getProfile"
+        }
+      }
+    },
+    "otherGetPublicationList": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Get/PublicationList",
+      "description": "The registry asks an application for the PublicationList of itself and its represented assets when it comes online or a MAM or Health is missing (ADR-0029 §4, read-only, ADR-0008); the answers arrive on the Pub channels of the application.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getPublicationList": {
+          "$ref": "#/components/messages/getPublicationList"
+        }
+      }
+    },
+    "otherGetSubscriptionList": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Get/SubscriptionList",
+      "description": "The registry asks an application for the SubscriptionList of itself and its represented assets when it comes online or a MAM or Health is missing (ADR-0029 §4, read-only, ADR-0008); the answers arrive on the Pub channels of the application.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "getSubscriptionList": {
+          "$ref": "#/components/messages/getSubscriptionList"
+        }
+      }
+    }
+  },
+  "operations": {
+    "publishMam": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubMam"
+      },
+      "summary": "Publishes the MAM of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubMam/messages/pubMam"
+        }
+      ]
+    },
+    "publishMamSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubMamSource"
+      },
+      "summary": "Publishes the MAM of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubMamSource/messages/pubMam"
+        }
+      ]
+    },
+    "publishHealth": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubHealth"
+      },
+      "summary": "Publishes the Health of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubHealth/messages/pubHealth"
+        }
+      ]
+    },
+    "publishHealthSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubHealthSource"
+      },
+      "summary": "Publishes the Health of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubHealthSource/messages/pubHealth"
+        }
+      ]
+    },
+    "publishConfig": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubConfig"
+      },
+      "summary": "Publishes the Config of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubConfig/messages/pubConfig"
+        }
+      ]
+    },
+    "publishConfigSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubConfigSource"
+      },
+      "summary": "Publishes the Config of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubConfigSource/messages/pubConfig"
+        }
+      ]
+    },
+    "publishConfigSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubConfigSourceFilter"
+      },
+      "summary": "Publishes the Config of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubConfigSourceFilter/messages/pubConfig"
+        }
+      ]
+    },
+    "publishData": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubData"
+      },
+      "summary": "Publishes the Data of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubData/messages/pubData"
+        }
+      ]
+    },
+    "publishDataSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubDataSource"
+      },
+      "summary": "Publishes the Data of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubDataSource/messages/pubData"
+        }
+      ]
+    },
+    "publishDataSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubDataSourceFilter"
+      },
+      "summary": "Publishes the Data of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubDataSourceFilter/messages/pubData"
+        }
+      ]
+    },
+    "publishMetadataSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubMetadataSourceFilter"
+      },
+      "summary": "Publishes the Metadata of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubMetadataSourceFilter/messages/pubMetadata"
+        }
+      ]
+    },
+    "publishEventSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubEventSourceFilter"
+      },
+      "summary": "Publishes the Event of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubEventSourceFilter/messages/pubEvent"
+        }
+      ]
+    },
+    "publishProfile": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubProfile"
+      },
+      "summary": "Publishes the Profile of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubProfile/messages/pubProfile"
+        }
+      ]
+    },
+    "publishProfileSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubProfileSource"
+      },
+      "summary": "Publishes the Profile of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubProfileSource/messages/pubProfile"
+        }
+      ]
+    },
+    "publishPublicationList": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubPublicationList"
+      },
+      "summary": "Publishes the PublicationList of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubPublicationList/messages/pubPublicationList"
+        }
+      ]
+    },
+    "publishPublicationListSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubPublicationListSource"
+      },
+      "summary": "Publishes the PublicationList of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubPublicationListSource/messages/pubPublicationList"
+        }
+      ]
+    },
+    "publishPublicationListSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubPublicationListSourceFilter"
+      },
+      "summary": "Publishes the PublicationList of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubPublicationListSourceFilter/messages/pubPublicationList"
+        }
+      ]
+    },
+    "publishSubscriptionList": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubSubscriptionList"
+      },
+      "summary": "Publishes the SubscriptionList of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubSubscriptionList/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "publishSubscriptionListSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubSubscriptionListSource"
+      },
+      "summary": "Publishes the SubscriptionList of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubSubscriptionListSource/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "publishSubscriptionListSourceFilter": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubSubscriptionListSourceFilter"
+      },
+      "summary": "Publishes the SubscriptionList of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubSubscriptionListSourceFilter/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "publishReferenceDesignation": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubReferenceDesignation"
+      },
+      "summary": "Publishes the ReferenceDesignation of the registry.",
+      "messages": [
+        {
+          "$ref": "#/channels/pubReferenceDesignation/messages/pubReferenceDesignation"
+        }
+      ]
+    },
+    "publishReferenceDesignationSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/pubReferenceDesignationSource"
+      },
+      "summary": "Publishes the ReferenceDesignation of the registry (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/pubReferenceDesignationSource/messages/pubReferenceDesignation"
+        }
+      ]
+    },
+    "serveMam": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getMam"
+      },
+      "summary": "Answers Get/MAM.",
+      "messages": [
+        {
+          "$ref": "#/channels/getMam/messages/getMam"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubMam"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubMam/messages/pubMam"
+          }
+        ]
+      }
+    },
+    "serveMamSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getMamSource"
+      },
+      "summary": "Answers Get/MAM/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getMamSource/messages/getMam"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubMamSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubMamSource/messages/pubMam"
+          }
+        ]
+      }
+    },
+    "serveHealth": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getHealth"
+      },
+      "summary": "Answers Get/Health.",
+      "messages": [
+        {
+          "$ref": "#/channels/getHealth/messages/getHealth"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubHealth"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubHealth/messages/pubHealth"
+          }
+        ]
+      }
+    },
+    "serveHealthSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getHealthSource"
+      },
+      "summary": "Answers Get/Health/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getHealthSource/messages/getHealth"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubHealthSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubHealthSource/messages/pubHealth"
+          }
+        ]
+      }
+    },
+    "serveConfig": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getConfig"
+      },
+      "summary": "Answers Get/Config.",
+      "messages": [
+        {
+          "$ref": "#/channels/getConfig/messages/getConfig"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubConfig"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubConfig/messages/pubConfig"
+          }
+        ]
+      }
+    },
+    "serveConfigSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getConfigSource"
+      },
+      "summary": "Answers Get/Config/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getConfigSource/messages/getConfig"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubConfigSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubConfigSource/messages/pubConfig"
+          }
+        ]
+      }
+    },
+    "serveConfigSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getConfigSourceFilter"
+      },
+      "summary": "Answers Get/Config/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getConfigSourceFilter/messages/getConfig"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubConfigSourceFilter"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubConfigSourceFilter/messages/pubConfig"
+          }
+        ]
+      }
+    },
+    "serveData": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getData"
+      },
+      "summary": "Answers Get/Data.",
+      "messages": [
+        {
+          "$ref": "#/channels/getData/messages/getData"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubData"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubData/messages/pubData"
+          }
+        ]
+      }
+    },
+    "serveDataSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getDataSource"
+      },
+      "summary": "Answers Get/Data/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getDataSource/messages/getData"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubDataSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubDataSource/messages/pubData"
+          }
+        ]
+      }
+    },
+    "serveDataSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getDataSourceFilter"
+      },
+      "summary": "Answers Get/Data/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getDataSourceFilter/messages/getData"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubDataSourceFilter"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubDataSourceFilter/messages/pubData"
+          }
+        ]
+      }
+    },
+    "serveMetadataSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getMetadataSourceFilter"
+      },
+      "summary": "Answers Get/Metadata/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getMetadataSourceFilter/messages/getMetadata"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubMetadataSourceFilter"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubMetadataSourceFilter/messages/pubMetadata"
+          }
+        ]
+      }
+    },
+    "serveProfile": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getProfile"
+      },
+      "summary": "Answers Get/Profile.",
+      "messages": [
+        {
+          "$ref": "#/channels/getProfile/messages/getProfile"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubProfile"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubProfile/messages/pubProfile"
+          }
+        ]
+      }
+    },
+    "serveProfileSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getProfileSource"
+      },
+      "summary": "Answers Get/Profile/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getProfileSource/messages/getProfile"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubProfileSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubProfileSource/messages/pubProfile"
+          }
+        ]
+      }
+    },
+    "servePublicationList": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getPublicationList"
+      },
+      "summary": "Answers Get/PublicationList.",
+      "messages": [
+        {
+          "$ref": "#/channels/getPublicationList/messages/getPublicationList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubPublicationList"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubPublicationList/messages/pubPublicationList"
+          }
+        ]
+      }
+    },
+    "servePublicationListSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getPublicationListSource"
+      },
+      "summary": "Answers Get/PublicationList/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getPublicationListSource/messages/getPublicationList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubPublicationListSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubPublicationListSource/messages/pubPublicationList"
+          }
+        ]
+      }
+    },
+    "servePublicationListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getPublicationListSourceFilter"
+      },
+      "summary": "Answers Get/PublicationList/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getPublicationListSourceFilter/messages/getPublicationList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubPublicationListSourceFilter"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubPublicationListSourceFilter/messages/pubPublicationList"
+          }
+        ]
+      }
+    },
+    "serveSubscriptionList": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getSubscriptionList"
+      },
+      "summary": "Answers Get/SubscriptionList.",
+      "messages": [
+        {
+          "$ref": "#/channels/getSubscriptionList/messages/getSubscriptionList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubSubscriptionList"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubSubscriptionList/messages/pubSubscriptionList"
+          }
+        ]
+      }
+    },
+    "serveSubscriptionListSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getSubscriptionListSource"
+      },
+      "summary": "Answers Get/SubscriptionList/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getSubscriptionListSource/messages/getSubscriptionList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubSubscriptionListSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubSubscriptionListSource/messages/pubSubscriptionList"
+          }
+        ]
+      }
+    },
+    "serveSubscriptionListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getSubscriptionListSourceFilter"
+      },
+      "summary": "Answers Get/SubscriptionList/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getSubscriptionListSourceFilter/messages/getSubscriptionList"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubSubscriptionListSourceFilter"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubSubscriptionListSourceFilter/messages/pubSubscriptionList"
+          }
+        ]
+      }
+    },
+    "serveReferenceDesignation": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getReferenceDesignation"
+      },
+      "summary": "Answers Get/ReferenceDesignation.",
+      "messages": [
+        {
+          "$ref": "#/channels/getReferenceDesignation/messages/getReferenceDesignation"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubReferenceDesignation"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubReferenceDesignation/messages/pubReferenceDesignation"
+          }
+        ]
+      }
+    },
+    "serveReferenceDesignationSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/getReferenceDesignationSource"
+      },
+      "summary": "Answers Get/ReferenceDesignation/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/getReferenceDesignationSource/messages/getReferenceDesignation"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/pubReferenceDesignationSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/pubReferenceDesignationSource/messages/pubReferenceDesignation"
+          }
+        ]
+      }
+    },
+    "writeConfigSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setConfigSourceFilter"
+      },
+      "summary": "Handles Set/Config (the SDK: accepted for writable content, else a Status event Bad)/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setConfigSourceFilter/messages/setConfig"
+        }
+      ]
+    },
+    "writeDataSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setDataSourceFilter"
+      },
+      "summary": "Handles Set/Data (the SDK: accepted for writable content, else a Status event Bad)/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setDataSourceFilter/messages/setData"
+        }
+      ]
+    },
+    "writeMetadataSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setMetadataSourceFilter"
+      },
+      "summary": "Handles Set/Metadata (the SDK: accepted for writable content, else a Status event Bad)/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setMetadataSourceFilter/messages/setMetadata"
+        }
+      ]
+    },
+    "writePublicationListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setPublicationListSourceFilter"
+      },
+      "summary": "Handles Set/PublicationList (the SDK: accepted for writable content, else a Status event Bad)/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setPublicationListSourceFilter/messages/setPublicationList"
+        }
+      ]
+    },
+    "writeSubscriptionListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setSubscriptionListSourceFilter"
+      },
+      "summary": "Handles Set/SubscriptionList (the SDK: accepted for writable content, else a Status event Bad)/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setSubscriptionListSourceFilter/messages/setSubscriptionList"
+        }
+      ]
+    },
+    "writeReferenceDesignationSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/setReferenceDesignationSource"
+      },
+      "summary": "Handles Set/ReferenceDesignation (the SDK: accepted for writable content, else a Status event Bad)/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/setReferenceDesignationSource/messages/setReferenceDesignation"
+        }
+      ]
+    },
+    "deleteSubscriptionListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/delSubscriptionListSourceFilter"
+      },
+      "summary": "Handles Del/SubscriptionList/<Source>/<Filter>.",
+      "messages": [
+        {
+          "$ref": "#/channels/delSubscriptionListSourceFilter/messages/delSubscriptionList"
+        }
+      ]
+    },
+    "deleteReferenceDesignationSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/delReferenceDesignationSource"
+      },
+      "summary": "Handles Del/ReferenceDesignation/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/delReferenceDesignationSource/messages/delReferenceDesignation"
+        }
+      ]
+    },
+    "callNewDataSetWriterId": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/callNewDataSetWriterId"
+      },
+      "summary": "Serves Call/NewDataSetWriterId.",
+      "messages": [
+        {
+          "$ref": "#/channels/callNewDataSetWriterId/messages/callNewDataSetWriterId"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/replyNewDataSetWriterId"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/replyNewDataSetWriterId/messages/replyNewDataSetWriterId"
+          }
+        ]
+      }
+    },
+    "callNewDataSetWriterIdSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/callNewDataSetWriterIdSource"
+      },
+      "summary": "Serves Call/NewDataSetWriterId/<Source>.",
+      "messages": [
+        {
+          "$ref": "#/channels/callNewDataSetWriterIdSource/messages/callNewDataSetWriterId"
+        }
+      ],
+      "reply": {
+        "channel": {
+          "$ref": "#/channels/replyNewDataSetWriterIdSource"
+        },
+        "messages": [
+          {
+            "$ref": "#/channels/replyNewDataSetWriterIdSource/messages/replyNewDataSetWriterId"
+          }
+        ]
+      }
+    },
+    "replyNewDataSetWriterId": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/replyNewDataSetWriterId"
+      },
+      "summary": "Replies to Call/NewDataSetWriterId.",
+      "messages": [
+        {
+          "$ref": "#/channels/replyNewDataSetWriterId/messages/replyNewDataSetWriterId"
+        }
+      ]
+    },
+    "replyNewDataSetWriterIdSource": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/replyNewDataSetWriterIdSource"
+      },
+      "summary": "Replies to Call/NewDataSetWriterId (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/replyNewDataSetWriterIdSource/messages/replyNewDataSetWriterId"
+        }
+      ]
+    },
+    "collectMam": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubMam"
+      },
+      "summary": "Collects the MAM of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubMam/messages/pubMam"
+        }
+      ]
+    },
+    "collectMamSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubMamSource"
+      },
+      "summary": "Collects the MAM of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubMamSource/messages/pubMam"
+        }
+      ]
+    },
+    "collectHealth": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubHealth"
+      },
+      "summary": "Collects the Health of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubHealth/messages/pubHealth"
+        }
+      ]
+    },
+    "collectHealthSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubHealthSource"
+      },
+      "summary": "Collects the Health of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubHealthSource/messages/pubHealth"
+        }
+      ]
+    },
+    "collectProfile": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubProfile"
+      },
+      "summary": "Collects the Profile of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubProfile/messages/pubProfile"
+        }
+      ]
+    },
+    "collectProfileSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubProfileSource"
+      },
+      "summary": "Collects the Profile of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubProfileSource/messages/pubProfile"
+        }
+      ]
+    },
+    "collectEventSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubEventSourceFilter"
+      },
+      "summary": "Collects the Event of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubEventSourceFilter/messages/pubEvent"
+        }
+      ]
+    },
+    "collectPublicationList": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubPublicationList"
+      },
+      "summary": "Collects the PublicationList of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubPublicationList/messages/pubPublicationList"
+        }
+      ]
+    },
+    "collectPublicationListSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubPublicationListSource"
+      },
+      "summary": "Collects the PublicationList of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubPublicationListSource/messages/pubPublicationList"
+        }
+      ]
+    },
+    "collectPublicationListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubPublicationListSourceFilter"
+      },
+      "summary": "Collects the PublicationList of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubPublicationListSourceFilter/messages/pubPublicationList"
+        }
+      ]
+    },
+    "collectSubscriptionList": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubSubscriptionList"
+      },
+      "summary": "Collects the SubscriptionList of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubSubscriptionList/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "collectSubscriptionListSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubSubscriptionListSource"
+      },
+      "summary": "Collects the SubscriptionList of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubSubscriptionListSource/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "collectSubscriptionListSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubSubscriptionListSourceFilter"
+      },
+      "summary": "Collects the SubscriptionList of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubSubscriptionListSourceFilter/messages/pubSubscriptionList"
+        }
+      ]
+    },
+    "requestMam": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/otherGetMam"
+      },
+      "summary": "Read-only request (ADR-0008): Get/MAM to an application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherGetMam/messages/getMam"
+        }
+      ]
+    },
+    "requestHealth": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/otherGetHealth"
+      },
+      "summary": "Read-only request (ADR-0008): Get/Health to an application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherGetHealth/messages/getHealth"
+        }
+      ]
+    },
+    "requestProfile": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/otherGetProfile"
+      },
+      "summary": "Read-only request (ADR-0008): Get/Profile to an application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherGetProfile/messages/getProfile"
+        }
+      ]
+    },
+    "requestPublicationList": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/otherGetPublicationList"
+      },
+      "summary": "Read-only request (ADR-0008): Get/PublicationList to an application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherGetPublicationList/messages/getPublicationList"
+        }
+      ]
+    },
+    "requestSubscriptionList": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/otherGetSubscriptionList"
+      },
+      "summary": "Read-only request (ADR-0008): Get/SubscriptionList to an application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherGetSubscriptionList/messages/getSubscriptionList"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "pubMam": {
+        "name": "PubMAM",
+        "title": "Pub MAM",
+        "summary": "A NetworkMessage with MAM DataSetMessages (MG 9.1.1).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-mam.schema.json"
+        }
+      },
+      "pubHealth": {
+        "name": "PubHealth",
+        "title": "Pub Health",
+        "summary": "A NetworkMessage with Health DataSetMessages (MG 9.1.2).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-health.schema.json"
+        }
+      },
+      "pubConfig": {
+        "name": "PubConfig",
+        "title": "Pub Config",
+        "summary": "A NetworkMessage with Config DataSetMessages (MG 9.1.3).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-config.schema.json"
+        }
+      },
+      "pubData": {
+        "name": "PubData",
+        "title": "Pub Data",
+        "summary": "A NetworkMessage with Data DataSetMessages (MG 9.1.4).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-data.schema.json"
+        }
+      },
+      "pubMetadata": {
+        "name": "PubMetadata",
+        "title": "Pub Metadata",
+        "summary": "A NetworkMessage with Metadata DataSetMessages (MG 9.1.5).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-metadata.schema.json"
+        }
+      },
+      "pubEvent": {
+        "name": "PubEvent",
+        "title": "Pub Event",
+        "summary": "A NetworkMessage with Event DataSetMessages (MG 9.1.6).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-event.schema.json"
+        }
+      },
+      "pubProfile": {
+        "name": "PubProfile",
+        "title": "Pub Profile",
+        "summary": "A NetworkMessage with Profile DataSetMessages (MG 9.1.7).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-profile.schema.json"
+        }
+      },
+      "pubPublicationList": {
+        "name": "PubPublicationList",
+        "title": "Pub PublicationList",
+        "summary": "A NetworkMessage with PublicationList DataSetMessages (MG 9.1.8).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-publicationlist.schema.json"
+        }
+      },
+      "pubSubscriptionList": {
+        "name": "PubSubscriptionList",
+        "title": "Pub SubscriptionList",
+        "summary": "A NetworkMessage with SubscriptionList DataSetMessages (MG 9.1.9).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-subscriptionlist.schema.json"
+        }
+      },
+      "pubReferenceDesignation": {
+        "name": "PubReferenceDesignation",
+        "title": "Pub ReferenceDesignation",
+        "summary": "A NetworkMessage with ReferenceDesignation DataSetMessages (MG 9.1.10).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/pub-referencedesignation.schema.json"
+        }
+      },
+      "getMam": {
+        "name": "GetMAM",
+        "title": "Get MAM",
+        "summary": "A Get request for MAM (MG 9.1.1).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-mam.schema.json"
+        }
+      },
+      "getHealth": {
+        "name": "GetHealth",
+        "title": "Get Health",
+        "summary": "A Get request for Health (MG 9.1.2).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-health.schema.json"
+        }
+      },
+      "getConfig": {
+        "name": "GetConfig",
+        "title": "Get Config",
+        "summary": "A Get request for Config (MG 9.1.3).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-config.schema.json"
+        }
+      },
+      "getData": {
+        "name": "GetData",
+        "title": "Get Data",
+        "summary": "A Get request for Data (MG 9.1.4).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-data.schema.json"
+        }
+      },
+      "getMetadata": {
+        "name": "GetMetadata",
+        "title": "Get Metadata",
+        "summary": "A Get request for Metadata (MG 9.1.5).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-metadata.schema.json"
+        }
+      },
+      "getProfile": {
+        "name": "GetProfile",
+        "title": "Get Profile",
+        "summary": "A Get request for Profile (MG 9.1.7).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-profile.schema.json"
+        }
+      },
+      "getPublicationList": {
+        "name": "GetPublicationList",
+        "title": "Get PublicationList",
+        "summary": "A Get request for PublicationList (MG 9.1.8).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-publicationlist.schema.json"
+        }
+      },
+      "getSubscriptionList": {
+        "name": "GetSubscriptionList",
+        "title": "Get SubscriptionList",
+        "summary": "A Get request for SubscriptionList (MG 9.1.9).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-subscriptionlist.schema.json"
+        }
+      },
+      "getReferenceDesignation": {
+        "name": "GetReferenceDesignation",
+        "title": "Get ReferenceDesignation",
+        "summary": "A Get request for ReferenceDesignation (MG 9.1.10).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/get-referencedesignation.schema.json"
+        }
+      },
+      "setConfig": {
+        "name": "SetConfig",
+        "title": "Set Config",
+        "summary": "A Set request for Config (MG 9.1.3).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-config.schema.json"
+        }
+      },
+      "setData": {
+        "name": "SetData",
+        "title": "Set Data",
+        "summary": "A Set request for Data (MG 9.1.4).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-data.schema.json"
+        }
+      },
+      "setMetadata": {
+        "name": "SetMetadata",
+        "title": "Set Metadata",
+        "summary": "A Set request for Metadata (MG 9.1.5).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-metadata.schema.json"
+        }
+      },
+      "setPublicationList": {
+        "name": "SetPublicationList",
+        "title": "Set PublicationList",
+        "summary": "A Set request for PublicationList (MG 9.1.8).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-publicationlist.schema.json"
+        }
+      },
+      "setSubscriptionList": {
+        "name": "SetSubscriptionList",
+        "title": "Set SubscriptionList",
+        "summary": "A Set request for SubscriptionList (MG 9.1.9).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-subscriptionlist.schema.json"
+        }
+      },
+      "setReferenceDesignation": {
+        "name": "SetReferenceDesignation",
+        "title": "Set ReferenceDesignation",
+        "summary": "A Set request for ReferenceDesignation (MG 9.1.10).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/set-referencedesignation.schema.json"
+        }
+      },
+      "delSubscriptionList": {
+        "name": "DelSubscriptionList",
+        "title": "Del SubscriptionList",
+        "summary": "A Del request for SubscriptionList (MG 9.1.9).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/del-subscriptionlist.schema.json"
+        }
+      },
+      "delReferenceDesignation": {
+        "name": "DelReferenceDesignation",
+        "title": "Del ReferenceDesignation",
+        "summary": "A Del request for ReferenceDesignation (MG 9.1.10).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/del-referencedesignation.schema.json"
+        }
+      },
+      "callNewDataSetWriterId": {
+        "name": "CallNewDataSetWriterId",
+        "title": "Call NewDataSetWriterId",
+        "summary": "A Call of the service NewDataSetWriterId (MG 9.2.1).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/call-newdatasetwriterid.schema.json"
+        }
+      },
+      "replyNewDataSetWriterId": {
+        "name": "ReplyNewDataSetWriterId",
+        "title": "Reply NewDataSetWriterId",
+        "summary": "The Reply of the service NewDataSetWriterId (MG 9.2.1).",
+        "contentType": "application/json",
+        "payload": {
+          "$ref": "https://schemas.openindustry4.com/oec/v2/topics/reply-newdatasetwriterid.schema.json"
+        }
+      }
+    }
+  }
+}

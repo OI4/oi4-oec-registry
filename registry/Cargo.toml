@@ -1,0 +1,58 @@
+# The OEC Registry D5 of P7 (ADR-0029, A-380): an own Cargo package outside
+# the SDK workspace, on the Rust SDK `oec` by path, with its own Cargo.lock
+# and the cargo-deny policy of the SDK (oec/sdk/rust/deny.toml).
+# Dependencies within ADR-0023 (amendments C-086, C-087, C-088).
+[package]
+name = "oec-registry"
+description = "OEC Registry (D5): collects the MAM and Health of the assets on the OI4 Message Bus and offers them with the Registry services of MG A1."
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT"
+publish = false
+repository = "https://github.com/OI4/oec"
+
+# Its own workspace: not a member of oec/sdk/rust.
+[workspace]
+
+[[bin]]
+name = "oec-registry"
+path = "src/main.rs"
+
+[dependencies]
+oec = { path = "../sdk/rust/oec" }
+# the conformity view (ADR-0029 §6, amendment C-087): the strict schema
+# validation of the SDK core, the same as D7's
+oec-core = { path = "../sdk/rust/oec-core", features = ["strict-validation"] }
+log = "0.4"
+serde_json = "1"
+# The HTTP side (ADR-0029 §7, ADR-0023 amendments C-086 and C-088): hyper 1
+# (HTTP/1.1 server only) on the tokio runtime of the SDK; TLS with the
+# rustls stack and the crypto provider of the SDK, the self-signed
+# certificate with rcgen, encrypted keys with pkcs8 (the same versions and
+# features as the SDK workspace).
+hyper = { version = "1.12", default-features = false, features = ["server", "http1"] }
+hyper-util = { version = "0.1.21", default-features = false, features = ["tokio"] }
+tokio = { version = "1.54", default-features = false, features = ["rt", "net", "time", "sync"] }
+rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12", "logging", "aws_lc_rs"] }
+tokio-rustls = { version = "0.26.6", default-features = false }
+rustls-pki-types = { version = "1.15", default-features = false, features = ["std"] }
+pkcs8 = { version = "0.11", default-features = false, features = ["std", "pem", "encryption"] }
+rcgen = { version = "0.14", default-features = false, features = ["pem", "aws_lc_rs"] }
+
+[dev-dependencies]
+# the pin of ADR-0019 §8; validates the API documents against the
+# official meta-schemas (ADR-0029 §11, A-385)
+jsonschema = { version = "=0.60.1", default-features = false }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+doc_markdown = "allow"

@@ -1,0 +1,983 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "OEC Registry – HTTP interface",
+    "version": "0.1.0",
+    "description": "The read-only HTTP interface of the OEC Registry D5 (ADR-0029 §7, increment 3, C-088): its directory of the assets on the Message Bus (REQ-REG-001), their MAM, Health, Profile, PublicationList and SubscriptionList, the observed Messaging level and the schema conformity (informative), and the Event trail; as REST and as server-sent events. Only `GET`; every other method is answered with 405. Served over TLS (REQ-REG-007) on port 5798 (with the Web UI) and 5799 (the API only). The MG payloads are embedded as received on the bus and described by the strict D1 schemas, referenced by their $id; the payload of a participant that violates its schema may deviate (see `violations` and `conformity`).",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit"
+    }
+  },
+  "externalDocs": {
+    "description": "OEC Messaging Guideline, Annex A1 OEC Registry",
+    "url": "https://github.com/OI4/oi4-oec-documentation"
+  },
+  "servers": [
+    {
+      "url": "https://{host}:{port}",
+      "description": "The registry.",
+      "variables": {
+        "host": {
+          "default": "localhost"
+        },
+        "port": {
+          "default": "5799",
+          "enum": [
+            "5798",
+            "5799"
+          ]
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/api/assets": {
+      "get": {
+        "operationId": "getAssets",
+        "summary": "The directory",
+        "description": "Every asset the registry knows, applications and devices, with the limits of the directory.",
+        "responses": {
+          "200": {
+            "description": "The directory.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Assets"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/assets/{il}": {
+      "get": {
+        "operationId": "getAsset",
+        "summary": "One asset",
+        "description": "One asset in detail.",
+        "parameters": [
+          {
+            "name": "il",
+            "in": "path",
+            "required": true,
+            "description": "The IdentificationLink of the asset, percent-encoded as one path segment (`vendor.com%2FPump%2FP-1%2F0815`); the plain form with `/` is accepted too.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The asset.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "operationId": "getEvents",
+        "summary": "The Event trail",
+        "description": "The last Events on the bus, oldest first.",
+        "responses": {
+          "200": {
+            "description": "The Event trail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Events"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/stream": {
+      "get": {
+        "operationId": "getStream",
+        "summary": "Changes as server-sent events",
+        "description": "A stream of server-sent events: first a `snapshot`, then a message per change (`asset`, `event`, `directory`). A comment `: keep-alive` is sent after 15 s without a change. A client that does not read is disconnected.",
+        "responses": {
+          "200": {
+            "description": "The stream.",
+            "content": {
+              "text/event-stream": {
+                "itemSchema": {
+                  "$ref": "#/components/schemas/ServerSentEvent"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "operationId": "getOpenApi",
+        "summary": "This document",
+        "description": "The OpenAPI document of the HTTP side.",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.2.0.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/asyncapi.json": {
+      "get": {
+        "operationId": "getAsyncApi",
+        "summary": "The MQTT interface",
+        "description": "The AsyncAPI document of the MQTT interface of the registry.",
+        "responses": {
+          "200": {
+            "description": "AsyncAPI 3.1.0.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "The body of every error response the registry writes (hyper's own 400/431 for an unreadable request head have no body).",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Limits": {
+        "type": "object",
+        "description": "The limits of the directory, from the Config `registry`/`directory` (A-393).",
+        "required": [
+          "healthHistory",
+          "eventTrail",
+          "violationTrail"
+        ],
+        "properties": {
+          "healthHistory": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Health changes kept per asset."
+          },
+          "eventTrail": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Events kept."
+          },
+          "violationTrail": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Schema violations kept per application."
+          }
+        },
+        "additionalProperties": false
+      },
+      "DirectoryFields": {
+        "type": "object",
+        "description": "The directory as a whole (without its assets).",
+        "required": [
+          "registry",
+          "version",
+          "limits",
+          "ignored"
+        ],
+        "properties": {
+          "registry": {
+            "type": "string",
+            "description": "The IdentificationLink (AppId) of the registry."
+          },
+          "version": {
+            "type": "string",
+            "description": "The software version of the registry."
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "ignored": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Messages ignored since the start: not parseable or not of the expected form."
+          }
+        }
+      },
+      "Observed": {
+        "type": "object",
+        "description": "The Messaging level observed on the bus (informative, ADR-0029 §5).",
+        "required": [
+          "level",
+          "missing"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+            "description": "0 (not yet seen) … 3."
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^REQ-[A-Z]+-[0-9]{3}$"
+            },
+            "description": "The requirements of the next level not observed (empty at 3)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Conformity": {
+        "type": "object",
+        "description": "The messages of an application checked against the strict D1 schemas (informative, A-394).",
+        "required": [
+          "messages",
+          "violations"
+        ],
+        "properties": {
+          "messages": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Messages checked."
+          },
+          "violations": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Messages that violate their schema."
+          }
+        },
+        "additionalProperties": false
+      },
+      "SummaryFields": {
+        "type": "object",
+        "description": "An asset of the directory: an application (its AppId) or a device it represents.",
+        "required": [
+          "il",
+          "kind",
+          "serviceType",
+          "publisher",
+          "availability",
+          "available",
+          "firstSeen",
+          "lastSeen",
+          "onlineSince",
+          "mam",
+          "health",
+          "observed",
+          "devices",
+          "conformity"
+        ],
+        "properties": {
+          "il": {
+            "type": "string",
+            "description": "The IdentificationLink of the asset (Oi4Identifier)."
+          },
+          "kind": {
+            "enum": [
+              "application",
+              "device"
+            ]
+          },
+          "serviceType": {
+            "type": "string",
+            "description": "The ServiceType of the application (of the publishing application for a device)."
+          },
+          "publisher": {
+            "type": "string",
+            "description": "The AppId that published the asset."
+          },
+          "availability": {
+            "enum": [
+              "online",
+              "offlineGraceful",
+              "offlineUngraceful"
+            ],
+            "description": "From the lifecycle of MG 6.3 (an application) or of its publishing application (a device)."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Available (MG A1): online with MAM and Health known."
+          },
+          "firstSeen": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) the registry saw it first."
+          },
+          "lastSeen": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) of its last message."
+          },
+          "onlineSince": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Unix time (ms) it came online."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mam": {
+            "anyOf": [
+              {
+                "$ref": "https://schemas.openindustry4.com/oec/v2/resources/mam.schema.json#/$defs/MAM"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health": {
+            "anyOf": [
+              {
+                "$ref": "https://schemas.openindustry4.com/oec/v2/resources/health.schema.json#/$defs/Health"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observed": {
+            "$ref": "#/components/schemas/Observed"
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The devices an application represents (empty for a device)."
+          },
+          "conformity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Conformity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SummaryFields"
+          }
+        ],
+        "unevaluatedProperties": false
+      },
+      "Answer": {
+        "type": "object",
+        "description": "The outcome of the last read-only Get of the registry for a resource.",
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "enum": [
+              "answered",
+              "timeout",
+              "refused"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "The status of the refusal."
+          }
+        },
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "outcome": {
+              "const": "refused"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "reason"
+          ]
+        },
+        "else": {
+          "not": {
+            "required": [
+              "reason"
+            ]
+          }
+        }
+      },
+      "Violation": {
+        "type": "object",
+        "description": "A message that violates its D1 schema.",
+        "required": [
+          "at",
+          "topic",
+          "reqs",
+          "message"
+        ],
+        "properties": {
+          "at": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) received."
+          },
+          "topic": {
+            "type": "string"
+          },
+          "reqs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The violated requirements."
+          },
+          "message": {
+            "type": "string",
+            "description": "The first error."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Asset": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SummaryFields"
+          }
+        ],
+        "description": "An asset in detail: its summary, Health history, Profile, the answers to the Gets of the registry, PublicationList, SubscriptionList and schema violations (the last three `null` for a device).",
+        "required": [
+          "healthHistory",
+          "profile",
+          "answers",
+          "publications",
+          "subscriptions",
+          "violations"
+        ],
+        "properties": {
+          "healthHistory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "at",
+                "health"
+              ],
+              "properties": {
+                "at": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Unix time (ms)."
+                },
+                "health": {
+                  "$ref": "https://schemas.openindustry4.com/oec/v2/resources/health.schema.json#/$defs/Health"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "https://schemas.openindustry4.com/oec/v2/resources/profile.schema.json#/$defs/Profile/properties/Resources"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answers": {
+            "type": "object",
+            "propertyNames": {
+              "enum": [
+                "MAM",
+                "Health",
+                "Profile",
+                "PublicationList",
+                "SubscriptionList"
+              ]
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            }
+          },
+          "publications": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "https://schemas.openindustry4.com/oec/v2/resources/publicationlist.schema.json#/$defs/PublicationEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subscriptions": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "https://schemas.openindustry4.com/oec/v2/resources/subscriptionlist.schema.json#/$defs/SubscriptionEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "violations": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Violation"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "unevaluatedProperties": false
+      },
+      "EventRecord": {
+        "type": "object",
+        "description": "An Event of the trail.",
+        "required": [
+          "seq",
+          "at",
+          "publisher",
+          "source",
+          "filter",
+          "event"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Its number since the start of the registry (ascending)."
+          },
+          "at": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) received."
+          },
+          "publisher": {
+            "type": "string",
+            "description": "The AppId of the topic."
+          },
+          "source": {
+            "type": "string",
+            "description": "The Source of the topic."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "The Filter of the topic (the category)."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event": {
+            "$ref": "https://schemas.openindustry4.com/oec/v2/resources/event.schema.json#/$defs/Event"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Assets": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DirectoryFields"
+          }
+        ],
+        "required": [
+          "time",
+          "assets"
+        ],
+        "properties": {
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) of the registry."
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Summary"
+            }
+          }
+        },
+        "unevaluatedProperties": false
+      },
+      "Events": {
+        "type": "object",
+        "required": [
+          "limit",
+          "events"
+        ],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Events kept."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventRecord"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SnapshotMessage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DirectoryFields"
+          }
+        ],
+        "description": "The first message: the directory (as `/api/assets`) and the Events (as `/api/events`).",
+        "required": [
+          "type",
+          "time",
+          "assets",
+          "events"
+        ],
+        "properties": {
+          "type": {
+            "const": "snapshot"
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) of the registry."
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Summary"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventRecord"
+            }
+          }
+        },
+        "unevaluatedProperties": false
+      },
+      "DirectoryMessage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DirectoryFields"
+          }
+        ],
+        "description": "The limits or the count of ignored messages changed.",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "const": "directory"
+          }
+        },
+        "unevaluatedProperties": false
+      },
+      "AssetMessage": {
+        "type": "object",
+        "description": "An asset is new or its summary changed.",
+        "required": [
+          "type",
+          "asset"
+        ],
+        "properties": {
+          "type": {
+            "const": "asset"
+          },
+          "asset": {
+            "$ref": "#/components/schemas/Summary"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EventMessage": {
+        "type": "object",
+        "description": "A new Event of the trail.",
+        "required": [
+          "type",
+          "event"
+        ],
+        "properties": {
+          "type": {
+            "const": "event"
+          },
+          "event": {
+            "$ref": "#/components/schemas/EventRecord"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StreamMessage": {
+        "description": "The JSON in the `data` of a server-sent event.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SnapshotMessage"
+          },
+          {
+            "$ref": "#/components/schemas/DirectoryMessage"
+          },
+          {
+            "$ref": "#/components/schemas/AssetMessage"
+          },
+          {
+            "$ref": "#/components/schemas/EventMessage"
+          }
+        ]
+      },
+      "ServerSentEvent": {
+        "type": "object",
+        "description": "One server-sent event: only `data`, one line of JSON. Comments (`: keep-alive`) when the stream is quiet are not events.",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "contentSchema": {
+              "$ref": "#/components/schemas/StreamMessage"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Not exactly one `Host`, an absolute target that names another host, or an invalid or repeated `Content-Length`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "`Host` is no name of the registry, or `Origin` is not the registry itself.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No such resource or asset.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "A method other than `GET`: the HTTP side is read-only.",
+        "headers": {
+          "Allow": {
+            "description": "`GET`.",
+            "schema": {
+              "const": "GET"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ContentTooLarge": {
+        "description": "`Content-Length` above 65536.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotImplemented": {
+        "description": "`Transfer-Encoding` in a request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Too many connections (16) or event streams (8).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
