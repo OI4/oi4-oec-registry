@@ -1,0 +1,19 @@
+{
+  "Manufacturer":{"Locale":"en-US","Text":"Open Industry 4.0 Alliance Community"},
+  "ManufacturerUri":"openindustry4.com",
+  "Model":{"Locale":"en-US","Text":"OEC Utility"},
+  "ProductCode":"OEC-Registry",
+  "HardwareRevision":"",
+  "SoftwareRevision":"1.1",
+  "DeviceRevision":"1",
+  "DeviceManual":"1.0",
+  "DeviceClass":"Oi4.Registry",
+  "SerialNumber":"F12AB34",
+  "ProductInstanceUri":"oi4/appid/service",
+  "RevisionCounter":0,
+  "Description":
+  {
+    "Locale":"en-US",
+    "Text":"An OI4 OEC Registry, provided by the OI4 community"
+  }
+}

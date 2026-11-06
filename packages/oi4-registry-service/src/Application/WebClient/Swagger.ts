@@ -1,6 +1,5 @@
 import express = require('express');
-import swaggerUi from "swagger-ui-express";
-
+import swaggerUi from 'swagger-ui-express';
 
 export class Swagger
 {

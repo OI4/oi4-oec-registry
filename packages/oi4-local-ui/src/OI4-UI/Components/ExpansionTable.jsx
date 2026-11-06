@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { withStyles } from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/core/styles';
 
+import aas_img from '../Images/OI4_AAS_logo.png';
 import namur_normal_0 from '../Images/namur_normal_0.png';
 import namur_failure_1 from '../Images/namur_failure_1.png';
 import namur_check_function_2 from '../Images/namur_check_function_2.png';
@@ -13,32 +14,25 @@ import PropTypes from 'prop-types';
 import MaterialTable from 'material-table';
 
 import {
-  Typography,
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Collapse,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Collapse,
-  IconButton,
   TextField,
-  InputAdornment,
-  Grid,
-  Snackbar,
   Tooltip,
+  Typography,
 } from '@material-ui/core';
 
-import {
-  ExpandMore,
-  ExpandLess,
-  Delete,
-  Search,
-  FileCopy,
-  Close,
-} from '@material-ui/icons';
+import {Close, Delete, ExpandLess, ExpandMore, FileCopy, Search,} from '@material-ui/icons';
 
 import ExpansionTableDetail from './ExpansionTableDetail.jsx';
 
@@ -85,7 +79,6 @@ class ExpansionTable extends React.Component {
 
   /**
    * Main render method of the ExpansionTable
-   * @memberof OI4Base
    */
   render() {
     const { classes } = this.props;
@@ -95,7 +88,7 @@ class ExpansionTable extends React.Component {
             <AccordionSummary expandIcon={<ExpandMore />}>
               <div>{this.state.tableName}: ({Object.keys(this.props.assetLookup).length} entries)</div>
               <TextField
-                  id='filterText'
+                  id={`filterText-${this.props.lookupType}`}
                   value={this.state.filterWord}
                   onChange={this.handleFilterChange.bind(this)}
                   onClick={(ev) => ev.stopPropagation()}
@@ -121,6 +114,7 @@ class ExpansionTable extends React.Component {
                     <TableCell>DeviceClass</TableCell>
                     <TableCell>SerialNumber</TableCell>
                     <TableCell align="right">Health</TableCell>
+                    <TableCell align="right">AAS</TableCell>
                     <TableCell align="right">Last Message</TableCell>
                     <TableCell align="right">Conformity</TableCell>
                     <TableCell align="right">Expand</TableCell>
@@ -140,11 +134,12 @@ class ExpansionTable extends React.Component {
                             // and true(1) will result in 1.5 To parse a bool into a float, we need to make it an integer, this is achieved by + operator
                             // (nodejs type inference) then parse it to float, add it together and convert it to a string
                         >
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Manufacturer.text}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').Model.text}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').DeviceClass}</TableCell>
-                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'mam').SerialNumber}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').Manufacturer.Text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').Model.Text}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').DeviceClass}</TableCell>
+                          <TableCell component="th" scope="row">{this.getResourceObject(oi4Id, 'MAM').SerialNumber}</TableCell>
                           <TableCell align="right">{this.displayNamurHealth(this.getHealth(oi4Id, 'application'))}</TableCell>
+                          <TableCell align="right">{this.displayAASIcon(oi4Id)}</TableCell>
                           <TableCell align="right">{this.props.assetLookup[oi4Id].lastMessage}</TableCell>
                           <TableCell align="right">
                             <Typography variant='h6'><span role="img" aria-label="check">{this.displayConformityHeader(oi4Id)}</span></Typography>
@@ -195,6 +190,7 @@ class ExpansionTable extends React.Component {
                                       expertMode={this.props.expertMode}
                                       oi4Id={oi4Id}
                                       assetLookup={this.props.assetLookup}
+                                      aasookup={this.props.aasLookup}
                                       updateConformity={this.updateConformity.bind(this)}
                                       getResourceObject={this.getResourceObject.bind(this)}
                                       lookupType={this.props.lookupType}
@@ -249,7 +245,7 @@ class ExpansionTable extends React.Component {
   filterAssets() {
     // TODO: This was a bit hard to get back into, maybe it can be simplified
     // Filter assetList to be displayed
-    const filteredAssets = Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
+    return Object.keys(this.props.assetLookup) // TODO: Maybe get this to another place?
         .filter((key) => {
           if (this.state.filterWord === '') {
             return true;
@@ -276,7 +272,6 @@ class ExpansionTable extends React.Component {
           obj[key] = this.props.assetLookup[key];
           return obj;
         }, {});
-    return filteredAssets;
   }
 
   /**
@@ -308,12 +303,12 @@ class ExpansionTable extends React.Component {
     } else {
       return 'wrong type selected';
     }
-    if ('health' in lookup[oi4Id].resources) {
-      if ('health' in lookup[oi4Id].resources.health) {
-        return lookup[oi4Id].resources.health.health;
+    if ('Health' in lookup[oi4Id].resources) {
+      if ('Health' in lookup[oi4Id].resources.Health) {
+        return lookup[oi4Id].resources.Health.Health;
       }
     }
-    return 'Error - getHealth: health string not found in lookup';
+    return 'Error - getHealth: Health string not found in lookup';
   }
 
   /**
@@ -358,6 +353,14 @@ class ExpansionTable extends React.Component {
     } else {
       return <img src={this.state.namurLookup[status]} alt="Namur" height={height} width={width} />;
     }
+  }
+
+  displayAASIcon(oi4Id, height = '25', width = '25') {
+    const lookup = this.props.assetLookup;
+    if ('AAS' in lookup[oi4Id].resources) {
+      return <img src={aas_img} alt="AAS" height={height} width={width} />;
+    }
+    return '';
   }
 
   /**

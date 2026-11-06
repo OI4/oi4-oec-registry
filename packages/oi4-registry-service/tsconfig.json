@@ -11,13 +11,6 @@
   },
   "include": [
     "src/**/*",
-    "src/**/*.json",
-    "LICENSE",
-    "README.md",
-    "package.json"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules/**/*"
+    "src/**/*.json"
   ]
 }

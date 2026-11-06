@@ -1,8 +1,8 @@
 [{
-    "licenseId": "MIT",
-    "components": [{
-        "component": "Async-Mqtt.js",
-        "licAuthors": [
+    "LicenseId": "MIT",
+    "Components": [{
+        "Component": "Async-Mqtt.js",
+        "LicAuthors": [
           "Adam Rudd",
           "Octavian Ionescu",
           "Nick O\"Leary",
@@ -12,10 +12,10 @@
           "Yohei Onishi",
           "RangerMauve"
         ],
-        "licAddText": "https://www.npmjs.com/package/async-mqtt"
+        "LicAddText": "https://www.npmjs.com/package/async-mqtt"
       }, {
-        "component": "Express.js",
-        "licAuthors": [
+        "Component": "Express.js",
+        "LicAuthors": [
           "Andrew Kelley",
           "Ryan",
           "Rand McKinney",
@@ -25,10 +25,10 @@
           "Jeremiah Senkpiel",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/express"
+        "LicAddText": "https://www.npmjs.com/package/express"
       }, {
-        "component": "uuid",
-        "licAuthors": [
+        "Component": "uuid",
+        "LicAuthors": [
           "ctavan",
           "broofa",
           "defunctzombie",
@@ -36,118 +36,118 @@
           "benjreinhart",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/uuid"
+        "LicAddText": "https://www.npmjs.com/package/uuid"
       }, {
-        "component": "ajv",
-        "licAuthors": [
+        "Component": "ajv",
+        "LicAuthors": [
           "epoberezkin",
           "blakeembrey",
           "gajus",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/ajv"
+        "LicAddText": "https://www.npmjs.com/package/ajv"
       }, {
-        "component": "cors",
-        "licAuthors": [
+        "Component": "cors",
+        "LicAuthors": [
           "dougwilson",
           "troygoode",
           "alex94cp",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/cors"
+        "LicAddText": "https://www.npmjs.com/package/cors"
       }, {
-        "component": "cors",
-        "licAuthors": [
+        "Component": "cors",
+        "LicAuthors": [
           "dougwilson",
           "troygoode",
           "alex94cp",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/cors"
+        "LicAddText": "https://www.npmjs.com/package/cors"
       }, {
-        "component": "OEC-Registry",
-        "licAuthors": [
+        "Component": "OEC-Registry",
+        "LicAuthors": [
           "OI4-Hilscher",
           "Berti Martens"
         ],
-        "licAddText": "none"
+        "LicAddText": "none"
       }, {
-        "component": "winston",
-        "licAuthors": [
+        "Component": "winston",
+        "LicAuthors": [
           "indexzero",
           "chij",
           "DABH",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/winston"
+        "LicAddText": "https://www.npmjs.com/package/winston"
       }, {
-        "component": "winston-syslog",
-        "licAuthors": [
+        "Component": "winston-syslog",
+        "LicAuthors": [
           "santigimeno",
           "indexzero",
           "DABH",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/winston-syslog"
+        "LicAddText": "https://www.npmjs.com/package/winston-syslog"
       }, {
-        "component": "glossy",
-        "licAuthors": [
+        "Component": "glossy",
+        "LicAuthors": [
           "squeeks",
           "fygrave",
           "mattbornski",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/glossy"
+        "LicAddText": "https://www.npmjs.com/package/glossy"
       }, {
-        "component": "sequential-ask-queue",
-        "licAuthors": [
+        "Component": "sequential-ask-queue",
+        "LicAuthors": [
           "BalassaMarton"
         ],
-        "licAddText": "https://www.npmjs.com/package/sequential-task-queue"
+        "LicAddText": "https://www.npmjs.com/package/sequential-task-queue"
       }, {
-        "component": "material-ui/core",
-        "licAuthors": [
+        "Component": "material-ui/core",
+        "LicAuthors": [
           "material-ui organization"
         ],
-        "licAddText": "https://www.npmjs.com/package/@material-ui/core"
+        "LicAddText": "https://www.npmjs.com/package/@material-ui/core"
       }, {
-        "component": "material-ui/icons",
-        "licAuthors": [
+        "Component": "material-ui/icons",
+        "LicAuthors": [
           "material-ui organization"
         ],
-        "licAddText": "https://www.npmjs.com/package/@material-ui/icons"
+        "LicAddText": "https://www.npmjs.com/package/@material-ui/icons"
       }, {
-        "component": "react",
-        "licAuthors": [
+        "Component": "react",
+        "LicAuthors": [
           "facebook"
         ],
-        "licAddText": "https://www.npmjs.com/package/react"
+        "LicAddText": "https://www.npmjs.com/package/react"
       }, {
-        "component": "react-dom",
-        "licAuthors": [
+        "Component": "react-dom",
+        "LicAuthors": [
           "facebook"
         ],
-        "licAddText": "https://www.npmjs.com/package/react-dom"
+        "LicAddText": "https://www.npmjs.com/package/react-dom"
       }, {
-        "component": "lodash",
-        "licAuthors": [
+        "Component": "lodash",
+        "LicAuthors": [
           "lodash"
         ],
-        "licAddText": "https://www.npmjs.com/package/lodash"
+        "LicAddText": "https://www.npmjs.com/package/lodash"
       }
     ]
   }, {
-    "licenseId": "BSD-2-Clause",
-    "components": [{
-        "component": "dotenv",
-        "licAuthors": [
+    "LicenseId": "BSD-2-Clause",
+    "Components": [{
+        "Component": "dotenv",
+        "LicAuthors": [
           "motdotla",
           "maxbeatty",
           "jcblw",
           "jessefulton",
           "et al"
         ],
-        "licAddText": "https://www.npmjs.com/package/dotenv"
+        "LicAddText": "https://www.npmjs.com/package/dotenv"
       }
     ]
   }

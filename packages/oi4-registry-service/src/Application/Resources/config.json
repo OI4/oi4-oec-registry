@@ -1,27 +1,27 @@
 {
-  "logging": {
-    "name": {
-      "locale": "en-US",
-      "text": "Logging"
+  "Logging": {
+    "Name": {
+      "Locale": "en-US",
+      "Text": "Logging"
     },
-    "description": {
-      "locale": "en-US",
-      "text": "Everything related to logging"
+    "Description": {
+      "Locale": "en-US",
+      "Text": "Everything related to logging"
     },
-    "auditLevel": {
-      "name": {
-        "locale": "en-US",
-        "text": "Audit Level"
+    "AuditLevel": {
+      "Name": {
+        "Locale": "en-US",
+        "Text": "Audit Level"
       },
-      "description": {
-        "locale": "en-US",
-        "text": "Audit Level, use Syslog Enum entries only!"
+      "Description": {
+        "Locale": "en-US",
+        "Text": "Audit Level, use Syslog Enum entries only!"
       },
-      "value": "warning",
-      "defaultValue": "warning",
-      "type": "String",
-      "validation": {
-        "values": [
+      "Value": "warning",
+      "DefaultValue": "warning",
+      "Type": "String",
+      "Validation": {
+        "Values": [
           "debug",
           "informational",
           "notice",
@@ -33,88 +33,88 @@
         ]
       }
     },
-    "logType": {
-      "name": {
-        "locale": "en-US",
-        "text": "Logging type"
+    "LogType": {
+      "Name": {
+        "Locale": "en-US",
+        "Text": "Logging type"
       },
-      "description": {
-        "locale": "en-US",
-        "text": "Currently used to enable / disable log to storage. Enum"
+      "Description": {
+        "Locale": "en-US",
+        "Text": "Currently used to enable / disable log to storage. Enum"
       },
-      "value": "disabled",
-      "defaultValue": "disabled",
-      "type": "String",
-      "validation": {
-        "values": [
+      "Value": "disabled",
+      "DefaultValue": "disabled",
+      "Type": "String",
+      "Validation": {
+        "Values": [
           "enabled",
           "disabled",
           "endpoint"
         ]
       }
     },
-    "logFileSize": {
-      "name": {
-        "locale": "en-US",
-        "text": "Size of Logfile (bytes)"
+    "LogFileSize": {
+      "Name": {
+        "Locale": "en-US",
+        "Text": "Size of Logfile (bytes)"
       },
-      "description": {
-        "locale": "en-US",
-        "text": "After this size, the logfile will cycle to the next one"
+      "Description": {
+        "Locale": "en-US",
+        "Text": "After this size, the logfile will cycle to the next one"
       },
-      "value": "250000",
-      "defaultValue": "250000",
-      "type": "Number",
-      "unit": "byte",
-      "validation": {
+      "Value": "250000",
+      "DefaultValue": "250000",
+      "Type": "Number",
+      "Unit": "byte",
+      "Validation": {
         "min": 1024
       }
     }
   },
-  "registry": {
-    "name": {
-      "locale": "en-US",
-      "text": "Registry"
+  "Registry": {
+    "Name": {
+      "Locale": "en-US",
+      "Text": "Registry"
     },
-    "description": {
-      "locale": "en-US",
-      "text": "Everything related to registry specific config"
+    "Description": {
+      "Locale": "en-US",
+      "Text": "Everything related to registry specific config"
     },
-    "developmentMode": {
-      "name": {
-        "locale": "en-US",
-        "text": "Development mode"
+    "DevelopmentMode": {
+      "Name": {
+        "Locale": "en-US",
+        "Text": "Development mode"
       },
-      "description": {
-        "locale": "en-US",
-        "text": "Enables or disables the development mode of the frontend"
+      "Description": {
+        "Locale": "en-US",
+        "Text": "Enables or disables the development mode of the frontend"
       },
-      "value": "false",
-      "defaultValue": "false",
-      "type": "Boolean"
+      "Value": "false",
+      "DefaultValue": "false",
+      "Type": "Boolean"
     },
-    "showRegistry": {
-      "name": {
-        "locale": "en-US",
-        "text": "Show Registry"
+    "ShowRegistry": {
+      "Name": {
+        "Locale": "en-US",
+        "Text": "Show Registry"
       },
-      "description": {
-        "locale": "en-US",
-        "text": "Decides, whether to save the Registry along the other assets or not"
+      "Description": {
+        "Locale": "en-US",
+        "Text": "Decides, whether to save the Registry along the other assets or not"
       },
-      "value": "true",
-      "defaultValue": "true",
-      "type": "Boolean"
+      "Value": "true",
+      "DefaultValue": "true",
+      "Type": "Boolean"
     }
   },
-  "context": {
-    "name": {
-      "locale": "en-US",
-      "text": "Registry settings"
+  "Context": {
+    "Name": {
+      "Locale": "en-US",
+      "Text": "Registry settings"
     },
-    "description": {
-      "locale": "en-US",
-      "text": "Settings for the OEC registry"
+    "Description": {
+      "Locale": "en-US",
+      "Text": "Settings for the OEC registry"
     }
   }
 }

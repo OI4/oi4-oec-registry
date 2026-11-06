@@ -1,15 +1,15 @@
 import {
-    IContainerConfig,
-    Health,
-    Profile,
-    License,
-    RTLicense,
-    LicenseText, 
     EAssetType,
-    MasterAssetModel
+    Health,
+    IContainerConfig,
+    License,
+    LicenseText,
+    MasterAssetModel,
+    Profile,
+    RTLicense,
+    Oi4Identifier,
 } from '@oi4/oi4-oec-service-model';
 import {IConformity} from '@oi4/oi4-oec-service-conformity-validator';
-import {Oi4Identifier} from '@oi4/oi4-oec-service-opcua-model';
 
 /**
  * This interface is proprietary and only used between registry backend and frontend.
@@ -37,17 +37,17 @@ export interface IAssetEvent {
     description?: string;
     details?: any;
     timestamp: string;
-  }
+}
 
 
 export interface IResourceObject {
     [key: string]: any;
 
-    mam: MasterAssetModel;
-    health?: Health;
-    rtLicense?: RTLicense;
-    license?: License;
-    config?: IContainerConfig;
-    profile?: Profile;
-    licenseText?: LicenseText;
+    MAM: MasterAssetModel;
+    Health?: Health;
+    RtLicense?: RTLicense;
+    License?: License;
+    Config?: IContainerConfig;
+    Profile?: Profile;
+    LicenseText?: LicenseText;
 }

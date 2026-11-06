@@ -1,20 +1,22 @@
-import { OI4ApplicationResources} from '@oi4/oi4-oec-service-node';
-import { IContainerConfig, 
-    License, 
-    LicenseText, 
-    Resource, 
-    ESyslogEventFilter, 
+import {OI4ApplicationResources} from '@oi4/oi4-oec-service-node';
+import {
+    ESyslogEventFilter,
+    IContainerConfig,
+    IContainerConfigConfigName,
     IContainerConfigGroupName,
-    IContainerConfigConfigName
+    License,
+    LicenseText,
+    Oi4Identifier,
+    OI4ResourceEvent,
+    Resources
 } from '@oi4/oi4-oec-service-model';
-import { ISettings, ELogType} from './Models/ISettings';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { StartupConfig } from './StartupConfig';
-import { Oi4Identifier } from '@oi4/oi4-oec-service-opcua-model';
+import {ELogType, ISettings} from './Models/ISettings';
+import {existsSync, readFileSync, writeFileSync} from 'fs';
+import {StartupConfig} from './StartupConfig';
 
+export const settingChangedEvent = 'settingsChanged';
 
-export class RegistryResources extends OI4ApplicationResources
-{
+export class RegistryResources extends OI4ApplicationResources {
     private static readonly AUDIT_LEVEL_DEFAULT = ESyslogEventFilter.warning;
     private static readonly LOG_TYPE_DEFAULT = ELogType.disabled;
     private static readonly LOG_FILE_SIZE_DEFAULT = 250000;
@@ -33,28 +35,30 @@ export class RegistryResources extends OI4ApplicationResources
         }
     };
 
-    constructor()
-    {
-        super(StartupConfig.mamFile());
+    private readonly startupConfig: StartupConfig;
 
-        this.on('resourceChanged', (oi4Id: Oi4Identifier, resource: Resource) => {
-            if (oi4Id.equals(this.oi4Id) && resource === Resource.CONFIG) {
+    constructor(startupConfig: StartupConfig) {
+        super(startupConfig.mamFileLocation);
+        this.startupConfig = startupConfig;
+
+        this.on(OI4ResourceEvent.RESOURCE_CHANGED, (oi4Id: Oi4Identifier, resource: Resources) => {
+            if (oi4Id.equals(this.oi4Id) && resource === Resources.CONFIG) {
                 const oldSettings = this._settings;
-                const newSettings = this.getSettingsFromConfig(this.config);
+                const newSettings = RegistryResources.getSettingsFromConfig(this.config);
                 if (newSettings != undefined) {
-                    if (!this.areEqual(oldSettings, newSettings)) {
+                    if (!RegistryResources.areEqual(oldSettings, newSettings)) {
                         this.writeConfig();
                     }
 
                     this.settings = newSettings;
-                    this.emit('settingsChanged', oldSettings, this._settings);
+                    this.eventEmitter.emit(settingChangedEvent, oldSettings, this._settings);
                 }
             }
         })
 
         this.loadLicenses();
         const isConfigLoaded = this.loadConfig();
-        
+
         this.initProfile(isConfigLoaded);
     }
 
@@ -68,40 +72,39 @@ export class RegistryResources extends OI4ApplicationResources
 
     private initProfile(addConfig: boolean): void {
 
-        // profile (contains allready the mandatory resources for an application) 
-        this.profile.resource.push(Resource.SUBSCRIPTION_LIST);
+        // profile (contains already the mandatory resources for an application)
+        this.profile.Resources.push(Resources.SUBSCRIPTION_LIST);
         if (addConfig) {
-            this.profile.resource.push(Resource.CONFIG);
+            this.profile.Resources.push(Resources.CONFIG);
         }
-        this.profile.resource.push(Resource.EVENT);
+        this.profile.Resources.push(Resources.EVENT);
     }
 
     private loadLicenses(): void {
         // license
-        const licenseFile = StartupConfig.licenseFile();
+        const licenseFile = this.startupConfig.licenseFile;
         if (existsSync(licenseFile)) {
             const texts = JSON.parse(readFileSync(licenseFile, 'utf-8'));
             for (const text of texts) {
                 const license = License.clone(text);
                 this.license.push(license);
-            }   
+            }
         }
 
         // license text
-        const licenseTextFile = StartupConfig.licenseTextFile();
+        const licenseTextFile = this.startupConfig.licenseTextFile;
         if (existsSync(licenseTextFile)) {
-            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({licenseId: string; licenseText: string})[];
+            const texts = JSON.parse(readFileSync(licenseTextFile, 'utf-8')) as ({ LicenseId: string; LicenseText: string })[];
             for (const text of texts) {
-                this.licenseText.set(text.licenseId, new LicenseText(text.licenseText));
+                this.licenseText.set(text.LicenseId, new LicenseText(text.LicenseText));
             }
         }
     }
 
     private loadConfig(): boolean {
-        const configFile = StartupConfig.configFile();
+        const configFile = this.startupConfig.configFile();
         if (configFile && existsSync(configFile)) {
-            const config: IContainerConfig = JSON.parse(readFileSync(configFile, 'utf-8'));
-            this.config = config;
+            this.config = JSON.parse(readFileSync(configFile, 'utf-8'));
             return true;
         }
 
@@ -110,36 +113,35 @@ export class RegistryResources extends OI4ApplicationResources
 
     private writeConfig(): void {
         try {
-            const configFile = StartupConfig.configFile();
+            const configFile = this.startupConfig.configFile();
             if (configFile && existsSync(configFile)) {
                 writeFileSync(configFile, Buffer.from(JSON.stringify(this.config, null, 4)));
             }
-        }
-        catch (e) {
+        } catch (e) {
             console.log(e);
         }
     }
 
-    private getSettingsFromConfig(config: IContainerConfig): ISettings | undefined {
-        const auditLevel = ESyslogEventFilter[this.getValue(config, 'logging', 'auditLevel') as keyof typeof ESyslogEventFilter];
+    private static getSettingsFromConfig(config: IContainerConfig): ISettings | undefined {
+        const auditLevel = ESyslogEventFilter[RegistryResources.getValue(config, 'Logging', 'AuditLevel') as keyof typeof ESyslogEventFilter];
         if (auditLevel === undefined) {
             console.log('Config setting auditLevel is invalid.');
-            return; 
+            return;
         }
 
-        const logType = ELogType[this.getValue(config, 'logging', 'logType') as keyof typeof ELogType];
+        const logType = ELogType[RegistryResources.getValue(config, 'Logging', 'LogType') as keyof typeof ELogType];
         if (logType === undefined) {
             console.log('Config setting logType is invalid.');
             return;
         }
 
-        const logFileSize = Number(this.getValue(config, 'logging', 'logFileSize'));
-        if (Number.isNaN(logFileSize) || !Number.isFinite(logFileSize) ||  logFileSize < 1024) {
+        const logFileSize = Number(RegistryResources.getValue(config, 'Logging', 'LogFileSize'));
+        if (Number.isNaN(logFileSize) || !Number.isFinite(logFileSize) || logFileSize < 1024) {
             console.log('Config setting logFileSize is invalid.');
             return;
         }
 
-        const developmentModeString = this.getValue(config, 'registry', 'developmentMode');
+        const developmentModeString = RegistryResources.getValue(config, 'Registry', 'DevelopmentMode');
         if (developmentModeString != 'true' && developmentModeString != 'false') {
             console.log('Config setting developmentMode is invalid.');
             return;
@@ -147,7 +149,7 @@ export class RegistryResources extends OI4ApplicationResources
 
         const developmentMode = developmentModeString === 'true';
 
-        const showRegistryString = this.getValue(config, 'registry', 'showRegistry');
+        const showRegistryString = RegistryResources.getValue(config, 'Registry', 'ShowRegistry');
         if (showRegistryString != 'true' && showRegistryString != 'false') {
             console.log('Config setting showRegistry is invalid.');
             return;
@@ -155,7 +157,7 @@ export class RegistryResources extends OI4ApplicationResources
 
         const showRegistry = showRegistryString === 'true';
 
-        return { 
+        return {
             logging: {
                 auditLevel: auditLevel,
                 logType: logType,
@@ -168,11 +170,11 @@ export class RegistryResources extends OI4ApplicationResources
         }
     }
 
-    private getValue(config: IContainerConfig, groupName: string, settingName: string): string {
-        return ((config?.[groupName] as IContainerConfigGroupName)?.[settingName] as IContainerConfigConfigName)?.value;
+    private static getValue(config: IContainerConfig, groupName: string, settingName: string): string {
+        return ((config?.[groupName] as IContainerConfigGroupName)?.[settingName] as IContainerConfigConfigName)?.Value;
     }
 
-    private areEqual(a: ISettings, b: ISettings): boolean  {
+    private static areEqual(a: ISettings, b: ISettings): boolean {
         return a.logging.auditLevel == b.logging.auditLevel &&
             a.logging.logFileSize == b.logging.logFileSize &&
             a.logging.logType == b.logging.logType &&

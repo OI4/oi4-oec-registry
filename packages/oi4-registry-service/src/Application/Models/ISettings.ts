@@ -1,13 +1,11 @@
-import { ESyslogEventFilter } from "@oi4/oi4-oec-service-model";
+import {ESyslogEventFilter} from '@oi4/oi4-oec-service-model';
 
-export interface ISettings
-{
+export interface ISettings {
     logging: ILogSettings;
     registry: IRegistrySettings;
 }
 
-export interface ILogSettings
-{
+export interface ILogSettings {
     auditLevel: ESyslogEventFilter;
     logType: ELogType;
     logFileSize: number;
@@ -19,9 +17,7 @@ export enum ELogType {
     endpoint = 'endpoint'
 }
 
-export interface IRegistrySettings
-{
+export interface IRegistrySettings {
     developmentMode: boolean;
     showRegistry: boolean;
 }
-  

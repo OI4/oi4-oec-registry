@@ -7,11 +7,16 @@ The OEC Registry is the first container to start on the bus and monitors onboard
 ![firefox_glIWnXYIXJ](https://user-images.githubusercontent.com/55870966/88534811-24dd7e00-d009-11ea-8699-b6267e277cb8.png)
 
 ## Getting started
-- Set environment variable for GitHub package repo (PAT) with, e.g. ```export PACKAGES_AUTH_TOKEN=123```
 - yarn install
 - yarn build
 - (one time) yarn run docker:prepare
 - yarn run docker:build:local
+
+To run the build docker image locally:
+```
+cd docker/configs/oi4-oec-registry
+docker compose up -d
+```
 
 ## Wiki
 Most of the previous entries of this README were moved to the Wiki portion of the Repository ([Click](https://github.com/OI4/oi4-registry/wiki))

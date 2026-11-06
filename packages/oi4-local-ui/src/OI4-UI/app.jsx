@@ -2,7 +2,6 @@
 import React from 'react';
 
 // Import images
-
 // OI4-Logos
 // import oi4BigLogoLight from './Images/OI4_Logo_complete_color_RGB.png';
 // import oi4BigLogoDark from './Images/OI4_Logo_complete_white_RGB.png';
@@ -14,8 +13,11 @@ import oi4SmallLogoDark from './Images/OI4_Signet_white_RGB.png';
 
 import namur_normal_0 from './Images/namur_normal_0.png';
 import namur_failure_1 from './Images/namur_failure_1.png';
+import namur_off_spec_3 from './Images/namur_off_spec_3.png';
 
-import { MuiThemeProvider, createTheme, withStyles } from '@material-ui/core/styles';
+import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight';
+
+import {createTheme, MuiThemeProvider, withStyles} from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 
 import Checkbox from '@material-ui/core/Checkbox';
@@ -24,33 +26,28 @@ import AppBar from '@material-ui/core/AppBar';
 
 import MaterialTable from 'material-table';
 
-import winston from 'winston';
-
 import {
-    Typography,
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Box,
     IconButton,
+    InputAdornment,
     Snackbar,
+    TextField,
     Tooltip,
+    Typography,
 } from '@material-ui/core';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import {
-    BrightnessHigh,
-    Brightness3,
-    ExpandMore,
-    FileCopy,
-    Close,
-} from '@material-ui/icons';
+import {Brightness3, BrightnessHigh, Close, ExpandMore, FileCopy,} from '@material-ui/icons';
 
 import _ from 'lodash';
-import { reject } from 'q';
-import { CommonFetch } from './Helper/CommonFetch/index.js';
+import {reject} from 'q';
+import {CommonFetch} from './Helper/CommonFetch/index.js';
 
 // Import custom components
-import { ClickableFooter } from './Components/ClickableFooter.jsx';
+import {ClickableFooter} from './Components/ClickableFooter.jsx';
 import ExpansionTable from './Components/ExpansionTable.jsx';
 
 // const pjson = require('../../package.json');
@@ -107,44 +104,35 @@ const styles = theme => ({
     },
 });
 
-const _winstonLogger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp({
-             format: 'YYYY-MM-DD HH:mm:ss'
-        }),
-        winston.format.errors({ stack: true }),
-        winston.format.splat(),
-        winston.format.label({ label: 'oi4-local-ui' }),
-    ),
-    transports: [
-        new winston.transports.Console({})
-    ]
-});
+let fetch
 
 class OI4Base extends React.Component {
     constructor(props) {
         super(props);
-        this.platform = 'fetch';
         // this.address = window.location.hostname;
         // The following lines will give access to the external Endpoint for the REST API defined by the Environment variables.
         // This way, the registry backend is fully decoupled from the front-end
         /* eslint-disable */
         if (typeof serviceEndpoint === 'object' && serviceEndpoint !== null) {
-            if (serviceEndpoint.address !== null && serviceEndpoint.address.length > 0) {
-                this.address = serviceEndpoint.address
-            } else {
-                this.address = window.location.hostname
-            }
             this.port = serviceEndpoint.port || 5799;
-            this.platform = serviceEndpoint.platform;
+            let raw = serviceEndpoint.address;
+
+            if (!raw.startsWith('http://') || !raw.startsWith('https://')) {
+                raw = `https://${raw}`;
+            }
+            if(raw.slice(6).indexOf(':') === -1) {
+                raw += `:${this.port}`;
+            }
+
+            this.address = raw;
         }
-        _winstonLogger.info(`Window.location.hostname: ${this.address}`);
-        _winstonLogger.info(`Window.location.port: ${this.port}`);
+        console.info(`Window.location.hostname: ${this.address}`);
+        console.info(`Window.location.port: ${this.port}`);
 
         // Since Cockpit uses a different approach to fetch data, we introduced a common API, which can be accessed by both
         // the local UI and the cockpit frontend.
         // Change the first argument to either 'fetch' or 'cockpit' depending on your use-case!
-        this.fetch = new CommonFetch(this.platform, this.address, this.port);
+        fetch = new CommonFetch(this.address);
         /* eslint-enable */
 
         this.state = {
@@ -171,7 +159,9 @@ class OI4Base extends React.Component {
             updatingConformity: false,
             filterWord: '',
             brokerState: false,
-            brokerStateRaw: 'empty',
+            backendState: false,
+            brokerStateRaw:  'false',
+            serviceAddressRaw:  this.address,
         };
 
         this.license = '';
@@ -222,24 +212,24 @@ class OI4Base extends React.Component {
             this.updateOi4Id();
         }, 300); // This will retrieve the oi4Id of the registry itself.
         setTimeout(() => { // Retrieve license and version from backend
-            this.fetch.get('/packageVersion')
+            fetch.get('/packageVersion')
                 .then(data => {
-                    _winstonLogger.info(data);
+                    console.info(data);
                     this.version = data;
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                     reject(err);
                 });
 
-            this.fetch.get('/packageLicense')
+            fetch.get('/packageLicense')
                 .then(data => {
-                    _winstonLogger.info(data);
+                    console.info(data);
                     this.license = data;
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                     reject(err);
                 });
@@ -259,8 +249,41 @@ class OI4Base extends React.Component {
         this.activeIntervals.forEach(element => clearInterval(element));
     }
 
-    handleFilterChange(ev) {
-        this.setState({ filterWord: ev.target.value });
+    handleServiceAddressChange(ev) {
+        this.setState({serviceAddressRaw: ev.target.value});
+    }
+
+    saveServiceAddress() {
+        let raw = this.state.serviceAddressRaw;
+        if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+            raw = `https://${raw}`;
+        }
+        if(raw.slice(6).indexOf(':') === -1) {
+            raw += `:${this.port}`;
+        }
+
+        this.address = raw;
+        fetch = new CommonFetch(this.address);
+        this.updateAll();
+    }
+
+    getBrokerState() {
+        if (!this.state.backendState) {
+            return {
+                text: "---",
+                namur: namur_off_spec_3
+            };
+        } else if (this.state.brokerState) {
+            return {
+                text: "Connected",
+                namur: namur_normal_0
+            };
+        } else {
+            return {
+                text: "Disconnected",
+                namur: namur_failure_1
+            };
+        }
     }
 
     /**
@@ -268,7 +291,7 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     render() {
-        const { classes } = this.props;
+        const {classes} = this.props;
         // const filteredTrail = this.state.globalEventTrail // TODO: Maybe get this to another place?
         //   .filter((item) => {
         //     if (this.state.filterWord === '') return true;
@@ -278,36 +301,66 @@ class OI4Base extends React.Component {
         //     if (JSON.stringify(item.payload).includes(this.state.filterWord)) return true;
         //     return false;
         //   });
+        const brokerState = this.getBrokerState();
+
+        // const textInput = React.createRef();
+        //
+        // function handleMessageBusChanged() {
+        //     console.info(`Clicked on MessageBus with detail: ${textInput.current.value}`);
+        // }
+
         return (
             <React.Fragment>
-                <MuiThemeProvider theme={ this.state.theme }>
-                    <CssBaseline />
+                <MuiThemeProvider theme={this.state.theme}>
+                    <CssBaseline/>
                     <div className={classes.root}>
                         <AppBar position='static' color='inherit'>
                             <Toolbar>
                                 {/* eslint-disable-next-line react/jsx-first-prop-new-line */}
-                                <img src={this.state.bigLogo} alt="OI4Logo" style={{ marginRight: '10px', maxWidth: '180px', height: 'auto' }} />
-                                <Typography variant='h6' style={{ flexGrow: 1 }}>OEC Registry</Typography>
-                                <div style={{ marginRight: '5px' }}>
-                                    <Typography variant='h6'>Message Bus:</Typography>
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <img src={this.state.bigLogo} alt="OI4Logo"
+                                     style={{marginRight: '10px', maxWidth: '180px', height: 'auto'}}/>
+                                <Typography variant='h6' style={{flexGrow: 1}}>OEC Registry</Typography>
+                                <div style={{marginRight: '5px'}}>
+                                    <Box m={1}>
+                                        <TextField
+                                            label="Service Address"
+                                            color="secondary"
+                                            value={this.state.serviceAddressRaw}
+                                            onChange={this.handleServiceAddressChange.bind(this)}
+                                            InputProps={{
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <IconButton
+                                                            edge="end"
+                                                            color="secondary"
+                                                            onClick={this.saveServiceAddress.bind(this)}>
+                                                            <ArrowCircleRightIcon/>
+                                                        </IconButton>
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                        />
+                                    </Box>
+                                    <div style={{display: 'flex', alignItems: 'center'}}>
                                         {/* eslint-disable-next-line react/jsx-first-prop-new-line */}
-                                        {this.state.brokerState === true ? <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Connected</Typography> : <Typography variant='h6' display='inline' style={{ marginRight: '10px' }}>Disconnected</Typography>}
-                                        {this.state.brokerState === true ? <img src={namur_normal_0} alt="Namur" height='25px' width='25px' /> : <img src={namur_failure_1} alt="Namur" height='25px' width='25px' />}
+                                        <Typography variant='h6' display='inline'
+                                                    style={{marginRight: '10px'}}>{brokerState.text}</Typography>
+                                        <img src={brokerState.namur} alt="Namur" height='25px' width='25px'/>
                                     </div>
                                 </div>
                                 <Checkbox
-                                    icon={<BrightnessHigh />}
-                                    checkedIcon={<Brightness3 />}
+                                    id={'darkModeSwitch'}
+                                    icon={<BrightnessHigh/>}
+                                    checkedIcon={<Brightness3/>}
                                     checked={this.state.darkActivated}
-                                    style={{ marginLeft: '15px' }}
+                                    style={{marginLeft: '15px'}}
                                     onChange={() => {
                                         this.toggleTheme();
                                     }}
                                 />
                             </Toolbar>
                         </AppBar>
-                        <div style={{ marginTop: '5%' }}>
+                        <div style={{marginTop: '5%'}}>
                             <ExpansionTable
                                 lookupType='application'
                                 assetLookup={this.state.applicationLookup}
@@ -330,7 +383,7 @@ class OI4Base extends React.Component {
                                 clearAsset={this.clearAssetById.bind(this)}
                             />
                             <Accordion>
-                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                <AccordionSummary expandIcon={<ExpandMore/>}>
                                     Global Event Trail: ({this.state.globalEventTrail.length} entries)
                                     {/* <TextField
                     id='filterText'
@@ -357,12 +410,12 @@ class OI4Base extends React.Component {
 
                         </div>
                         {/* Padding for dialog */}
-                        <div style={{ flexGrow: 1 }} />
+                        <div style={{flexGrow: 1}}/>
                         <ClickableFooter
                             updateFrontendConfig={this.updateFrontendConfig.bind(this)}
                             config={this.state.config}
                             backendConfig={this.state.backendConfig}
-                            fetch={this.fetch}
+                            fetch={fetch}
                             license={this.license}
                             version={this.version}
                             bigLogo={this.state.bigLogo}
@@ -387,11 +440,11 @@ class OI4Base extends React.Component {
             if (typeof object[property] === type) { // eslint-disable-line
                 return true;
             } else {
-                _winstonLogger.info('Object does have property, but its not the correct type');
+                console.info('Object does have property, but its not the correct type');
                 return false;
             }
         } else {
-            _winstonLogger.info('Object does not have this property');
+            console.info('Object does not have this property');
             return false;
         }
     }
@@ -495,31 +548,31 @@ class OI4Base extends React.Component {
                 return (
                     <MaterialTable
                         columns={[
-                            { title: "Level", field: "level", width: '8%', cellStyle: { wordBreak: 'break-all' } },
-                            { title: "Number", field: "number", width: '8%', cellStyle: { wordBreak: 'break-all' } },
-                            { title: "Category", field: "category", width: '13%', cellStyle: { wordBreak: 'break-all' } },
+                            {title: "Level", field: "level", width: '8%', cellStyle: {wordBreak: 'break-all'}},
+                            {title: "Number", field: "number", width: '8%', cellStyle: {wordBreak: 'break-all'}},
+                            {title: "Category", field: "category", width: '13%', cellStyle: {wordBreak: 'break-all'}},
                             {
                                 title: "Description",
                                 field: "description",
                                 width: '0px',
-                                cellStyle: { wordBreak: 'break-all' }
+                                cellStyle: {wordBreak: 'break-all'}
                             },
-                            { title: 'Details', field: 'details', cellStyle: { wordBreak: 'break-all' } }
+                            {title: 'Details', field: 'details', cellStyle: {wordBreak: 'break-all'}}
                         ]}
-                        style={{ minWidth: '100%' }}
+                        style={{minWidth: '100%'}}
                         data={newArray}
-                        title={<span style={{ marginRight: '1%' }}>
+                        title={<span style={{marginRight: '1%'}}>
               <Tooltip title="Copy to clipboard">
                 <IconButton
                     size='small'
                     color='default'
                     onClick={() => {
                         navigator.clipboard.writeText(JSON.stringify(eventArray, null, 2)).then(() => {
-                            this.setState({ copySnackOpen: true });
+                            this.setState({copySnackOpen: true});
                         });
                     }}
                 >
-                  <FileCopy />
+                  <FileCopy/>
                 </IconButton>
               </Tooltip>
               <Snackbar
@@ -529,15 +582,17 @@ class OI4Base extends React.Component {
                       horizontal: 'center',
                   }}
                   onClose={() => {
-                      this.setState({ copySnackOpen: false });
+                      this.setState({copySnackOpen: false});
                   }}
                   autoHideDuration={4000}
                   message='Saved Global Events to clipboard'
                   action={
                       <>
                           {/* eslint-disable-next-line react/jsx-first-prop-new-line */}
-                          <IconButton size='small' color='inherit' onClick={() => { this.setState({ copySnackOpen: false }) }}>
-                              <Close fontSize='small' />
+                          <IconButton size='small' color='inherit' onClick={() => {
+                              this.setState({copySnackOpen: false})
+                          }}>
+                              <Close fontSize='small'/>
                           </IconButton>
                       </>
                   }
@@ -553,14 +608,16 @@ class OI4Base extends React.Component {
     // UPDATE-FUNCTIONS OF ASSETS AND RESOURCES //
 
     updateBrokerState() {
-        this.fetch.get('/brokerState')
+        fetch.get('/brokerState')
             .then(data => {
                 const newValue = (data === 'true');
-                this.setState({ brokerState: newValue });
-                this.setState({ brokerStateRaw: data });
+                this.setState({brokerState: newValue});
+                this.setState({backendState: true});
+                this.setState({brokerStateRaw: data});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                this.setState({backendState: false});
+                console.info(err);
                 reject(err);
             });
     }
@@ -572,34 +629,34 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateConformity(fullTopic, oi4Id) {
-        this.setState({ updatingConformity: true });
-        _winstonLogger.info(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id}`);
+        this.setState({updatingConformity: true});
+        console.info(`Updating Conformity for ${fullTopic} with oi4Id: ${oi4Id}`);
         if (this.state.backendConfig.developmentMode === true) { // If we're in development mode, we retrieve *all* conformity values
-            this.fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
+            fetch.get(`/fullConformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
                 .then(data => {
-                    this.setState({ updatingConformity: false });
+                    this.setState({updatingConformity: false});
                     const jsonData = JSON.parse(data);
                     const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
                     delete confLookup[oi4Id];
                     confLookup[oi4Id] = jsonData;
-                    this.setState({ conformityLookup: confLookup, updatingConformity: false });
+                    this.setState({conformityLookup: confLookup, updatingConformity: false});
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                 });
         } else { // If not, retrieve only mandatory conformity values
-            this.fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
+            fetch.get(`/conformity/${encodeURIComponent(fullTopic)}/${encodeURIComponent(oi4Id)}`)
                 .then(data => {
-                    this.setState({ updatingConformity: false });
+                    this.setState({updatingConformity: false});
                     const jsonData = JSON.parse(data);
                     const confLookup = JSON.parse(JSON.stringify(this.state.conformityLookup));
                     delete confLookup[oi4Id];
                     confLookup[oi4Id] = jsonData;
-                    this.setState({ conformityLookup: confLookup, updatingConformity: false });
+                    this.setState({conformityLookup: confLookup, updatingConformity: false});
                 })
                 .catch(err => {
-                    _winstonLogger.info(err);
+                    console.info(err);
                     reject(err);
                 });
         }
@@ -610,7 +667,7 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateDevices() {
-        this.fetch.get(`/registry/device`)
+        fetch.get(`/registry/device`)
             .then(data => {
                 const jsonData = JSON.parse(data);
                 const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
@@ -640,12 +697,12 @@ class OI4Base extends React.Component {
                     }
                 });
                 if (wasUpdated) {
-                    this.setState({ listOfDevices: listOfDevices }); // FIXME: Potentially dangerous
+                    this.setState({listOfDevices: listOfDevices}); // FIXME: Potentially dangerous
                 }
-                this.setState({ deviceLookup: jsonData, conformityLookup: confLookupLoc });
+                this.setState({deviceLookup: jsonData, conformityLookup: confLookupLoc});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -655,7 +712,7 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateApplications() {
-        this.fetch.get(`/registry/application`)
+        fetch.get(`/registry/application`)
             .then(data => {
                 const jsonData = JSON.parse(data);
                 const confLookupLoc = JSON.parse(JSON.stringify(this.state.conformityLookup));
@@ -682,9 +739,16 @@ class OI4Base extends React.Component {
                 });
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
+    }
+
+    updateAll(){
+        this.updateBrokerState();
+        this.updateApplications();
+        this.updateDevices();
+        //this.updateGlobalEventTrail();
     }
 
     /**
@@ -696,7 +760,7 @@ class OI4Base extends React.Component {
             // Check, if we can even get the resource (through conformity lookup)
             if (typeof this.state.conformityLookup[oi4Id] === 'object' && this.state.conformityLookup[oi4Id] !== null) {
                 if (resource === 'lastMessage') {
-                    this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
+                    fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
                         .then(data => {
                             const resourceObject = JSON.parse(data);
                             // TODO: Remove everything except setState and update function!
@@ -704,25 +768,25 @@ class OI4Base extends React.Component {
                             if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
                                 if (typeof resourceObject === 'object' && resourceObject !== null) {
                                     if ('err' in resourceObject) {
-                                        _winstonLogger.info(`Received Error in updateRegistryResource (${resource})`);
-                                        _winstonLogger.info(resourceObject);
+                                        console.info(`Received Error in updateRegistryResource (${resource})`);
+                                        console.info(resourceObject);
                                     }
                                 } else {
                                     applicationLookupLoc[oi4Id][resource] = resourceObject;
                                 }
                             }
-                            this.setState({ applicationLookup: applicationLookupLoc });
+                            this.setState({applicationLookup: applicationLookupLoc});
                         })
                         .catch(err => {
-                            // _winstonLogger.info(`Error ${err} with Resource ${resource}`);
+                            // console.info(`Error ${err} with Resource ${resource}`);
                             reject(err);
                         });
                 } else { // If we don't have it in our lookup, we can return!
                     if (typeof this.state.conformityLookup[oi4Id].resource[resource] !== 'undefined') {
-                        // _winstonLogger.info(`The resource ${resource} could not be requested yet, because we are waiting for conformity`);
+                        // console.info(`The resource ${resource} could not be requested yet, because we are waiting for conformity`);
                         return;
                     }
-                    this.fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
+                    fetch.get(`/registry/${resource}/${encodeURIComponent(oi4Id)}`)
                         .then(data => {
                             const resourceObject = JSON.parse(data);
                             // TODO: Remove everything except setState and update function!
@@ -730,10 +794,10 @@ class OI4Base extends React.Component {
                             if (!(_.isEqual(applicationLookupLoc[oi4Id][resource], resourceObject))) {
                                 applicationLookupLoc[oi4Id][resource] = resourceObject;
                             }
-                            this.setState({ applicationLookup: applicationLookupLoc });
+                            this.setState({applicationLookup: applicationLookupLoc});
                         })
                         .catch(err => {
-                            _winstonLogger.info(`Error ${err} with Resource ${resource}`);
+                            console.info(`Error ${err} with Resource ${resource}`);
                             reject(err);
                         });
                 }
@@ -748,10 +812,10 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     clearAssetById(oi4Id) {
-        _winstonLogger.info('Clear Asset by Id clicked');
-        this.fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
+        console.info('Clear Asset by Id clicked');
+        fetch.delete(`/registry/assets/${encodeURIComponent(oi4Id)}`)
             .then(data => {
-                _winstonLogger.info(data);
+                console.info(data);
             });
     }
 
@@ -761,12 +825,12 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateHealth() {
-        this.fetch.get(`/health`)
+        fetch.get(`/health`)
             .then(data => {
-                this.setState({ health: JSON.parse(data) });
+                this.setState({health: JSON.parse(data)});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -776,13 +840,13 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateOi4Id() {
-        this.fetch.get('')
+        fetch.get('')
             .then(data => {
-                _winstonLogger.info(data);
-                this.setState({ oi4Id: JSON.parse(data) });
+                console.info(data);
+                this.setState({oi4Id: JSON.parse(data)});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
                 reject(err);
             });
@@ -799,17 +863,17 @@ class OI4Base extends React.Component {
     updateFrontendConfig(configPropertyName, newProperty) {
         const oldConfigObj = JSON.parse(JSON.stringify(this.state.config));
         oldConfigObj[configPropertyName] = newProperty;
-        this.setState({ config: oldConfigObj });
+        this.setState({config: oldConfigObj});
     }
 
     async retrieveBackendConfig() {
         try {
-            const data = await this.fetch.get(`/registry/config`);
+            const data = await fetch.get(`/registry/config`);
             const regConfData = JSON.parse(data); // Format from backend!
             return regConfData;
         } catch (err) {
-            _winstonLogger.info(err);
-            throw err;
+            console.info(err);
+            reject(err);
         }
     }
 
@@ -819,11 +883,12 @@ class OI4Base extends React.Component {
      */
     async getBackendConfig() {
         const regConfData = await this.retrieveBackendConfig();
+        if(!regConfData) return;
         const backendConfig = {
             showRegistry: regConfData.registry.showRegistry.value === 'true',
             developmentMode: regConfData.registry.developmentMode.value === 'true',
         };
-        this.setState({ backendConfig: backendConfig });
+        this.setState({backendConfig: backendConfig});
     }
 
     /**
@@ -831,12 +896,12 @@ class OI4Base extends React.Component {
      * @memberof OI4Base
      */
     updateGlobalEventTrail() {
-        this.fetch.get(`/registry/event/${this.state.config.auditTrailLength}`)
+        fetch.get(`/registry/event/${this.state.config.auditTrailLength}`)
             .then(data => {
-                this.setState({ globalEventTrail: JSON.parse(data) });
+                this.setState({globalEventTrail: JSON.parse(data)});
             })
             .catch(err => {
-                _winstonLogger.info(err);
+                console.info(err);
                 reject(err);
             });
     }
@@ -846,4 +911,4 @@ OI4Base.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles, { withTheme: true })(OI4Base);
+export default withStyles(styles, {withTheme: true})(OI4Base);
