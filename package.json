@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "dotenv": "^16.0.0",
-    "lerna": "^7.1.5"
+    "lerna": "^10.1.1"
   },
   "scripts": {
     "clean": "lerna clean",
