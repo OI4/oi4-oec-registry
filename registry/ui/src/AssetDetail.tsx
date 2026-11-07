@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { fetchAsset, type Asset, type Mam, type PublicationEntry, type Summary } from "./api";
+import { fetchAsset, type Asset, type DataSets, type Mam, type PublicationEntry, type Summary } from "./api";
+import { DataCards } from "./DataView";
 import { EventTable } from "./EventList";
 import { HealthChart } from "./HealthChart";
 import {
@@ -96,7 +97,7 @@ function useAsset(il: string, summary: Summary | undefined) {
   return { asset, error };
 }
 
-export type Tab = "overview" | "nameplate" | "interfaces" | "conformity" | "events";
+export type Tab = "overview" | "nameplate" | "interfaces" | "data" | "conformity" | "events";
 
 function Section({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) {
   return (
@@ -580,12 +581,14 @@ export function AssetDetail({
   il,
   summary,
   live,
+  data,
   tab,
   onTab,
 }: {
   il: string;
   summary: Summary | undefined;
   live: Live;
+  data: DataSets | null;
   tab: Tab;
   onTab: (t: Tab) => void;
 }) {
@@ -610,10 +613,12 @@ export function AssetDetail({
   }
   const events = live.events.filter((e) => e.source === il);
   const violations = s.conformity?.violations ?? 0;
+  const records = data?.dataSets.filter((r) => r.source === il) ?? [];
   const tabs: [Tab, string, ReactNode][] = [
     ["overview", "Overview", null],
     ["nameplate", "Nameplate", null],
     ["interfaces", "Interfaces", null],
+    ["data", "Data", records.length > 0 ? <span className="count">{records.length}</span> : null],
     ["conformity", "Conformity", violations > 0 ? <span className="count bad">{violations}</span> : null],
     ["events", "Events", events.length > 0 ? <span className="count">{events.length}</span> : null],
   ];
@@ -669,6 +674,16 @@ export function AssetDetail({
         {tab === "overview" && <Overview s={s} asset={asset} live={live} />}
         {tab === "nameplate" && <Nameplate mam={s.mam} />}
         {tab === "interfaces" && <Interfaces asset={asset} live={live} />}
+        {tab === "data" &&
+          (data === null ? (
+            <p className="muted pad">Loading …</p>
+          ) : records.length === 0 ? (
+            <Empty title="No Data with this asset as Source">
+              The last value of every Data DataSet about this asset appears here once it is published on the bus.
+            </Empty>
+          ) : (
+            <DataCards records={records} live={live} showSource={false} />
+          ))}
         {tab === "conformity" && <Conformity s={s} asset={asset} />}
         {tab === "events" &&
           (events.length === 0 ? (

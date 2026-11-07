@@ -34,6 +34,9 @@
 //! conformity per participant (counted by the bus side, [`Conformity`]) and
 //! the observed Messaging level (informative, REQ-CMP-013, [`Observed`]).
 //!
+//! The data logger (amendment 2026-11-28): the last value of every `Data`
+//! DataSet on the bus ([`DataRecord`]), in memory only, no history.
+//!
 //! Ignored (counted): the registry's own messages, the republications of
 //! other registries (a `Source` ≠ `AppId` under ServiceType Registry is a
 //! listed asset there, not a represented one), a MAM whose
@@ -275,6 +278,33 @@ pub(crate) struct EventRecord {
     pub(crate) event: Event,
 }
 
+/// The data logger keeps the last value of at most this many DataSets;
+/// beyond, the one updated longest ago is dropped.
+pub(crate) const DATA_SETS: usize = 1000;
+/// The longest Payload kept (JSON text, octets); a longer one is kept
+/// without its Payload.
+pub(crate) const DATA_MAX: usize = 16 * 1024;
+
+/// The last value of one `Data` DataSet (the data logger, amendment
+/// 2026-11-28), keyed by publisher, Source and Filter.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct DataRecord {
+    /// The number of the update, counting from 1 since the start of the
+    /// registry over all DataSets.
+    pub(crate) seq: u64,
+    /// Registry clock, Unix ms.
+    pub(crate) at: u64,
+    /// AppId of the publisher.
+    pub(crate) publisher: String,
+    /// Its `Source` (DataSetWriterName).
+    pub(crate) source: String,
+    /// The Filter of its topic, else its WriterGroupName: the DataSet.
+    pub(crate) filter: Option<String>,
+    pub(crate) data_set_writer_id: u16,
+    /// The Payload as received; `None` if longer than [`DATA_MAX`].
+    pub(crate) payload: Option<serde_json::Value>,
+}
+
 /// A message that violates the D1 schemas (or is no message at all).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Violation {
@@ -332,6 +362,9 @@ pub(crate) struct Directory {
     /// The number of Events received so far (the last [`EventRecord::seq`]).
     events_seen: u64,
     conformity: BTreeMap<String, Conformity>,
+    /// The data logger: (publisher, Source, Filter) → last value.
+    data: BTreeMap<(String, String, Option<String>), DataRecord>,
+    data_seen: u64,
 }
 
 fn fetch(o: &Origin<'_>, want: Want) -> Effect {
@@ -415,6 +448,8 @@ impl Directory {
             events: VecDeque::new(),
             events_seen: 0,
             conformity: BTreeMap::new(),
+            data: BTreeMap::new(),
+            data_seen: 0,
         }
     }
 
@@ -624,6 +659,50 @@ impl Directory {
             event,
         });
         trim(&mut self.events, self.limits.event_trail);
+    }
+
+    /// The last values of the data logger, by publisher, Source and Filter.
+    pub(crate) fn data_sets(&self) -> impl Iterator<Item = &DataRecord> {
+        self.data.values()
+    }
+
+    /// A `Pub/Data` DataSetMessage: its value replaces the last one of the
+    /// DataSet (`filter`: the Filter of the topic or the WriterGroupName).
+    pub(crate) fn data(
+        &mut self,
+        o: &Origin<'_>,
+        filter: Option<String>,
+        data_set_writer_id: u16,
+        payload: serde_json::Value,
+    ) {
+        if self.ignore(o) {
+            return;
+        }
+        let key = (o.app.to_owned(), o.source.to_owned(), filter.clone());
+        if !self.data.contains_key(&key)
+            && self.data.len() >= DATA_SETS
+            && let Some(oldest) = self
+                .data
+                .iter()
+                .min_by_key(|(_, r)| r.seq)
+                .map(|(k, _)| k.clone())
+        {
+            self.data.remove(&oldest);
+        }
+        let fits = serde_json::to_string(&payload).is_ok_and(|t| t.len() <= DATA_MAX);
+        self.data_seen += 1;
+        self.data.insert(
+            key,
+            DataRecord {
+                seq: self.data_seen,
+                at: o.now,
+                publisher: o.app.to_owned(),
+                source: o.source.to_owned(),
+                filter,
+                data_set_writer_id,
+                payload: fits.then_some(payload),
+            },
+        );
     }
 
     /// `Pub/PublicationList` entries of the application `o.app`.
@@ -1095,6 +1174,45 @@ mod tests {
         };
         d.mam(&o, mam(other));
         assert_eq!(d.get(other).unwrap().service_type, ServiceType::Registry);
+    }
+
+    /// The data logger: the last value per publisher, Source and Filter;
+    /// at most [`DATA_SETS`], the one updated longest ago dropped; a
+    /// Payload longer than [`DATA_MAX`] not kept; own messages ignored.
+    #[test]
+    fn data_logger() {
+        let mut d = Directory::new(ME);
+        let v = |x: i64| serde_json::json!({ "Value": x });
+        d.data(&at(APP, PUMP, false, 1), Some("Level".to_owned()), 7, v(1));
+        d.data(&at(APP, PUMP, false, 2), Some("Level".to_owned()), 7, v(2));
+        d.data(&at(APP, PUMP, false, 3), Some("Flow".to_owned()), 8, v(3));
+        d.data(&at(ME, ME, false, 4), None, 9, v(4));
+        let sets: Vec<_> = d.data_sets().collect();
+        assert_eq!(sets.len(), 2);
+        let level = sets
+            .iter()
+            .find(|r| r.filter.as_deref() == Some("Level"))
+            .unwrap();
+        assert_eq!((level.seq, level.at, level.data_set_writer_id), (2, 2, 7));
+        assert_eq!(level.payload, Some(v(2)));
+        assert_eq!(level.publisher, APP);
+        assert_eq!(level.source, PUMP);
+        assert_eq!(d.ignored(), 1);
+
+        let big = serde_json::json!({ "Blob": "x".repeat(DATA_MAX) });
+        d.data(&at(APP, APP, false, 5), None, 1, big);
+        let blob = d.data_sets().find(|r| r.source == APP).unwrap();
+        assert_eq!(blob.payload, None);
+
+        for i in 0..DATA_SETS {
+            d.data(&at(APP, APP, false, 6), Some(format!("S{i}")), 2, v(0));
+        }
+        assert_eq!(d.data_sets().count(), DATA_SETS);
+        // the three oldest (Level, Flow, the blob) are dropped
+        assert!(
+            d.data_sets()
+                .all(|r| r.filter.as_deref().is_some_and(|f| f.starts_with('S')))
+        );
     }
 
     /// A Close of an application never seen online is recorded offline.

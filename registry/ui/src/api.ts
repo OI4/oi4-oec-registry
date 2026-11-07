@@ -170,3 +170,33 @@ export async function fetchAsset(il: string, signal: AbortSignal): Promise<Asset
   }
   return (await resp.json()) as Asset;
 }
+
+/** The last value of one Data DataSet (`GET /api/data`, the data logger). */
+export interface DataRecord {
+  seq: number;
+  at: number;
+  publisher: string;
+  source: string;
+  filter: string | null;
+  dataSetWriterId: number;
+  /** null: longer than 16 KiB, not kept. */
+  payload: Record<string, unknown> | null;
+}
+
+export interface DataSets {
+  max: number;
+  dataSets: DataRecord[];
+}
+
+/** Reads the last values of the data logger. */
+export async function fetchData(signal: AbortSignal): Promise<DataSets> {
+  const resp = await fetch("/api/data", {
+    signal,
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!resp.ok) {
+    throw new Error(`${resp.status} ${resp.statusText}`);
+  }
+  return (await resp.json()) as DataSets;
+}

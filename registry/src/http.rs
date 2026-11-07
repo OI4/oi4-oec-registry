@@ -438,6 +438,7 @@ fn handle(
             None => error(404, "no such asset"),
         },
         Route::Events => json(200, &api::events(&dir())),
+        Route::Data => json(200, &api::data(&dir())),
         Route::OpenApi => content(
             200,
             "application/json",

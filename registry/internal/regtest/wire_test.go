@@ -26,7 +26,9 @@ func TestAPI(t *testing.T) {
 		{"send", other + "/Del/SubscriptionList", ""},
 		{"send", other + "/Call/NewDataSetWriterId", ""},
 		{"send", other + "/Get/Data", ""},
-		{"receive", other + "/Pub/Data", ""},
+		{"receive", other + "/Pub/Data", "otherPubData"},
+		{"receive", other + "/Pub/Data/" + src + "/Climate", "otherPubDataSourceFilter"},
+		{"receive", other + "/Pub/Config", ""},
 		{"send", "Oi4v2/Foo/" + Topic("acme.com/X/Y/1") + "/Get/MAM", ""},
 		{"send", "Oi4v2/Registry/" + Topic("acme.com/X/Y/1") + "/Pub/MAM", ""},
 	} {
@@ -40,7 +42,8 @@ func TestAPI(t *testing.T) {
 		{own + "/Get/MAM/#", "getMam"},
 		{own + "/Call/NewDataSetWriterId/+", "callNewDataSetWriterIdSource"},
 		{"Oi4v2/Utility/" + Topic("acme.com/X/Y/1") + "/Pub/Event/+/Status/+", "otherPubEventSourceFilter"},
-		{"Oi4v2/+/+/Pub/Data/#", ""},
+		{"Oi4v2/+/+/Pub/Data/#", "otherPubData"},
+		{"Oi4v2/+/+/Pub/Config/#", ""},
 		{"Oi4v2/+/+/Set/Config/#", ""},
 		{"#", ""},
 	} {

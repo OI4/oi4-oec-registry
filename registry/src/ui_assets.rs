@@ -7,14 +7,14 @@ use crate::api::UiFile;
 /// The files by path, sorted.
 pub(crate) const UI_FILES: &[UiFile] = &[
     UiFile {
-        path: "/assets/index-skadSyzN.js",
+        path: "/assets/index-BdBkwo3L.js",
         content_type: "text/javascript; charset=utf-8",
-        bytes: include_bytes!("../ui/dist/assets/index-skadSyzN.js"),
+        bytes: include_bytes!("../ui/dist/assets/index-BdBkwo3L.js"),
     },
     UiFile {
-        path: "/assets/style-BdNyyNnO.css",
+        path: "/assets/style-Dmy_pvg1.css",
         content_type: "text/css; charset=utf-8",
-        bytes: include_bytes!("../ui/dist/assets/style-BdNyyNnO.css"),
+        bytes: include_bytes!("../ui/dist/assets/style-Dmy_pvg1.css"),
     },
     UiFile {
         path: "/favicon.svg",

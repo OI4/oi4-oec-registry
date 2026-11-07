@@ -8,6 +8,7 @@ import {
   ilParts,
   type Label,
 } from "./format";
+import { Atom } from "./logo";
 
 /** The labels of all assets (name and suffix), computed once per directory change. */
 export const LabelsContext = createContext<ReadonlyMap<string, Label>>(new Map());
@@ -181,38 +182,11 @@ export function Icon({ name }: { name: keyof typeof ICONS }) {
   );
 }
 
-/**
- * The mark of the Web UI: a hub with spokes in the colours of the Open
- * Industry 4.0 Alliance (not the alliance's logo).
- */
-export function Signet({ className }: { className?: string }) {
-  const spokes = [-90, -38, 14, 66, 118, 170, 222];
-  return (
-    <svg className={className ?? "signet"} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-      <circle className="signet-core" cx="32" cy="32" r="5.5" />
-      <path className="signet-ring" d="M32 17.5a14.5 14.5 0 0 1 13.2 8.5M47 35a14.5 14.5 0 0 1-9.5 10.4M27 45.6A14.5 14.5 0 0 1 17.6 34M18.2 26.5A14.5 14.5 0 0 1 26 18.8" />
-      {spokes.map((a, i) => {
-        const r = (a * Math.PI) / 180;
-        const x1 = 32 + Math.cos(r) * 19.5;
-        const y1 = 32 + Math.sin(r) * 19.5;
-        const x2 = 32 + Math.cos(r) * 26.5;
-        const y2 = 32 + Math.sin(r) * 26.5;
-        return (
-          <g key={a}>
-            <line className="signet-spoke" x1={x1} y1={y1} x2={x2} y2={y2} />
-            <circle className="signet-node" cx={x2} cy={y2} r={i % 2 === 0 ? 3.6 : 2.7} />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 /** An empty state with a short explanation. */
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="empty">
-      <Signet className="empty-mark" />
+      <Atom className="empty-mark" />
       <p className="empty-title">{title}</p>
       {children && <p className="muted">{children}</p>}
     </div>

@@ -3,7 +3,8 @@ import type { HealthState, Summary } from "./api";
 import { EventTable } from "./EventList";
 import { HEALTH_STATES, healthLabel, healthTone, needsAttention } from "./format";
 import type { Live } from "./live";
-import { AssetLink, AvailabilityDot, HealthBadge, Icon, Signet } from "./parts";
+import { Atom, CommunityBadge } from "./logo";
+import { AssetLink, AvailabilityDot, HealthBadge, Icon } from "./parts";
 
 /** A stacked bar of counts (SVG attributes, no inline style: CSP). */
 function Stack({ parts, label }: { parts: { key: string; n: number; tone: string; label: string }[]; label: string }) {
@@ -55,7 +56,7 @@ export function Dashboard({ live }: { live: Live }) {
   return (
     <div className="detail-body dashboard">
       <header className="welcome">
-        <Signet className="welcome-mark" />
+        <Atom className="welcome-mark" />
         <div>
           <h2>Overview</h2>
           <p className="muted">
@@ -186,6 +187,17 @@ export function Dashboard({ live }: { live: Live }) {
           </dl>
         </section>
       )}
+
+      <section className="section community-note" aria-label="About">
+        <CommunityBadge className="community-badge" />
+        <div>
+          <p>
+            <b>A community project.</b> The OEC Registry is developed by the OI4 Open Edge Computing community; it is
+            not an official product of the Open Industry 4.0 Alliance.
+          </p>
+          <p className="muted small">The OI4 logo is a trademark of the Open Industry 4.0 Alliance.</p>
+        </div>
+      </section>
     </div>
   );
 }

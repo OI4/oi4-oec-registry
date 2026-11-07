@@ -2,23 +2,28 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssetDetail, type Tab } from "./AssetDetail";
 import { AssetList, type ListState, type Show } from "./AssetList";
 import { Dashboard } from "./Dashboard";
+import { DataView, useData } from "./DataView";
 import { EventsView } from "./EventList";
 import { ago, labels, needsAttention, severity } from "./format";
 import { useLive, type Connection } from "./live";
-import { assetHref, Icon, LabelsContext, Signet } from "./parts";
+import { Atom, CommunityBadge } from "./logo";
+import { assetHref, Icon, LabelsContext } from "./parts";
 
-type Route = { view: "assets"; il: string | null; tab: Tab } | { view: "events" };
+type Route = { view: "assets"; il: string | null; tab: Tab } | { view: "events" } | { view: "data" };
 
-const TABS: readonly Tab[] = ["overview", "nameplate", "interfaces", "conformity", "events"];
+const TABS: readonly Tab[] = ["overview", "nameplate", "interfaces", "data", "conformity", "events"];
 
 /**
  * The route from the location hash: `#/asset/<IL percent-encoded>[/<tab>]`,
- * `#/events` or the directory.
+ * `#/events`, `#/data` or the directory.
  */
 function route(): Route {
   const h = window.location.hash;
   if (h === "#/events") {
     return { view: "events" };
+  }
+  if (h === "#/data") {
+    return { view: "data" };
   }
   const m = /^#\/asset\/([^/]+)(?:\/([a-z]+))?$/.exec(h);
   if (m?.[1] === undefined) {
@@ -175,7 +180,9 @@ export function App() {
     document.title =
       r.view === "events"
         ? `Events · ${base}`
-        : r.il !== null
+        : r.view === "data"
+          ? `Data · ${base}`
+          : r.il !== null
           ? `${names.get(r.il)?.name ?? r.il} · ${base}`
           : base;
   }, [r, names]);
@@ -187,6 +194,7 @@ export function App() {
     }
   };
   const selected = r.view === "assets" ? r.il : null;
+  const data = useData(r.view === "data" || (r.view === "assets" && r.il !== null && r.tab === "data"));
   const openTab = useCallback(
     (t: Tab) => {
       if (selected !== null) {
@@ -202,11 +210,14 @@ export function App() {
       <div className="page">
         <header className="appbar">
           <a className="brand" href="#/" aria-label="OEC Registry – overview">
-            <Signet />
+            <Atom />
             <span className="brand-text">
               <span className="brand-kicker">OI4 Open Edge Computing</span>
               <span className="brand-name">
                 OEC <b>Registry</b>
+                <span className="brand-tag" title="A community project – not an official product of the Open Industry 4.0 Alliance">
+                  Community
+                </span>
               </span>
             </span>
           </a>
@@ -216,6 +227,9 @@ export function App() {
             </a>
             <a href="#/events" className={r.view === "events" ? "on" : ""} aria-current={r.view === "events" ? "page" : undefined}>
               Events <span className="count">{live.events.length}</span>
+            </a>
+            <a href="#/data" className={r.view === "data" ? "on" : ""} aria-current={r.view === "data" ? "page" : undefined}>
+              Data <span className="count">{data.data?.dataSets.length ?? "–"}</span>
             </a>
           </nav>
           <div className="appbar-end">
@@ -268,6 +282,10 @@ export function App() {
           <main className="main single">
             <EventsView live={live} />
           </main>
+        ) : r.view === "data" ? (
+          <main className="main single">
+            <DataView live={live} data={data.data} error={data.error} />
+          </main>
         ) : (
           <main className={`main${selected !== null ? " has-selection" : ""}`}>
             <AssetList live={live} selected={selected} state={list} onState={setList} labelOf={labelOf} />
@@ -275,20 +293,38 @@ export function App() {
               {selected === null ? (
                 <Dashboard live={live} />
               ) : (
-                <AssetDetail key={selected} il={selected} summary={live.assets.get(selected)} live={live} tab={r.view === "assets" ? r.tab : "overview"} onTab={openTab} />
+                <AssetDetail
+                  key={selected}
+                  il={selected}
+                  summary={live.assets.get(selected)}
+                  live={live}
+                  data={data.data}
+                  tab={r.view === "assets" ? r.tab : "overview"}
+                  onTab={openTab}
+                />
               )}
             </aside>
           </main>
         )}
 
         <footer className="foot">
-          <span>
-            <b>OEC Registry</b>
-            {live.directory && ` ${live.directory.version}`} · read-only · part of OI4 Open Edge Computing
-          </span>
+          <div className="foot-about">
+            <CommunityBadge className="foot-badge" />
+            <span className="foot-text">
+              <span>
+                <b>OEC Registry</b>
+                {live.directory && ` ${live.directory.version}`} · read-only · part of OI4 Open Edge Computing
+              </span>
+              <span>
+                A community project – not an official product of the Open Industry 4.0 Alliance. The OI4 logo is a
+                trademark of the Open Industry 4.0 Alliance.
+              </span>
+            </span>
+          </div>
           <span className="foot-links">
             API <a href="/api/assets">/api/assets</a>
             <a href="/api/events">/api/events</a>
+            <a href="/api/data">/api/data</a>
             <a href="/api/openapi.json">OpenAPI</a>
             <a href="/api/asyncapi.json">AsyncAPI</a>
           </span>

@@ -18,6 +18,9 @@ relation and the devices, an observed Messaging level (informative) and a
 conformity view (every received message validated with the strict D1
 schemas, independent of D7). It has its own `Config` (below) and a
 persistent `ReferenceDesignation`; D7 `oec-check test --level 3` passes.
+Since the PO order of 2026-11-28 it also keeps the **last value of every
+`Data` DataSet** on the bus (the data logger: in memory only, no history,
+at most 1000 DataSets, a Payload longer than 16 KiB without its value).
 Since C-088 it serves the directory over **HTTPS**, read-only (below);
 since C-089 the **Web UI** (React/TypeScript/Vite, `ui/`) on the web port;
 since C-090 the **image** `oi4/oec-registry` (below) and the compose profile
@@ -54,6 +57,7 @@ Read-only (ADR-0008): every resource answers `GET` only, any other method
 | `GET /api/assets` | the registry, its limits, the ignored messages and a summary per asset (kind, publisher, availability, MAM, latest Health, observed level, conformity counts, devices) |
 | `GET /api/assets/{il}` | the summary plus the detail (Profile, Health history, answers to the `Get`s, PublicationList, SubscriptionList, last violations); `{il}` percent-encoded as one segment; `404` if unknown |
 | `GET /api/events` | the Event trail, oldest first, with a sequence number |
+| `GET /api/data` | the data logger: the last value of every `Data` DataSet (publisher, Source, Filter, DataSetWriterId, time, Payload), at most 1000 – beyond, the one updated longest ago is dropped |
 | `GET /api/stream` | `text/event-stream`: a `snapshot`, then `asset`, `event` and `directory` messages; a `keep-alive` comment when quiet |
 | `GET /api/openapi.json`, `GET /api/asyncapi.json` | the API documents |
 | `GET /`, `GET /<file of ui/dist>` | web port only: the Web UI (below); other paths `404` |
@@ -104,16 +108,27 @@ system or chosen in the app bar):
 - **Asset detail** with the tabs Overview (availability, latest Health and
   its history, observed Messaging level, devices), Nameplate (MAM),
   Interfaces (Profile, the answers to the `Get`s, PublicationList with
-  filter by resource, SubscriptionList), Conformity (informative, with the
-  missing REQs and the last violations) and Events.
+  filter by resource, SubscriptionList), Data (the last values of its
+  `Data` DataSets), Conformity (informative, with the missing REQs and the
+  last violations) and Events.
 - **Event trail** (`#/events`): search, severity (Syslog level, the class of
   the StatusCode of a Status Event), category, pause.
+- **Data logger** (`#/data`): the last value of every `Data` DataSet as a
+  card (asset, Filter, fields, age; stale after 60 s), with search; polled
+  from `/api/data` every 2 s while shown.
 
-Hash routes `#/asset/<IL>[/<tab>]` and `#/events` (bookmarkable); `/`
-focuses the search, `Esc` closes the detail. No other origin: the CSP
-`default-src 'self'` holds without `unsafe-inline` (no `style` props, bars
-are SVG). The OI4 signet is a simplified own SVG drawing, not the official
-logo.
+Hash routes `#/asset/<IL>[/<tab>]`, `#/events` and `#/data`
+(bookmarkable); `/` focuses the search, `Esc` closes the detail. No other
+origin: the CSP `default-src 'self'` holds without `unsafe-inline` (no
+`style` props, bars are SVG).
+
+**Community project:** the app bar, the overview and the footer say that
+the registry is a community project and not an official product of the Open
+Industry 4.0 Alliance. With this note it shows the OI4 **community badge**
+(the PO's permission of 2026-11-28; the OI4 logo is a trademark of the
+alliance): `ui/src/logo.tsx` holds the atom and the badge as SVG paths
+traced from the supplied PNG (no fonts, no raster image in `dist/`; the grey
+recoloured per theme), `ui/public/favicon.svg` the atom.
 
 React 19.3.1 + react-dom, TypeScript 7.0.2, Vite 7.3.7 (not Vite 8:
 `lightningcss` is MPL-2.0, A-382); JSX through esbuild, no
@@ -224,7 +239,7 @@ ADR-0006):
 
 - `TestD8Registry`: `oec-infra bus --tests T8-BUS-03` passes (REQ-REG-001,
   REQ-REG-002); the registry subscribes to `Oi4v2/+/+/Pub/<R>/#` for the
-  six collected resources, and its topics and subscriptions on the wire
+  seven collected resources (with `Data`), and its topics and subscriptions on the wire
   are channels of `api/asyncapi.json`.
 - `TestD7Level3`: `oec-check test --level 3` – no fail, 49 pinned passes,
   the wire again against `api/asyncapi.json`; T7-GET-04, T7-SET-03 and
@@ -234,7 +249,8 @@ ADR-0006):
 - `TestHTTPSelfSigned`, `TestHTTPApplicationCertificate`, `TestHTTPPlain`,
   `TestHTTPSettings` (`http_test.go`): TLS with a self-signed or the
   application certificate on both ports, plain only with `TLS=off`; every
-  OpenAPI path, the views and the stream with a participant on the bus;
+  OpenAPI path, the views and the stream with a participant on the bus
+  (incl. its last `Data` in `/api/data`);
   the guards, limits, timeouts and keep-alive of the hardening contract;
   invalid settings; every file of the Web UI over HTTPS with its bytes,
   content type and headers on the web port, `404` on the API port. The

@@ -44,6 +44,9 @@ func announce(t *testing.T, b *regtest.Broker, conn int) {
 		`{"Health": "NORMAL_0", "HealthScore": 100}`))
 	b.Send(t, conn, base+"Event/"+regtest.Topic(peer)+"/Status/Good", message("543ae05e-b6d9-4161-a0a3-350a0fac5976",
 		`{"Number": 0, "Category": "CAT_STATUS_1", "Description": "Good"}`))
+	b.Send(t, conn, base+"Data/"+regtest.Topic(peer)+"/Level", `{"MessageId": "1639693510001-Utility/`+peer+
+		`", "MessageType": "ua-data", "PublisherId": "Utility/`+peer+`", "ReplyTo": "", "Messages": [{"DataSetWriterId": 11, "MessageType": "ua-keyframe", `+
+		`"WriterGroupName": "Level", "DataSetWriterName": "`+peer+`", "Payload": {"Level": 42.5}}]}`)
 }
 
 // started is a registry with the HTTP side on two loopback ports.
@@ -186,6 +189,21 @@ func checkContent(t *testing.T, s started, w, a *regtest.Web) {
 	}) {
 		t.Errorf("/api/events: %v", events)
 	}
+
+	// the data logger (ADR-0029 amendment 2026-11-28, addendum 1)
+	regtest.Eventually(t, "the peer's Data in /api/data", func() bool {
+		var data map[string]any
+		a.JSON(t, "/api/data", &data)
+		doc.CheckMembers(t, "Data", data)
+		for _, x := range data["dataSets"].([]any) {
+			doc.CheckMembers(t, "DataRecord", x)
+			m := x.(map[string]any)
+			if m["source"] == peer && m["filter"] == "Level" && m["dataSetWriterId"] == 11.0 {
+				return m["payload"].(map[string]any)["Level"] == 42.5
+			}
+		}
+		return false
+	})
 
 	for file, path := range map[string]string{"api/openapi.json": "/api/openapi.json", "api/asyncapi.json": "/api/asyncapi.json"} {
 		want, err := os.ReadFile(file)

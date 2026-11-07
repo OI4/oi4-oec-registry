@@ -69,6 +69,8 @@ pub(crate) enum Route {
     /// `/api/assets/{il}`, the decoded Identification Link.
     Asset(String),
     Events,
+    /// `/api/data`: the data logger.
+    Data,
     Stream,
     OpenApi,
     AsyncApi,
@@ -77,13 +79,14 @@ pub(crate) enum Route {
 #[cfg(test)]
 impl Route {
     /// The paths of the API, as in the OpenAPI document.
-    pub(crate) const PATHS: [&'static str; 6] = [
+    pub(crate) const PATHS: [&'static str; 7] = [
         "/api/assets",
         "/api/assets/{il}",
         "/api/events",
         "/api/stream",
         "/api/openapi.json",
         "/api/asyncapi.json",
+        "/api/data",
     ];
 
     /// The path template of the route (`None`: not part of the API).
@@ -96,6 +99,7 @@ impl Route {
             Self::Stream => Self::PATHS[3],
             Self::OpenApi => Self::PATHS[4],
             Self::AsyncApi => Self::PATHS[5],
+            Self::Data => Self::PATHS[6],
         })
     }
 }
@@ -112,6 +116,7 @@ pub(crate) fn route(path: &str, ui: bool) -> Option<Route> {
     Some(match path {
         "/api/assets" => Route::Assets,
         "/api/events" => Route::Events,
+        "/api/data" => Route::Data,
         "/api/stream" => Route::Stream,
         "/api/openapi.json" => Route::OpenApi,
         "/api/asyncapi.json" => Route::AsyncApi,
@@ -410,6 +415,27 @@ pub(crate) fn events(d: &Directory) -> Value {
     })
 }
 
+/// `GET /api/data`: the last value of every `Data` DataSet (the data
+/// logger), by Source, Filter and publisher.
+pub(crate) fn data(d: &Directory) -> Value {
+    let mut sets: Vec<_> = d.data_sets().collect();
+    sets.sort_by(|a, b| {
+        (&a.source, &a.filter, &a.publisher).cmp(&(&b.source, &b.filter, &b.publisher))
+    });
+    json!({
+        "max": crate::directory::DATA_SETS,
+        "dataSets": sets.into_iter().map(|r| json!({
+            "seq": r.seq,
+            "at": r.at,
+            "publisher": r.publisher,
+            "source": r.source,
+            "filter": r.filter,
+            "dataSetWriterId": r.data_set_writer_id,
+            "payload": r.payload,
+        })).collect::<Vec<_>>(),
+    })
+}
+
 /// What one event stream has sent: the messages for the changes since.
 #[derive(Debug, Default)]
 pub(crate) struct Stream {
@@ -532,6 +558,18 @@ pub(crate) mod tests {
                 "Details": {"x": 1}
             }))
             .unwrap(),
+        );
+        d.data(
+            &at(APP, PUMP, false, 4),
+            Some("Pressure".to_owned()),
+            12,
+            json!({"Value": 1.5}),
+        );
+        d.data(
+            &at(APP, APP, true, 4),
+            None,
+            13,
+            json!({"Blob": "x".repeat(crate::directory::DATA_MAX)}),
         );
         let fetch = |want| Fetch {
             service_type: ServiceType::Aggregation,
@@ -834,6 +872,18 @@ pub(crate) mod tests {
         assert_eq!(ev["events"][0]["source"], PUMP);
         assert_eq!(ev["events"][0]["filter"], "Generic/Info");
         assert_eq!(ev["events"][0]["event"]["Number"], 0);
+
+        let data = data(&d);
+        assert_eq!(data["max"], 1000);
+        assert_eq!(
+            data["dataSets"],
+            json!([
+                {"seq": 2, "at": 4, "publisher": APP, "source": APP, "filter": null,
+                 "dataSetWriterId": 13, "payload": null},
+                {"seq": 1, "at": 4, "publisher": APP, "source": PUMP, "filter": "Pressure",
+                 "dataSetWriterId": 12, "payload": {"Value": 1.5}},
+            ])
+        );
     }
 
     #[test]

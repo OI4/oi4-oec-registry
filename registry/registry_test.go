@@ -35,7 +35,7 @@ func TestD8Registry(t *testing.T) {
 	conn := birth.Conn
 	gets := 0
 	collecting := map[string]bool{}
-	for _, r := range []string{"MAM", "Health", "Profile", "Event", "PublicationList", "SubscriptionList"} {
+	for _, r := range []string{"MAM", "Health", "Profile", "Event", "PublicationList", "SubscriptionList", "Data"} {
 		collecting["Oi4v2/+/+/Pub/"+r+"/#"] = false
 	}
 	for _, s := range b.Events() {

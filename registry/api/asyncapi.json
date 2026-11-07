@@ -4,7 +4,7 @@
   "info": {
     "title": "OEC Registry – MQTT interface",
     "version": "0.1.0",
-    "description": "The MQTT interface of the OEC Registry D5 (ADR-0029 §8): the Registry services of MG A1 (REQ-REG-002), the interface of an application of Messaging Level 3 served by the SDK on its own AppId (its lifecycle MG 6.3, Get of every resource, Set and Del of the writable ones, its own Config `registry`, a persistent ReferenceDesignation, Call/NewDataSetWriterId) and the subscriptions and read-only Get requests it uses to collect the MAM, Health, Profile, Events, PublicationList and SubscriptionList of the participants (REQ-REG-001, ADR-0008, ADR-0029 §4). Increment 2 (C-087). Payloads are the NetworkMessages of the OEC JSON Schema D1, referenced by their $id.",
+    "description": "The MQTT interface of the OEC Registry D5 (ADR-0029 §8): the Registry services of MG A1 (REQ-REG-002), the interface of an application of Messaging Level 3 served by the SDK on its own AppId (its lifecycle MG 6.3, Get of every resource, Set and Del of the writable ones, its own Config `registry`, a persistent ReferenceDesignation, Call/NewDataSetWriterId) and the subscriptions and read-only Get requests it uses to collect the MAM, Health, Profile, Events, PublicationList and SubscriptionList of the participants and the last value of their Data (REQ-REG-001, ADR-0008, ADR-0029 §4). Increment 2 (C-087). Payloads are the NetworkMessages of the OEC JSON Schema D1, referenced by their $id.",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/license/mit"
@@ -1155,6 +1155,93 @@
       "messages": {
         "pubEvent": {
           "$ref": "#/components/messages/pubEvent"
+        }
+      }
+    },
+    "otherPubData": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Data",
+      "description": "The Data DataSets of every application; the registry keeps the last value of each (ADR-0029 amendment 2026-11-28: data logger) (subscribed as Oi4v2/+/+/Pub/Data/#) – without Source: answers to a Get without Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
+        }
+      }
+    },
+    "otherPubDataSource": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Data/{source}",
+      "description": "The Data DataSets of every application; the registry keeps the last value of each (ADR-0029 amendment 2026-11-28: data logger) (subscribed as Oi4v2/+/+/Pub/Data/#) – of one Source.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
+        }
+      }
+    },
+    "otherPubDataSourceFilter": {
+      "address": "Oi4v2/{serviceType}/{otherAppId}/Pub/Data/{source}/{filter}",
+      "description": "The Data DataSets of every application; the registry keeps the last value of each (ADR-0029 amendment 2026-11-28: data logger) (subscribed as Oi4v2/+/+/Pub/Data/#) – of one Source and Filter.",
+      "parameters": {
+        "serviceType": {
+          "description": "ServiceType of the other application (MG 7.2).",
+          "enum": [
+            "Registry",
+            "OTConnector",
+            "ITConnector",
+            "Utility",
+            "Persistence",
+            "Aggregation",
+            "CloudConnector"
+          ]
+        },
+        "otherAppId": {
+          "description": "The AppId of another application, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "source": {
+          "description": "The Source: the Identification Link of the described asset, base64url-encoded as one topic level (MG 4.3)."
+        },
+        "filter": {
+          "description": "The Filter: the name of the DataSet (WriterGroupName, MG 9.1.4); one or more topic levels."
+        }
+      },
+      "messages": {
+        "pubData": {
+          "$ref": "#/components/messages/pubData"
         }
       }
     },
@@ -2435,6 +2522,42 @@
       "messages": [
         {
           "$ref": "#/channels/otherPubEventSourceFilter/messages/pubEvent"
+        }
+      ]
+    },
+    "collectData": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubData"
+      },
+      "summary": "Collects the Data of every application.",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubData/messages/pubData"
+        }
+      ]
+    },
+    "collectDataSource": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubDataSource"
+      },
+      "summary": "Collects the Data of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubDataSource/messages/pubData"
+        }
+      ]
+    },
+    "collectDataSourceFilter": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/otherPubDataSourceFilter"
+      },
+      "summary": "Collects the Data of every application (with Source).",
+      "messages": [
+        {
+          "$ref": "#/channels/otherPubDataSourceFilter/messages/pubData"
         }
       ]
     },

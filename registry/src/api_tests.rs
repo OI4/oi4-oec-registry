@@ -384,6 +384,7 @@ fn openapi_schemas_are_the_views() {
     check("Asset", &api::asset(&d, APP).expect("the application"));
     check("Asset", &api::asset(&d, PUMP).expect("the device"));
     check("Events", &api::events(&d));
+    check("Data", &api::data(&d));
     check("Error", &serde_json::json!({ "error": "not found" }));
     let mut stream = Stream::default();
     let snapshot: Value = serde_json::from_str(&stream.snapshot(&d, 7)).expect("JSON");

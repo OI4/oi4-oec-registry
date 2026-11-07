@@ -3,7 +3,7 @@
   "info": {
     "title": "OEC Registry – HTTP interface",
     "version": "0.1.0",
-    "description": "The read-only HTTP interface of the OEC Registry D5 (ADR-0029 §7, increment 3, C-088): its directory of the assets on the Message Bus (REQ-REG-001), their MAM, Health, Profile, PublicationList and SubscriptionList, the observed Messaging level and the schema conformity (informative), and the Event trail; as REST and as server-sent events. Only `GET`; every other method is answered with 405. Served over TLS (REQ-REG-007) on port 5798 (with the Web UI) and 5799 (the API only). The MG payloads are embedded as received on the bus and described by the strict D1 schemas, referenced by their $id; the payload of a participant that violates its schema may deviate (see `violations` and `conformity`).",
+    "description": "The read-only HTTP interface of the OEC Registry D5 (ADR-0029 §7, increment 3, C-088): its directory of the assets on the Message Bus (REQ-REG-001), their MAM, Health, Profile, PublicationList and SubscriptionList, the observed Messaging level and the schema conformity (informative), the Event trail and the last value of every Data DataSet (the data logger); as REST and as server-sent events. Only `GET`; every other method is answered with 405. Served over TLS (REQ-REG-007) on port 5798 (with the Web UI) and 5799 (the API only). The MG payloads are embedded as received on the bus and described by the strict D1 schemas, referenced by their $id; the payload of a participant that violates its schema may deviate (see `violations` and `conformity`).",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/license/mit"
@@ -133,6 +133,43 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Events"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "get": {
+        "operationId": "getData",
+        "summary": "The data logger",
+        "description": "The last value of every Data DataSet on the bus (MG 9.1.4), by Source, Filter and publisher; in memory only, no history. At most `max` DataSets are kept; beyond, the one updated longest ago is dropped.",
+        "responses": {
+          "200": {
+            "description": "The last values.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Data"
                 }
               }
             }
@@ -772,6 +809,90 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/EventRecord"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataRecord": {
+        "type": "object",
+        "description": "The last value of one Data DataSet.",
+        "required": [
+          "seq",
+          "at",
+          "publisher",
+          "source",
+          "filter",
+          "dataSetWriterId",
+          "payload"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The number of its last update since the start of the registry (over all DataSets)."
+          },
+          "at": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix time (ms) received."
+          },
+          "publisher": {
+            "type": "string",
+            "description": "The AppId of the topic."
+          },
+          "source": {
+            "type": "string",
+            "description": "The Source of the DataSetMessage (its DataSetWriterName)."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "The Filter of the topic, else the WriterGroupName: the DataSet."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dataSetWriterId": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535,
+            "description": "Its DataSetWriterId (REQ-MSG-018)."
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "The Payload of the last DataSetMessage, as received (MG 9.1.4)."
+              },
+              {
+                "type": "null",
+                "description": "The Payload is longer than 16 KiB (JSON text) and not kept."
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Data": {
+        "type": "object",
+        "required": [
+          "max",
+          "dataSets"
+        ],
+        "properties": {
+          "max": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "DataSets kept at most."
+          },
+          "dataSets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataRecord"
             }
           }
         },

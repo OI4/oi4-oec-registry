@@ -1,6 +1,7 @@
 //! The bus side of the registry (ADR-0029 §3 … §6): the subscriptions to
 //! `Pub/MAM`, `Pub/Health`, `Pub/Profile`, `Pub/Event`,
-//! `Pub/PublicationList` and `Pub/SubscriptionList` of every application,
+//! `Pub/PublicationList`, `Pub/SubscriptionList` and `Pub/Data` (the data
+//! logger, last value only) of every application,
 //! the [`Directory`], the listing of the available assets in the Registry
 //! services (MG A1, REQ-REG-002, through the SDK's listed assets), the
 //! `Get`s for what is missing and the conformity view: every message is
@@ -29,14 +30,16 @@ use oec_core::topic::Topic;
 use crate::directory::{Answer, Directory, Effect, Fetch, Limits, Lists, Origin, Violation};
 
 /// The resources the registry collects from every application; MAM and
-/// Health it offers in the Registry services (MG A1).
-pub(crate) const COLLECTED: [Resource; 6] = [
+/// Health it offers in the Registry services (MG A1); of Data it keeps the
+/// last value (the data logger, ADR-0029 amendment 2026-11-28).
+pub(crate) const COLLECTED: [Resource; 7] = [
     Resource::Mam,
     Resource::Health,
     Resource::Profile,
     Resource::Event,
     Resource::PublicationList,
     Resource::SubscriptionList,
+    Resource::Data,
 ];
 
 /// The time a `Get` waits, so a Health that follows a Birth at once makes
@@ -320,6 +323,12 @@ impl Bus {
                 }
                 Payload::SubscriptionList(e) => {
                     dir.subscriptions(&o, vec![e.clone()]);
+                    return;
+                }
+                Payload::Data(d) => {
+                    let filter = r.filter().or_else(|| r.writer_group_name());
+                    let value = serde_json::Value::Object(d.0.clone());
+                    dir.data(&o, filter, r.data_set_writer_id(), value);
                     return;
                 }
                 _ => return,
