@@ -1,30 +1,45 @@
-import { useEffect, useMemo, useState } from "react";
-import { AssetDetail } from "./AssetDetail";
-import { AssetTable } from "./AssetTable";
-import { EventList } from "./EventList";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AssetDetail, type Tab } from "./AssetDetail";
+import { AssetList, type ListState, type Show } from "./AssetList";
+import { Dashboard } from "./Dashboard";
+import { EventsView } from "./EventList";
+import { ago, labels, needsAttention, severity } from "./format";
 import { useLive, type Connection } from "./live";
+import { assetHref, Icon, LabelsContext, Signet } from "./parts";
 
-/** The selected asset from the location hash `#/asset/<IL percent-encoded>`. */
-function selected(): string | null {
-  const m = /^#\/asset\/(.+)$/.exec(window.location.hash);
-  if (m?.[1] === undefined) {
-    return null;
+type Route = { view: "assets"; il: string | null; tab: Tab } | { view: "events" };
+
+const TABS: readonly Tab[] = ["overview", "nameplate", "interfaces", "conformity", "events"];
+
+/**
+ * The route from the location hash: `#/asset/<IL percent-encoded>[/<tab>]`,
+ * `#/events` or the directory.
+ */
+function route(): Route {
+  const h = window.location.hash;
+  if (h === "#/events") {
+    return { view: "events" };
   }
+  const m = /^#\/asset\/([^/]+)(?:\/([a-z]+))?$/.exec(h);
+  if (m?.[1] === undefined) {
+    return { view: "assets", il: null, tab: "overview" };
+  }
+  const tab = TABS.find((t) => t === m[2]) ?? "overview";
   try {
-    return decodeURIComponent(m[1]);
+    return { view: "assets", il: decodeURIComponent(m[1]), tab };
   } catch {
-    return null;
+    return { view: "assets", il: null, tab: "overview" };
   }
 }
 
-function useSelected(): string | null {
-  const [il, setIl] = useState(selected);
+function useRoute(): Route {
+  const [r, setR] = useState(route);
   useEffect(() => {
-    const on = () => setIl(selected());
+    const on = () => setR(route());
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
-  return il;
+  return r;
 }
 
 /** Renders again every few seconds so that relative times stay current. */
@@ -36,95 +51,249 @@ function useTick(ms: number): void {
   }, [ms]);
 }
 
+type Theme = "system" | "light" | "dark";
+const THEME_KEY = "oec-registry-theme";
+
+function storedTheme(): Theme {
+  try {
+    const t = window.localStorage.getItem(THEME_KEY);
+    return t === "light" || t === "dark" ? t : "system";
+  } catch {
+    return "system";
+  }
+}
+
+/** The colour theme: the system's or one chosen by the user (a `data-theme` attribute, no inline style). */
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(storedTheme);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "system") {
+      delete root.dataset["theme"];
+    } else {
+      root.dataset["theme"] = theme;
+    }
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Without storage the choice lasts until the page is reloaded.
+    }
+  }, [theme]);
+  const next = useCallback(() => setTheme((t) => (t === "system" ? "light" : t === "light" ? "dark" : "system")), []);
+  return [theme, next];
+}
+
 const CONNECTION: Record<Connection, string> = {
-  connecting: "Connecting …",
+  connecting: "Connecting",
   live: "Live",
-  reconnecting: "Reconnecting …",
+  reconnecting: "Reconnecting",
 };
+
+const THEME_LABEL: Record<Theme, string> = { system: "System theme", light: "Light theme", dark: "Dark theme" };
+
+function Kpi({
+  label,
+  value,
+  sub,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number | string;
+  sub: string;
+  tone?: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className={`kpi${tone ? ` kpi-${tone}` : ""}${active ? " on" : ""}`} onClick={onClick} aria-pressed={active}>
+      <span className="kpi-label">{label}</span>
+      <span className="kpi-value">{value}</span>
+      <span className="kpi-sub">{sub}</span>
+    </button>
+  );
+}
 
 export function App() {
   const live = useLive();
-  const il = useSelected();
+  const r = useRoute();
+  const [theme, nextTheme] = useTheme();
+  const [list, setList] = useState<ListState>({ query: "", show: "all", sort: "name" });
   useTick(5000);
+
+  const names = useMemo(() => labels(live.assets), [live.assets]);
+  const labelOf = useCallback(
+    (il: string) => names.get(il) ?? { name: il, suffix: null },
+    [names],
+  );
+
   const counts = useMemo(() => {
     let apps = 0;
+    let appsOnline = 0;
     let devices = 0;
-    let online = 0;
+    let devicesOnline = 0;
+    let attention = 0;
     for (const a of live.assets.values()) {
+      const on = a.availability === "online";
       if (a.kind === "application") {
         apps++;
+        appsOnline += on ? 1 : 0;
       } else {
         devices++;
+        devicesOnline += on ? 1 : 0;
       }
-      if (a.availability === "online") {
-        online++;
-      }
+      attention += needsAttention(a) ? 1 : 0;
     }
-    return { apps, devices, online };
-  }, [live.assets]);
-  const summary = il === null ? undefined : live.assets.get(il);
+    const warnings = live.events.filter((e) => {
+      const s = severity(e.event);
+      return s !== null && s <= 4;
+    }).length;
+    return { apps, appsOnline, devices, devicesOnline, attention, warnings };
+  }, [live.assets, live.events]);
+
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = el !== null && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA");
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        if (r.view !== "assets") {
+          window.location.hash = "#/";
+        }
+        window.setTimeout(() => document.getElementById("asset-search")?.focus(), 0);
+      } else if (e.key === "Escape" && r.view === "assets" && r.il !== null && !typing) {
+        window.location.hash = "#/";
+      }
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [r]);
+
+  useEffect(() => {
+    const base = "OEC Registry";
+    document.title =
+      r.view === "events"
+        ? `Events · ${base}`
+        : r.il !== null
+          ? `${names.get(r.il)?.name ?? r.il} · ${base}`
+          : base;
+  }, [r, names]);
+
+  const show = (s: Show) => {
+    setList({ ...list, show: list.show === s && s !== "all" ? "all" : s });
+    if (r.view !== "assets") {
+      window.location.hash = "#/";
+    }
+  };
+  const selected = r.view === "assets" ? r.il : null;
+  const openTab = useCallback(
+    (t: Tab) => {
+      if (selected !== null) {
+        window.location.replace(assetHref(selected) + (t === "overview" ? "" : `/${t}`));
+      }
+    },
+    [selected],
+  );
+  const lastEvent = live.events[live.events.length - 1];
+
   return (
-    <div className="page">
-      <header className="top">
-        <div className="brand">
-          <a href="#/">OEC Registry</a>
-          {live.directory && (
-            <span className="muted mono" title="AppId of the registry">
-              {live.directory.registry}
+    <LabelsContext.Provider value={names}>
+      <div className="page">
+        <header className="appbar">
+          <a className="brand" href="#/" aria-label="OEC Registry – overview">
+            <Signet />
+            <span className="brand-text">
+              <span className="brand-kicker">OI4 Open Edge Computing</span>
+              <span className="brand-name">
+                OEC <b>Registry</b>
+              </span>
             </span>
-          )}
-          {live.directory && <span className="muted">v{live.directory.version}</span>}
-        </div>
-        <div className="stats">
-          <span>
-            <b>{counts.apps}</b> applications
-          </span>
-          <span>
-            <b>{counts.devices}</b> devices
-          </span>
-          <span>
-            <b>{counts.online}</b> online
-          </span>
-          {live.directory && (
-            <span title="Messages ignored since the start: not parseable or not of the expected form">
-              <b>{live.directory.ignored}</b> ignored
+          </a>
+          <nav className="nav" aria-label="Views">
+            <a href="#/" className={r.view === "assets" ? "on" : ""} aria-current={r.view === "assets" ? "page" : undefined}>
+              Assets <span className="count">{live.assets.size}</span>
+            </a>
+            <a href="#/events" className={r.view === "events" ? "on" : ""} aria-current={r.view === "events" ? "page" : undefined}>
+              Events <span className="count">{live.events.length}</span>
+            </a>
+          </nav>
+          <div className="appbar-end">
+            <span className={`conn conn-${live.connection}`} role="status" title="Connection to the event stream of the registry">
+              <i className="dot" aria-hidden="true" />
+              {CONNECTION[live.connection]}
             </span>
-          )}
-          <span className={`badge conn-${live.connection}`} role="status">
-            {CONNECTION[live.connection]}
-          </span>
+            <button type="button" className="icon-button on-dark" onClick={nextTheme} title={`${THEME_LABEL[theme]} – click to change`} aria-label={THEME_LABEL[theme]}>
+              <Icon name={theme === "light" ? "sun" : theme === "dark" ? "moon" : "auto"} />
+            </button>
+          </div>
+        </header>
+
+        <div className="kpis">
+          <Kpi
+            label="Applications"
+            value={counts.apps}
+            sub={`${counts.appsOnline} online`}
+            active={list.show === "applications" && r.view === "assets"}
+            onClick={() => show("applications")}
+          />
+          <Kpi
+            label="Devices"
+            value={counts.devices}
+            sub={`${counts.devicesOnline} online`}
+            active={list.show === "devices" && r.view === "assets"}
+            onClick={() => show("devices")}
+          />
+          <Kpi
+            label="Attention"
+            value={counts.attention}
+            sub={counts.attention === 0 ? "all healthy" : "offline, Health or schema"}
+            tone={counts.attention > 0 ? "warn" : "ok"}
+            active={list.show === "attention" && r.view === "assets"}
+            onClick={() => show("attention")}
+          />
+          <Kpi
+            label="Events"
+            value={live.events.length}
+            sub={lastEvent ? `last ${ago(lastEvent.at, live.skew)}` : "none yet"}
+            tone={counts.warnings > 0 ? "info" : undefined}
+            active={r.view === "events"}
+            onClick={() => {
+              window.location.hash = "#/events";
+            }}
+          />
         </div>
-      </header>
-      <main className="main">
-        <section className="panel assets">
-          <AssetTable live={live} selected={il} />
-        </section>
-        <section className="panel detail">
-          {il === null ? (
-            <div className="hint">
-              <h2>Directory</h2>
-              <p>
-                The registry lists the applications and devices it observes on the OEC bus. Select an
-                asset for its MAM, Health, availability, Profile, publications, observed Messaging level
-                and schema conformity.
-              </p>
-              <p className="muted">
-                The observed level and the conformity counters are informative; a conformity verdict is the
-                result of the D7 test tool <span className="mono">oec-check</span>.
-              </p>
-            </div>
-          ) : (
-            <AssetDetail key={il} il={il} summary={summary} live={live} />
-          )}
-        </section>
-        <section className="panel events">
-          <EventList live={live} />
-        </section>
-      </main>
-      <footer className="foot muted">
-        Read-only. API: <a href="/api/assets">/api/assets</a> · <a href="/api/events">/api/events</a> ·{" "}
-        <a href="/api/openapi.json">openapi.json</a> · <a href="/api/asyncapi.json">asyncapi.json</a>
-      </footer>
-    </div>
+
+        {r.view === "events" ? (
+          <main className="main single">
+            <EventsView live={live} />
+          </main>
+        ) : (
+          <main className={`main${selected !== null ? " has-selection" : ""}`}>
+            <AssetList live={live} selected={selected} state={list} onState={setList} labelOf={labelOf} />
+            <aside className="card detail" aria-label={selected !== null ? "Asset" : "Overview"}>
+              {selected === null ? (
+                <Dashboard live={live} />
+              ) : (
+                <AssetDetail key={selected} il={selected} summary={live.assets.get(selected)} live={live} tab={r.view === "assets" ? r.tab : "overview"} onTab={openTab} />
+              )}
+            </aside>
+          </main>
+        )}
+
+        <footer className="foot">
+          <span>
+            <b>OEC Registry</b>
+            {live.directory && ` ${live.directory.version}`} · read-only · part of OI4 Open Edge Computing
+          </span>
+          <span className="foot-links">
+            API <a href="/api/assets">/api/assets</a>
+            <a href="/api/events">/api/events</a>
+            <a href="/api/openapi.json">OpenAPI</a>
+            <a href="/api/asyncapi.json">AsyncAPI</a>
+          </span>
+        </footer>
+      </div>
+    </LabelsContext.Provider>
   );
 }

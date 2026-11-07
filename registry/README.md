@@ -88,13 +88,32 @@ restrictive CSP, `Referrer-Policy: no-referrer`.
 ## Web UI (ADR-0029 §9, §10)
 
 A single page on the web port (`https://<host>:5798/`), read-only and live
-over `/api/stream`: the applications with their devices (filter), per
-asset the availability, MAM, latest Health with its history, the observed
-Messaging level and the schema conformity (both informative, with the
-missing REQs and the last violations), Profile and the answers to the
-`Get`s, PublicationList and SubscriptionList, and the Event trail (pause).
-Hash routes (`#/asset/<IL>`), no other origin: the CSP `default-src
-'self'` holds without `unsafe-inline`.
+over `/api/stream`, in the colours of the Open Industry 4.0 Alliance
+(green `#76B82A`, navy `#061520`; light and dark theme, following the
+system or chosen in the app bar):
+
+- **Key figures**: applications, devices, assets that need attention
+  (offline, Health not `NORMAL_0` or schema violations) and Events; a click
+  filters the list or opens the Event trail.
+- **Asset list**: the applications with their devices (collapsible), search
+  over name, IL, ServiceType and manufacturer, filter (all, applications,
+  devices, attention) and sort (name, Health, last seen).
+- **Overview** (nothing selected): Health distribution, the assets that
+  need attention, ServiceTypes, observed levels, the latest Events and the
+  registry itself.
+- **Asset detail** with the tabs Overview (availability, latest Health and
+  its history, observed Messaging level, devices), Nameplate (MAM),
+  Interfaces (Profile, the answers to the `Get`s, PublicationList with
+  filter by resource, SubscriptionList), Conformity (informative, with the
+  missing REQs and the last violations) and Events.
+- **Event trail** (`#/events`): search, severity (Syslog level, the class of
+  the StatusCode of a Status Event), category, pause.
+
+Hash routes `#/asset/<IL>[/<tab>]` and `#/events` (bookmarkable); `/`
+focuses the search, `Esc` closes the detail. No other origin: the CSP
+`default-src 'self'` holds without `unsafe-inline` (no `style` props, bars
+are SVG). The OI4 signet is a simplified own SVG drawing, not the official
+logo.
 
 React 19.3.1 + react-dom, TypeScript 7.0.2, Vite 7.3.7 (not Vite 8:
 `lightningcss` is MPL-2.0, A-382); JSX through esbuild, no

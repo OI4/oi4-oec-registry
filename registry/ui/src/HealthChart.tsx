@@ -5,7 +5,7 @@ import { healthLabel, healthTone, time } from "./format";
 const ROWS: HealthState[] = ["NORMAL_0", "MAINTENANCE_REQUIRED_4", "OFF_SPEC_3", "CHECK_FUNCTION_2", "FAILURE_1"];
 
 const W = 640;
-const H = 150;
+const H = 168;
 const LEFT = 150;
 const RIGHT = 10;
 const TOP = 10;
