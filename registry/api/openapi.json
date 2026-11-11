@@ -3,7 +3,7 @@
   "info": {
     "title": "OEC Registry – HTTP interface",
     "version": "0.1.0",
-    "description": "The read-only HTTP interface of the OEC Registry D5 (ADR-0029 §7, increment 3, C-088): its directory of the assets on the Message Bus (REQ-REG-001), their MAM, Health, Profile, PublicationList and SubscriptionList, the observed Messaging level and the schema conformity (informative), the Event trail and the last value of every Data DataSet (the data logger); as REST and as server-sent events. Only `GET`; every other method is answered with 405. Served over TLS (REQ-REG-007) on port 5798 (with the Web UI) and 5799 (the API only). The MG payloads are embedded as received on the bus and described by the strict D1 schemas, referenced by their $id; the payload of a participant that violates its schema may deviate (see `violations` and `conformity`).",
+    "description": "The HTTP interface of the OEC Registry D5 (ADR-0029 §7, increment 3, C-088): its directory of the assets on the Message Bus (REQ-REG-001), their MAM, Health, Profile, PublicationList and SubscriptionList, the observed Messaging level and the schema conformity (informative), the Event trail and the last value of every Data DataSet (the data logger); as REST and as server-sent events. The directory is read-only: its resources take `GET` only, every other method is answered with 405 and `Allow`. Since C-113 (ADR-0035) every resource but the Web UI, the API documents, login and logout needs the session of a user: log in with `POST /api/login` and send the token as `Authorization: Bearer` or the session cookie (`__Host-oec_session` over TLS, `oec_session` over plain HTTP of development). A user has the role `admin` (also manages the users) or `user`; a user whose password has to be changed may only change it. Served over TLS (REQ-REG-007) on port 5798 (with the Web UI) and 5799 (the API only). The MG payloads are embedded as received on the bus and described by the strict D1 schemas, referenced by their $id; the payload of a participant that violates its schema may deviate (see `violations` and `conformity`).",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/license/mit"
@@ -31,6 +31,14 @@
       }
     }
   ],
+  "security": [
+    {
+      "session": []
+    },
+    {
+      "bearer": []
+    }
+  ],
   "paths": {
     "/api/assets": {
       "get": {
@@ -50,6 +58,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -100,6 +111,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
@@ -140,6 +154,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
@@ -177,6 +194,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
@@ -213,6 +233,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -266,7 +289,8 @@
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/asyncapi.json": {
@@ -303,6 +327,441 @@
           "503": {
             "$ref": "#/components/responses/ServiceUnavailable"
           }
+        },
+        "security": []
+      }
+    },
+    "/api/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Log in",
+        "description": "A new session for a name and password. 5 wrong passwords from a client address block it for 60 s (429).",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The user and the token of the session; the session cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "The session cookie (`HttpOnly; SameSite=Strict; Path=/`, over TLS also `Secure`).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoggedIn"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadBody"
+          },
+          "401": {
+            "description": "Wrong name or password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Log out",
+        "description": "Ends the session of the request, if any, and clears the cookie.",
+        "security": [],
+        "responses": {
+          "204": {
+            "description": "No session any more.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "The session cookie (`HttpOnly; SameSite=Strict; Path=/`, over TLS also `Secure`).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/session": {
+      "get": {
+        "operationId": "getSession",
+        "summary": "The own user",
+        "description": "The user of the session (also one whose password has to be changed).",
+        "responses": {
+          "200": {
+            "description": "The user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/password": {
+      "post": {
+        "operationId": "changePassword",
+        "summary": "Change the own password",
+        "description": "Ends the other sessions of the user. A wrong current password is answered with 403 and counts as a failed login.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadBody"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/StoreFailed"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "getUsers",
+        "summary": "The users (admin)",
+        "responses": {
+          "200": {
+            "description": "The users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Users"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createUser",
+        "summary": "A new user (admin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadBody"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/StoreFailed"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/users/{name}": {
+      "parameters": [
+        {
+          "name": "name",
+          "in": "path",
+          "required": true,
+          "description": "The name of the user, percent-encoded.",
+          "schema": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._@-]{1,64}$",
+            "description": "1 … 64 characters A-Z a-z 0-9 . _ @ -."
+          }
+        }
+      ],
+      "put": {
+        "operationId": "updateUser",
+        "summary": "Change a user (admin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadBody"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/StoreFailed"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteUser",
+        "summary": "Delete a user (admin)",
+        "description": "Ends the sessions of the user.",
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/ContentTooLarge"
+          },
+          "500": {
+            "$ref": "#/components/responses/StoreFailed"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
         }
       }
     }
@@ -324,11 +783,14 @@
       },
       "Limits": {
         "type": "object",
-        "description": "The limits of the directory, from the Config `registry`/`directory` (A-393).",
+        "description": "The limits of the directory: `healthHistory`, `eventTrail` and `violationTrail` from the Config `registry`/`directory` (A-393), the others fixed (C-113).",
         "required": [
           "healthHistory",
           "eventTrail",
-          "violationTrail"
+          "violationTrail",
+          "entries",
+          "valueMax",
+          "listEntries"
         ],
         "properties": {
           "healthHistory": {
@@ -345,6 +807,21 @@
             "type": "integer",
             "minimum": 0,
             "description": "Schema violations kept per application."
+          },
+          "entries": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Assets kept at most, and participants in the conformity view (fixed). When full, the offline asset seen longest ago gives way; an online or listed one never does: then a new asset is ignored."
+          },
+          "valueMax": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The longest MAM, Health, Profile, Event or PublicationList/SubscriptionList entry kept, octets of its JSON text (fixed); a longer one is ignored."
+          },
+          "listEntries": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "PublicationList and SubscriptionList entries kept over all applications (fixed); beyond, a new one is ignored."
           }
         },
         "additionalProperties": false
@@ -373,7 +850,7 @@
           "ignored": {
             "type": "integer",
             "minimum": 0,
-            "description": "Messages ignored since the start: not parseable or not of the expected form."
+            "description": "Messages ignored since the start: not parseable or not of the expected form, about an asset that is not the publisher's, longer than `valueMax`, or beyond `entries` or `listEntries`."
           }
         }
       },
@@ -635,6 +1112,7 @@
         "properties": {
           "healthHistory": {
             "type": "array",
+            "description": "The changes of its Health (state or score), oldest first, without `Details` (C-113).",
             "items": {
               "type": "object",
               "required": [
@@ -1018,6 +1496,172 @@
             }
           }
         }
+      },
+      "User": {
+        "type": "object",
+        "description": "A user (never its password).",
+        "required": [
+          "name",
+          "role",
+          "mustChange"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._@-]{1,64}$",
+            "description": "1 … 64 characters A-Z a-z 0-9 . _ @ -."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "`admin` also manages the users."
+          },
+          "mustChange": {
+            "type": "boolean",
+            "description": "The password has to be changed (`POST /api/password`) before any other resource can be used."
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoggedIn": {
+        "type": "object",
+        "description": "The user of the new session and its token.",
+        "required": [
+          "name",
+          "role",
+          "mustChange",
+          "token"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._@-]{1,64}$",
+            "description": "1 … 64 characters A-Z a-z 0-9 . _ @ -."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "`admin` also manages the users."
+          },
+          "mustChange": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Users": {
+        "type": "object",
+        "required": [
+          "users"
+        ],
+        "properties": {
+          "users": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Login": {
+        "type": "object",
+        "required": [
+          "name",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PasswordChange": {
+        "type": "object",
+        "required": [
+          "current",
+          "new"
+        ],
+        "properties": {
+          "current": {
+            "type": "string"
+          },
+          "new": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 256,
+            "description": "12 … 256 characters, not the name (case-insensitive)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserCreate": {
+        "type": "object",
+        "description": "The user has to change the password at the first login.",
+        "required": [
+          "name",
+          "role",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._@-]{1,64}$",
+            "description": "1 … 64 characters A-Z a-z 0-9 . _ @ -."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "`admin` also manages the users."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 256,
+            "description": "12 … 256 characters, not the name (case-insensitive)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserUpdate": {
+        "type": "object",
+        "description": "A new password ends the sessions of the user, who has to change it at the next login.",
+        "minProperties": 1,
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "`admin` also manages the users."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 256,
+            "description": "12 … 256 characters, not the name (case-insensitive)."
+          }
+        },
+        "additionalProperties": false
       }
     },
     "responses": {
@@ -1032,7 +1676,7 @@
         }
       },
       "Forbidden": {
-        "description": "`Host` is no name of the registry, or `Origin` is not the registry itself.",
+        "description": "`Host` is no name of the registry, or `Origin` is not the registry itself; or the session may not use the resource (its password has to be changed first, or it is for admins only).",
         "content": {
           "application/json": {
             "schema": {
@@ -1052,12 +1696,12 @@
         }
       },
       "MethodNotAllowed": {
-        "description": "A method other than `GET`: the HTTP side is read-only.",
+        "description": "A method the resource does not take.",
         "headers": {
           "Allow": {
-            "description": "`GET`.",
+            "description": "The methods of the resource (e.g. `GET`).",
             "schema": {
-              "const": "GET"
+              "type": "string"
             }
           }
         },
@@ -1090,7 +1734,7 @@
         }
       },
       "ServiceUnavailable": {
-        "description": "Too many connections (16) or event streams (8).",
+        "description": "Too many connections (16) or event streams (8), or no place to check a password within 5 s.",
         "content": {
           "application/json": {
             "schema": {
@@ -1098,6 +1742,115 @@
             }
           }
         }
+      },
+      "Unauthorized": {
+        "description": "No session: no token, or its session ended. Log in with `POST /api/login`.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "const": "Bearer realm=\"oec-registry\""
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BadBody": {
+        "description": "A request head as for every resource (see `BadRequest`), or the body is not a JSON object of the members of the resource (strings), or a value is invalid (name, role, password policy: 12 … 256 characters, not the name).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RequestTimeout": {
+        "description": "The body did not arrive within 5 s.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BodyTooLarge": {
+        "description": "`Content-Length` above 65536, or a body above 4096 octets.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "The body is not `application/json`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The user exists, there are 64 users already, the last admin would be deleted or lose its role, or the password changed meanwhile.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "5 wrong passwords from this client address: no check for 60 s.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "StoreFailed": {
+        "description": "The users cannot be stored (see the log of the registry).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-oec_session",
+        "description": "The session cookie of `POST /api/login` (over plain HTTP of development: `oec_session`). `HttpOnly`, `SameSite=Strict`; the server ends the session after 30 min without a request (an open event stream counts), 12 h after the login, at logout, when the user is deleted or an admin sets its password."
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The token of `POST /api/login` (64 hexadecimal digits), the same session as the cookie."
       }
     }
   }

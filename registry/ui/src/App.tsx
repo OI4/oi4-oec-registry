@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { logout, type User } from "./api";
 import { AssetDetail, type Tab } from "./AssetDetail";
 import { AssetList, type ListState, type Show } from "./AssetList";
+import { ForcedPassword, Login, PasswordView, UsersView, useSession } from "./Auth";
 import { Dashboard } from "./Dashboard";
 import { DataView, useData } from "./DataView";
 import { EventsView } from "./EventList";
@@ -9,13 +11,18 @@ import { useLive, type Connection } from "./live";
 import { Atom, CommunityBadge } from "./logo";
 import { assetHref, Icon, LabelsContext } from "./parts";
 
-type Route = { view: "assets"; il: string | null; tab: Tab } | { view: "events" } | { view: "data" };
+type Route =
+  | { view: "assets"; il: string | null; tab: Tab }
+  | { view: "events" }
+  | { view: "data" }
+  | { view: "users" }
+  | { view: "password" };
 
 const TABS: readonly Tab[] = ["overview", "nameplate", "interfaces", "data", "conformity", "events"];
 
 /**
  * The route from the location hash: `#/asset/<IL percent-encoded>[/<tab>]`,
- * `#/events`, `#/data` or the directory.
+ * `#/events`, `#/data`, `#/users`, `#/password` or the directory.
  */
 function route(): Route {
   const h = window.location.hash;
@@ -24,6 +31,12 @@ function route(): Route {
   }
   if (h === "#/data") {
     return { view: "data" };
+  }
+  if (h === "#/users") {
+    return { view: "users" };
+  }
+  if (h === "#/password") {
+    return { view: "password" };
   }
   const m = /^#\/asset\/([^/]+)(?:\/([a-z]+))?$/.exec(h);
   if (m?.[1] === undefined) {
@@ -120,7 +133,30 @@ function Kpi({
   );
 }
 
+/** The page: the login, the forced password change or the registry. */
 export function App() {
+  const [session, setSession] = useSession();
+  const out = useCallback(() => {
+    logout()
+      .catch(() => undefined)
+      .finally(() => setSession({ state: "anonymous", note: "You have been logged out." }));
+  }, [setSession]);
+  const onUser = useCallback((user: User) => setSession({ state: "user", user }), [setSession]);
+  switch (session.state) {
+    case "loading":
+      return null;
+    case "anonymous":
+      return <Login note={session.note} onUser={onUser} />;
+    case "user":
+      return session.user.mustChange ? (
+        <ForcedPassword user={session.user} onDone={onUser} onLogout={out} />
+      ) : (
+        <Registry user={session.user} onUser={onUser} onLogout={out} />
+      );
+  }
+}
+
+function Registry({ user, onUser, onLogout }: { user: User; onUser: (u: User) => void; onLogout: () => void }) {
   const live = useLive();
   const r = useRoute();
   const [theme, nextTheme] = useTheme();
@@ -182,7 +218,11 @@ export function App() {
         ? `Events · ${base}`
         : r.view === "data"
           ? `Data · ${base}`
-          : r.il !== null
+          : r.view === "users"
+            ? `Users · ${base}`
+            : r.view === "password"
+              ? `Password · ${base}`
+              : r.il !== null
           ? `${names.get(r.il)?.name ?? r.il} · ${base}`
           : base;
   }, [r, names]);
@@ -237,6 +277,20 @@ export function App() {
               <i className="dot" aria-hidden="true" />
               {CONNECTION[live.connection]}
             </span>
+            <span className="user-menu">
+              <a href="#/password" className="user-name" title="Change your password">
+                <Icon name="user" />
+                {user.name}
+              </a>
+              {user.role === "admin" && (
+                <a href="#/users" className={r.view === "users" ? "on" : ""} aria-current={r.view === "users" ? "page" : undefined}>
+                  Users
+                </a>
+              )}
+              <button type="button" className="link on-dark" onClick={onLogout}>
+                Log out
+              </button>
+            </span>
             <button type="button" className="icon-button on-dark" onClick={nextTheme} title={`${THEME_LABEL[theme]} – click to change`} aria-label={THEME_LABEL[theme]}>
               <Icon name={theme === "light" ? "sun" : theme === "dark" ? "moon" : "auto"} />
             </button>
@@ -278,7 +332,15 @@ export function App() {
           />
         </div>
 
-        {r.view === "events" ? (
+        {r.view === "users" ? (
+          <main className="main single">
+            {user.role === "admin" ? <UsersView self={user} /> : <p className="error">Only an admin manages the users.</p>}
+          </main>
+        ) : r.view === "password" ? (
+          <main className="main single">
+            <PasswordView user={user} onDone={onUser} />
+          </main>
+        ) : r.view === "events" ? (
           <main className="main single">
             <EventsView live={live} />
           </main>
@@ -313,7 +375,7 @@ export function App() {
             <span className="foot-text">
               <span>
                 <b>OEC Registry</b>
-                {live.directory && ` ${live.directory.version}`} · read-only · part of OI4 Open Edge Computing
+                {live.directory && ` ${live.directory.version}`} · reads the bus, never writes · part of OI4 Open Edge Computing
               </span>
               <span>
                 A community project – not an official product of the Open Industry 4.0 Alliance. The OI4 logo is a

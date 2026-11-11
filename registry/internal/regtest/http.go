@@ -35,6 +35,11 @@ const (
 	// HTTPRequestTime is the time a client has for the TLS handshake and
 	// again for its request head.
 	HTTPRequestTime = 5 * time.Second
+	// HTTPMaxJSON is the largest body of the user management (ADR-0035).
+	HTTPMaxJSON = 4 << 10
+	// AdminPassword is the password of the first user admin of the
+	// containers of Container (run/secrets/oi4/registry_admin_password).
+	AdminPassword = "registry test admin"
 )
 
 // HTTPOff is the environment that switches the HTTP side off (the tests
@@ -46,6 +51,9 @@ type Web struct {
 	Addr string
 	// TLS is the client configuration (nil: plain HTTP).
 	TLS *tls.Config
+	// Token is the session of the requests (Authorization: Bearer; "":
+	// none), see Login.
+	Token string
 }
 
 // LoopbackAddr is a free loopback address for OEC_REGISTRY_WEB/API.
@@ -65,6 +73,39 @@ func WaitWeb(t *testing.T, addr string, conf *tls.Config) *Web {
 		return err == nil
 	})
 	return &Web{Addr: addr, TLS: conf}
+}
+
+// As is a copy of w with the session of another login.
+func (w *Web) As(t *testing.T, name, password string) *Web {
+	t.Helper()
+	c := &Web{Addr: w.Addr, TLS: w.TLS}
+	c.Login(t, name, password)
+	return c
+}
+
+// Login logs in (POST /api/login, expects 200) and keeps the token; the
+// answer (name, role, mustChange, token).
+func (w *Web) Login(t *testing.T, name, password string) map[string]any {
+	t.Helper()
+	body, _ := json.Marshal(map[string]string{"name": name, "password": password})
+	resp, raw := w.Do(t, "POST", "/api/login", "application/json", string(body))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("login %s: %d %s", name, resp.StatusCode, raw)
+	}
+	var out map[string]any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatalf("login %s: %v in %s", name, err, raw)
+	}
+	w.Token, _ = out["token"].(string)
+	return out
+}
+
+// auth is the header line of the session ("" without one).
+func (w *Web) auth() string {
+	if w.Token == "" {
+		return ""
+	}
+	return "Authorization: Bearer " + w.Token + "\r\n"
 }
 
 // Scheme is https or http.
@@ -114,6 +155,9 @@ func (w *Web) Do(t *testing.T, method, path, contentType, body string) (*http.Re
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
+	}
+	if w.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+w.Token)
 	}
 	resp, err := w.Client().Do(req)
 	if err != nil {
@@ -213,6 +257,9 @@ func (w *Web) TryStream(t *testing.T) (*SSE, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if w.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+w.Token)
+	}
 	client := w.Client()
 	client.Timeout = 0
 	resp, err := client.Do(req)
@@ -263,6 +310,9 @@ func (s *SSE) Close() {
 // All is a copy of the lines so far.
 func (s *SSE) All() []SSEItem { return s.items.all() }
 
+// Ended is closed when the server has ended the stream.
+func (s *SSE) Ended() <-chan struct{} { return s.items.done }
+
 // Expect waits for a line from index from on that matches.
 func (s *SSE) Expect(t *testing.T, from int, what string, match func(SSEItem) bool) (SSEItem, int) {
 	t.Helper()
@@ -280,11 +330,14 @@ func (s *SSE) Event(t *testing.T, from int, typ string, match func(map[string]an
 }
 
 // CheckGuards checks the request guards (ADR-0028 amendment C-083, the
-// registry variant: read-only, so every method but GET is 405 – also a
-// POST with a body of another type). path is a JSON resource (GET).
+// registry variant: the directory is read-only, so every method but GET
+// is 405 with Allow: GET – also a POST with a body of another type) and
+// that the resource needs a session (401, ADR-0035). path is a JSON
+// resource of the directory (GET); w has a session.
 func (w *Web) CheckGuards(t *testing.T, path string) {
 	t.Helper()
-	h := "Host: " + w.Addr + "\r\n"
+	a := w.auth()
+	h := "Host: " + w.Addr + "\r\n" + a
 	big := strings.Repeat("a", 2*HTTPMaxHead+4096)
 	origin := w.Scheme() + "://" + w.Addr
 	other := "https://"
@@ -293,8 +346,10 @@ func (w *Web) CheckGuards(t *testing.T, path string) {
 	}
 	for request, want := range map[string]string{
 		"GET " + path + " HTTP/1.1\r\n" + h + "\r\n":                                                                              "200",
-		"GET " + path + " HTTP/1.1\r\nHost: localhost\r\n\r\n":                                                                    "200",
-		"GET " + path + " HTTP/1.1\r\nHost: reg-1\r\n\r\n":                                                                        "200",
+		"GET " + path + " HTTP/1.1\r\nHost: localhost\r\n" + a + "\r\n":                                                           "200",
+		"GET " + path + " HTTP/1.1\r\nHost: reg-1\r\n" + a + "\r\n":                                                               "200",
+		"GET " + path + " HTTP/1.1\r\nHost: localhost\r\n\r\n":                                                                    "401",
+		"GET " + path + " HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer " + strings.Repeat("0", 64) + "\r\n\r\n":           "401",
 		"GET " + path + " HTTP/1.1\r\nHost: registry.example\r\n\r\n":                                                             "403",
 		"GET " + path + " HTTP/1.1\r\nHost: localhost.example:80\r\n\r\n":                                                         "403",
 		"GET " + path + " HTTP/1.1\r\n\r\n":                                                                                       "400",
@@ -309,6 +364,7 @@ func (w *Web) CheckGuards(t *testing.T, path string) {
 		fmt.Sprintf("POST %s HTTP/1.1\r\n%sContent-Type: application/json\r\nContent-Length: %d\r\n\r\n", path, h, HTTPMaxBody+1): "413",
 		"GET " + path + " HTTP/1.1\r\n" + h + "X-Big: " + big + "\r\n\r\n":                                                        "431",
 		"GET /nope HTTP/1.1\r\n" + h + "\r\n":                                                                                     "404",
+		"GET /api/login HTTP/1.1\r\n" + h + "\r\n":                                                                                "405",
 		"GET /api/assets/%zz HTTP/1.1\r\n" + h + "\r\n":                                                                           "404",
 		"PUT " + path + " HTTP/1.1\r\n" + h + "Content-Length: 0\r\n\r\n":                                                         "405",
 		"PATCH " + path + " HTTP/1.1\r\n" + h + "Content-Length: 0\r\n\r\n":                                                       "405",
@@ -318,6 +374,9 @@ func (w *Web) CheckGuards(t *testing.T, path string) {
 	} {
 		got := w.Raw(t, request)
 		if f := strings.Fields(got); len(f) < 2 || f[0] != "HTTP/1.1" || f[1] != want {
+			if w.Token != "" {
+				request = strings.ReplaceAll(request, w.Token, "<token>")
+			}
 			if len(request) > 120 {
 				request = request[:120] + "…"
 			}
@@ -393,7 +452,7 @@ func (w *Web) CheckLimits(t *testing.T) {
 			conns = append(conns, c)
 		}
 		time.Sleep(300 * time.Millisecond)
-		if got := w.Raw(t, "GET /api/events HTTP/1.1\r\nHost: "+w.Addr+"\r\n\r\n"); !strings.HasPrefix(got, "HTTP/1.1 503") {
+		if got := w.Raw(t, "GET /api/events HTTP/1.1\r\nHost: "+w.Addr+"\r\n"+w.auth()+"\r\n"); !strings.HasPrefix(got, "HTTP/1.1 503") {
 			t.Errorf("connection %d: %q", HTTPMaxConnections+1, got)
 		}
 		for i, c := range conns {
@@ -404,7 +463,7 @@ func (w *Web) CheckLimits(t *testing.T) {
 				}
 				c = tc
 			}
-			if _, err := io.WriteString(c, "GET /api/events HTTP/1.1\r\nHost: "+w.Addr+"\r\n\r\n"); err != nil {
+			if _, err := io.WriteString(c, "GET /api/events HTTP/1.1\r\nHost: "+w.Addr+"\r\n"+w.auth()+"\r\n"); err != nil {
 				t.Fatal(err)
 			}
 			line, _ := bufio.NewReader(c).ReadString('\n')
@@ -498,6 +557,18 @@ func LoadOpenAPI(t *testing.T) *OpenAPI {
 }
 
 // Paths are the paths of the document.
+// Methods are the methods of path (upper case, sorted).
+func (o *OpenAPI) Methods(path string) []string {
+	var out []string
+	for k := range o.doc["paths"].(map[string]any)[path].(map[string]any) {
+		if k != "parameters" {
+			out = append(out, strings.ToUpper(k))
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 func (o *OpenAPI) Paths() []string {
 	var out []string
 	for p := range o.doc["paths"].(map[string]any) {

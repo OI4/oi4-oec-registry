@@ -21,7 +21,8 @@ persistent `ReferenceDesignation`; D7 `oec-check test --level 3` passes.
 Since the PO order of 2026-11-28 it also keeps the **last value of every
 `Data` DataSet** on the bus (the data logger: in memory only, no history,
 at most 1000 DataSets, a Payload longer than 16 KiB without its value).
-Since C-088 it serves the directory over **HTTPS**, read-only (below);
+Since C-088 it serves the directory over **HTTPS** (below), since C-113
+behind a **login** with two roles (ADR-0035, below);
 since C-089 the **Web UI** (React/TypeScript/Vite, `ui/`) on the web port;
 since C-090 the **image** `oi4/oec-registry` (below) and the compose profile
 `registry` of `oec/dev`. C-091 ran the P7 exit (image with D8 `image`,
@@ -46,15 +47,50 @@ what it reads as a second line of defence:
 | `EventTrail` | 200 | 0 … 10000 | kept `Event`s of all participants |
 | `ViolationTrail` | 10 | 0 … 1000 | kept schema violations per participant |
 
+### Fixed limits (C-113 RR-3)
+
+Every participant on the bus can make the registry keep data, so the
+memory is bounded by fixed limits (constants of `src/directory.rs`, shown
+with the settings in the `limits` of `GET /api/assets`); what exceeds them
+is ignored and counted in `ignored`:
+
+| Limit | Value | Meaning |
+|---|---|---|
+| `entries` (`ENTRIES`) | 4096 | assets kept; when full, the offline asset seen longest ago gives way – an online or listed one never does, then a new asset is ignored. Also the participants of the conformity view (the one checked longest ago gives way unless it is online) |
+| `valueMax` (`VALUE_MAX`) | 8 KiB | the longest `MAM`, `Health`, `Profile`, `Event` and PublicationList/SubscriptionList entry kept (its JSON text); a longer one is ignored |
+| `listEntries` (`LIST_ENTRIES`) | 4096 | PublicationList and SubscriptionList entries over all applications |
+| `TEXT_MAX` | 512 | characters kept of the topic and the message of a schema violation |
+
+The Health history keeps state and score of each change, not the
+`Details` (the latest `Health` keeps them); the data logger has its own
+limits (1000 DataSets, 16 KiB per Payload). An event stream keeps a digest
+per asset, not a copy of its summary.
+
+**Ownership (C-113 RR-1):** an Identification Link belongs to the
+application that publishes its own `MAM` or `Health` (`Source` = `AppId`):
+a device entry about it that another publisher created is dropped, and
+later device messages about it – or about any AppId seen on the bus – are
+ignored. A device is not taken over by another publisher while its
+publisher is online.
+
 ## HTTP: REST, SSE, TLS (ADR-0029 §7)
 
-Read-only (ADR-0008): every resource answers `GET` only, any other method
-(also `HEAD`, `OPTIONS`) `405` with `Allow: GET`. Described in
+The directory is read-only (ADR-0008): its resources answer `GET` only;
+only the session and user resources take `POST`, `PUT` or `DELETE`. A
+method a resource does not have (also `HEAD`, `OPTIONS`) gets `405` with
+its `Allow`. Every resource except the Web UI files, the API documents,
+login and logout needs a session (`401` without). Described in
 `api/openapi.json` (OpenAPI 3.2.0).
 
 | Path | Content |
 |---|---|
-| `GET /api/assets` | the registry, its limits, the ignored messages and a summary per asset (kind, publisher, availability, MAM, latest Health, observed level, conformity counts, devices) |
+| `POST /api/login` | `{name, password}` → `{name, role, mustChange, token}` and the session cookie (below) |
+| `POST /api/logout` | ends the session, clears the cookie (`204`) |
+| `GET /api/session` | the own user `{name, role, mustChange}` |
+| `POST /api/password` | `{current, new}`: changes the own password, ends the other sessions of the user |
+| `GET`, `POST /api/users` | `admin` only: the users; a new user `{name, role, password}` |
+| `PUT`, `DELETE /api/users/{name}` | `admin` only: change role and/or password `{role?, password?}`; delete |
+| `GET /api/assets` | the registry, its limits (settings and fixed limits), the ignored messages and a summary per asset (kind, publisher, availability, MAM, latest Health, observed level, conformity counts, devices) |
 | `GET /api/assets/{il}` | the summary plus the detail (Profile, Health history, answers to the `Get`s, PublicationList, SubscriptionList, last violations); `{il}` percent-encoded as one segment; `404` if unknown |
 | `GET /api/events` | the Event trail, oldest first, with a sequence number |
 | `GET /api/data` | the data logger: the last value of every `Data` DataSet (publisher, Source, Filter, DataSetWriterId, time, Payload), at most 1000 – beyond, the one updated longest ago is dropped |
@@ -69,6 +105,7 @@ Read-only (ADR-0008): every resource answers `GET` only, any other method
 | `OEC_REGISTRY_TLS` | `on` | `off` = plain HTTP, for development only (a warning is logged) |
 | `OEC_REGISTRY_HOSTS` | – | further host names, comma separated: allowed in `Host` and, when self-signed, in the certificate |
 | `OEC_REGISTRY_KEEPALIVE_MS` | `15000` | keep-alive comment of an idle stream, 1 … 15000 |
+| `OEC_REGISTRY_ADMIN_PASSWORD_FILE` | `<OEC_ROOT>/run/secrets/oi4/registry_admin_password` | the password of the first user `admin` (below); only read while there is no user store; a named file that cannot be read is an error |
 
 **TLS:** if the registry authenticates at the Message Bus with its
 application certificate (`/etc/oi4/certs/<containername>.pem`, key in
@@ -79,8 +116,40 @@ The certificate is read at the start: a rotated one takes effect with the
 next start. Invalid settings or a taken port end the start with a message
 before the registry connects to the broker.
 
-**Hardening** (ADR-0028 amendment C-083, no authentication: the API is
-read-only): `Host` must be `localhost`, the container name, a name of
+**Users (ADR-0035, C-113 D-2):** two roles – `admin` reads everything and
+manages the users, `user` reads everything. The store is
+`/etc/oi4/app/registry/users.json` on the application-specific volume
+(`0600`, written atomically); passwords are PBKDF2-HMAC-SHA256 with
+600 000 iterations and a random salt (aws-lc-rs), 12 … 256 characters and
+not the name; at most 64 users; the last `admin` can neither be deleted nor
+demoted (`409`). Without a store the registry creates `admin` at the start:
+with the password of `OEC_REGISTRY_ADMIN_PASSWORD_FILE` if that file
+exists, otherwise with a random password printed **once on stderr**
+(`docker logs`), which has to be changed at the first login. A password an
+admin sets (new user, reset) has to be changed at the next login
+(`mustChange`: until then `403` except session, logout and password).
+Deleting `users.json` (with the registry stopped) starts over.
+
+**Sessions:** a login returns a random token (64 hex digits; the server
+keeps only its SHA-256), as the cookie `__Host-oec_session` (`Secure;
+HttpOnly; SameSite=Strict`; plain HTTP: `oec_session`) for the Web UI and
+in the body for scripts (`Authorization: Bearer <token>`). A session ends
+after 30 min without a request (an open stream counts), 12 h after the
+login, at logout, when its user is deleted or an admin sets its password;
+the event stream ends with it. Role changes take effect at once. Per client
+address 5 failed logins (or wrong current passwords) in a row block it for
+60 s (`429`, `Retry-After`). Bodies: `application/json` (`415`), at most
+4 KiB (`413`), an object of strings with the documented members (`400`).
+
+```sh
+api=https://localhost:5799
+token=$(jq -n --rawfile p generated/roots/oec-registry/run/secrets/oi4/registry_admin_password \
+  '{name: "admin", password: ($p | rtrimstr("\n"))}' |
+  curl -fsS --cacert generated/broker/ca.pem -H 'Content-Type: application/json' --data-binary @- $api/api/login | jq -r .token)
+curl -fsS --cacert generated/broker/ca.pem -H "Authorization: Bearer $token" $api/api/assets
+```
+
+**Hardening** (ADR-0028 amendment C-083): `Host` must be `localhost`, the container name, a name of
 `OEC_REGISTRY_HOSTS` or an IP literal (DNS rebinding); a cross-site
 `Origin` is refused (`403`); `Transfer-Encoding` `501`, `Content-Length`
 over 64 KiB `413`, header over 8 KiB `431`; at most 16 connections and 8
@@ -91,8 +160,8 @@ restrictive CSP, `Referrer-Policy: no-referrer`.
 
 ## Web UI (ADR-0029 §9, §10)
 
-A single page on the web port (`https://<host>:5798/`), read-only and live
-over `/api/stream`, in the colours of the Open Industry 4.0 Alliance
+A single page on the web port (`https://<host>:5798/`) behind the login
+form (ADR-0035), live over `/api/stream`, in the colours of the Open Industry 4.0 Alliance
 (green `#76B82A`, navy `#061520`; light and dark theme, following the
 system or chosen in the app bar):
 
@@ -211,10 +280,11 @@ script offline (gate). To read the SBOM of a loaded image:
 
 | Path | Content |
 |---|---|
-| `src/main.rs` | wiring: identity, level, log, the SDK application |
+| `src/main.rs` | wiring: identity, level, log, the users, the SDK application |
+| `src/auth.rs` | the users (ADR-0035): store, PBKDF2, sessions, login throttle, with unit tests |
 | `src/directory.rs` | the directory: sans-IO rules of ADR-0029 §3 with unit tests |
 | `src/api.rs` | the HTTP API, sans-IO: router, guards, JSON views of the directory, the stream messages |
-| `src/http.rs` | the HTTP server on hyper 1: listeners, TLS, limits, timeouts, the stream |
+| `src/http.rs` | the HTTP server on hyper 1: listeners, TLS, limits, timeouts, sessions, the user resources, the stream |
 | `src/tls.rs` | the TLS identity: application certificate or self-signed (rcgen) |
 | `src/ui_assets.rs` | generated: the files of `ui/dist/` embedded (`include_bytes!`) with their content types |
 | `ui/` | the Web UI: `src/` (React/TypeScript), `index.html`, `public/`, `package.json`, `package-lock.json`, `vite.config.mjs`, `tsconfig.json`; `dist/` and `build.stamp` committed; `build.sh` (opt-in) |
@@ -252,9 +322,13 @@ ADR-0006):
   OpenAPI path, the views and the stream with a participant on the bus
   (incl. its last `Data` in `/api/data`);
   the guards, limits, timeouts and keep-alive of the hardening contract;
-  invalid settings; every file of the Web UI over HTTPS with its bytes,
+  invalid settings, a missing or weak admin password file; every file of the Web UI over HTTPS with its bytes,
   content type and headers on the web port, `404` on the API port. The
   D8/D7/RD runs keep HTTP off (`regtest.HTTPOff`).
+- `TestHTTPUsers`, `TestHTTPGeneratedPassword` (`users_test.go`, ADR-0035):
+  login, logout, roles, `mustChange`, user create/change/delete, the last
+  admin, session end by reset and delete (also of a stream), the login
+  throttle, the store across a restart; the generated password on stderr.
 - `internal/uipolicy` `TestUI`, `TestViolations`, `TestWrite`: the npm
   policy, the stamp and the table of the committed UI, and 31 violations
   on a copy.

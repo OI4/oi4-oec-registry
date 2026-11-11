@@ -37,11 +37,22 @@
 //! The data logger (amendment 2026-11-28): the last value of every `Data`
 //! DataSet on the bus ([`DataRecord`]), in memory only, no history.
 //!
+//! 7. An Identification Link is an application's once the application
+//!    publishes its own MAM or Health: a device entry about it, created
+//!    by another publisher, is dropped and the application starts as in
+//!    rule 2 (C-113 RR-1). A device is not taken over by another publisher
+//!    while its publisher is online.
+//!
 //! Ignored (counted): the registry's own messages, the republications of
 //! other registries (a `Source` ≠ `AppId` under ServiceType Registry is a
 //! listed asset there, not a represented one), a MAM whose
-//! ProductInstanceUri is not its `Source`, and a device message about a
-//! known application.
+//! ProductInstanceUri is not its `Source`, a device message about a known
+//! application or a participant seen on the bus under its own AppId, a MAM
+//! or Health of another publisher about the device of an online publisher
+//! (rule 7), and – bounding the memory (C-113 RR-3) – a MAM, Health,
+//! Profile, Event or list entry longer than [`VALUE_MAX`], a new asset
+//! when [`ENTRIES`] are kept and none is offline, a list entry beyond
+//! [`LIST_ENTRIES`].
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -104,8 +115,8 @@ pub(crate) struct Entry {
     pub(crate) online_since: Option<u64>,
     /// The resources and services of its last Profile.
     pub(crate) profile: Option<Vec<Subject>>,
-    /// The changes of its Health (time, Health), oldest first, bounded
-    /// by [`Limits::health_history`].
+    /// The changes of its Health (time, Health without details), oldest
+    /// first, bounded by [`Limits::health_history`].
     pub(crate) health_history: VecDeque<(u64, Health)>,
     /// The answers per resource since its publisher came online.
     pub(crate) answers: BTreeMap<Want, Answer>,
@@ -285,6 +296,48 @@ pub(crate) const DATA_SETS: usize = 1000;
 /// without its Payload.
 pub(crate) const DATA_MAX: usize = 16 * 1024;
 
+/// The directory keeps at most this many entries, and the conformity view
+/// at most this many participants (C-113 RR-3): an edge host runs tens of
+/// applications that represent up to some thousand devices. When full, the
+/// offline entry seen longest ago gives way; an online or listed one never
+/// does: then a new asset is ignored. With [`VALUE_MAX`] the MAMs and
+/// Healths of all entries take at most 64 MiB (the listed ones once more
+/// in the SDK).
+pub(crate) const ENTRIES: usize = 4096;
+/// The longest MAM, Health, Profile, Event or list entry kept (JSON text,
+/// octets; C-113 RR-3): a longer one is ignored. A MAM of an SDK
+/// application takes well below 1 KiB.
+pub(crate) const VALUE_MAX: usize = 8 * 1024;
+/// The PublicationList and SubscriptionList entries kept over all
+/// applications (C-113 RR-3); beyond, a new one is ignored.
+pub(crate) const LIST_ENTRIES: usize = 4096;
+/// The longest topic and message of a [`Violation`] kept, in characters.
+pub(crate) const TEXT_MAX: usize = 512;
+
+/// Counts the octets of a JSON text; fails beyond [`VALUE_MAX`], so a
+/// large value is not written out in full.
+struct Bounded(usize);
+
+impl std::io::Write for Bounded {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0 += buf.len();
+        if self.0 > VALUE_MAX {
+            return Err(std::io::ErrorKind::FileTooLarge.into());
+        }
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Whether the JSON text that `write` writes is at most [`VALUE_MAX`]
+/// octets long (C-113 RR-3).
+fn fits(write: impl FnOnce(&mut Bounded) -> serde_json::Result<()>) -> bool {
+    write(&mut Bounded(0)).is_ok()
+}
+
 /// The last value of one `Data` DataSet (the data logger, amendment
 /// 2026-11-28), keyed by publisher, Source and Filter.
 #[derive(Debug, Clone, PartialEq)]
@@ -328,6 +381,9 @@ pub(crate) struct Conformity {
     /// The last violations, oldest first, bounded by
     /// [`Limits::violation_trail`].
     pub(crate) last: VecDeque<Violation>,
+    /// The number of its last check: the participant checked longest ago
+    /// gives way when the view is full ([`ENTRIES`]).
+    seq: u64,
 }
 
 /// The observed Messaging level of an entry (REQ-CMP-013, ADR-0008):
@@ -362,6 +418,8 @@ pub(crate) struct Directory {
     /// The number of Events received so far (the last [`EventRecord::seq`]).
     events_seen: u64,
     conformity: BTreeMap<String, Conformity>,
+    /// The number of checked messages (the last [`Conformity::seq`]).
+    checks: u64,
     /// The data logger: (publisher, Source, Filter) → last value.
     data: BTreeMap<(String, String, Option<String>), DataRecord>,
     data_seen: u64,
@@ -393,14 +451,45 @@ fn trim<T>(q: &mut VecDeque<T>, max: usize) {
     }
 }
 
-/// Puts each item in `list`, replacing one with the same key.
-fn upsert<T, K: PartialEq>(list: &mut Vec<T>, items: Vec<T>, key: impl Fn(&T) -> K) {
+/// Puts each item in `list`, replacing one with the same key; a new key
+/// only while `list` is shorter than `max`. Returns the number of items
+/// dropped: without room or not `ok` (too long).
+fn upsert<T, K: PartialEq>(
+    list: &mut Vec<T>,
+    items: Vec<T>,
+    key: impl Fn(&T) -> K,
+    ok: impl Fn(&T) -> bool,
+    max: usize,
+) -> u64 {
+    let mut dropped = 0;
     for item in items {
+        if !ok(&item) {
+            dropped += 1;
+            continue;
+        }
         match list.iter().position(|x| key(x) == key(&item)) {
             Some(i) => list[i] = item,
-            None => list.push(item),
+            None if list.len() < max => list.push(item),
+            None => dropped += 1,
         }
     }
+    dropped
+}
+
+/// Replaces `list` by the first `max` items that are `ok`; returns the
+/// number of items dropped.
+fn replace<T>(list: &mut Vec<T>, items: Vec<T>, ok: impl Fn(&T) -> bool, max: usize) -> u64 {
+    let n = items.len();
+    *list = items.into_iter().filter(|x| ok(x)).take(max).collect();
+    (n - list.len()) as u64
+}
+
+fn publication_fits(p: &PublicationEntry) -> bool {
+    fits(|w| serde_json::to_writer(w, p))
+}
+
+fn subscription_fits(s: &SubscriptionEntry) -> bool {
+    fits(|w| serde_json::to_writer(w, s))
 }
 
 fn publication_key(p: &PublicationEntry) -> (Resource, String, Option<String>) {
@@ -448,6 +537,7 @@ impl Directory {
             events: VecDeque::new(),
             events_seen: 0,
             conformity: BTreeMap::new(),
+            checks: 0,
             data: BTreeMap::new(),
             data_seen: 0,
         }
@@ -512,10 +602,11 @@ impl Directory {
         let skip = o.app == self.me
             || (o.service_type == ServiceType::Registry && o.source != o.app)
             || (o.source != o.app
-                && self
-                    .entries
-                    .get(o.source)
-                    .is_some_and(|e| e.kind == Kind::Application));
+                && (self.conformity.contains_key(o.source)
+                    || self
+                        .entries
+                        .get(o.source)
+                        .is_some_and(|e| e.kind == Kind::Application)));
         if skip {
             self.ignored += 1;
         }
@@ -532,12 +623,45 @@ impl Directory {
         }
     }
 
+    /// Whether a MAM or Health about `o.source` may change the directory:
+    /// - C-113 RR-1: the application's own message takes its IL back from
+    ///   a device entry another publisher created (squatting): the entry
+    ///   is dropped, the application starts afresh (rule 2);
+    /// - C-113 RR-1: the device of an online publisher is not taken over by
+    ///   another publisher;
+    /// - C-113 RR-3: a new entry needs room ([`ENTRIES`]).
+    fn admit(&mut self, o: &Origin<'_>) -> bool {
+        if let Some(e) = self.entries.get(o.source) {
+            if o.source != o.app {
+                let online = |p: &Entry| p.availability == Availability::Online;
+                return e.publisher == o.app || !self.entries.get(&e.publisher).is_some_and(online);
+            }
+            if e.kind == Kind::Application {
+                return true;
+            }
+            self.entries.remove(o.source);
+        }
+        if self.entries.len() < ENTRIES {
+            return true;
+        }
+        let gone = self
+            .entries
+            .values()
+            .filter(|e| e.availability != Availability::Online && !self.listed.contains(&e.il))
+            .min_by_key(|e| e.last_seen)
+            .map(|e| e.il.clone());
+        gone.is_some_and(|il| self.entries.remove(&il).is_some())
+    }
+
     /// A `Pub/MAM` message.
     pub(crate) fn mam(&mut self, o: &Origin<'_>, mam: Mam) -> Vec<Effect> {
         if self.ignore(o) {
             return Vec::new();
         }
-        if mam.product_instance_uri != o.source {
+        if mam.product_instance_uri != o.source
+            || !fits(|w| serde_json::to_writer(w, &mam))
+            || !self.admit(o)
+        {
             self.ignored += 1;
             return Vec::new();
         }
@@ -586,6 +710,10 @@ impl Directory {
     /// A `Pub/Health` message.
     pub(crate) fn health(&mut self, o: &Origin<'_>, health: Health) -> Vec<Effect> {
         if self.ignore(o) {
+            return Vec::new();
+        }
+        if !fits(|w| serde_json::to_writer(w, &health)) || !self.admit(o) {
+            self.ignored += 1;
             return Vec::new();
         }
         let mut out = Vec::new();
@@ -638,6 +766,10 @@ impl Directory {
         if self.ignore(o) {
             return;
         }
+        if !fits(|w| serde_json::to_writer(w, &resources)) {
+            self.ignored += 1;
+            return;
+        }
         if let Some(e) = self.known(o) {
             e.profile = Some(resources);
             e.received(Want::Profile, o.reply);
@@ -647,6 +779,10 @@ impl Directory {
     /// A `Pub/Event` message: into the trail.
     pub(crate) fn event(&mut self, o: &Origin<'_>, filter: Option<String>, event: Event) {
         if self.ignore(o) {
+            return;
+        }
+        if !fits(|w| serde_json::to_writer(w, &event)) {
+            self.ignored += 1;
             return;
         }
         self.events_seen += 1;
@@ -710,9 +846,18 @@ impl Directory {
         if o.app == self.me {
             return;
         }
+        let free = self.list_room();
         if let Some(e) = self.application(o.app) {
-            upsert(&mut e.publications, entries, publication_key);
+            let max = e.publications.len() + free;
+            let dropped = upsert(
+                &mut e.publications,
+                entries,
+                publication_key,
+                publication_fits,
+                max,
+            );
             e.received(Want::PublicationList, o.reply);
+            self.ignored += dropped;
         }
     }
 
@@ -721,40 +866,91 @@ impl Directory {
         if o.app == self.me {
             return;
         }
+        let free = self.list_room();
         if let Some(e) = self.application(o.app) {
-            upsert(&mut e.subscriptions, entries, |s| s.topic_path.clone());
+            let max = e.subscriptions.len() + free;
+            let dropped = upsert(
+                &mut e.subscriptions,
+                entries,
+                |s| s.topic_path.clone(),
+                subscription_fits,
+                max,
+            );
             e.received(Want::SubscriptionList, o.reply);
+            self.ignored += dropped;
         }
+    }
+
+    /// The list entries that may still be kept ([`LIST_ENTRIES`]).
+    fn list_room(&self) -> usize {
+        let kept: usize = self
+            .entries
+            .values()
+            .map(|e| e.publications.len() + e.subscriptions.len())
+            .sum();
+        LIST_ENTRIES.saturating_sub(kept)
     }
 
     /// The outcome of the registry's `Get` `f`. A complete answer to `Get
     /// PublicationList` or `Get SubscriptionList` (without Source and
     /// Filter) replaces the list of the application.
     pub(crate) fn asked(&mut self, f: &Fetch, answer: Answer, lists: Lists) {
+        let free = self.list_room();
         let Some(e) = self.application(&f.app) else {
             return;
         };
+        let mut dropped = 0;
         if answer == Answer::Answered {
             match lists {
-                Lists::Publications(p) => e.publications = p,
-                Lists::Subscriptions(s) => e.subscriptions = s,
+                Lists::Publications(p) => {
+                    let max = e.publications.len() + free;
+                    dropped = replace(&mut e.publications, p, publication_fits, max);
+                }
+                Lists::Subscriptions(s) => {
+                    let max = e.subscriptions.len() + free;
+                    dropped = replace(&mut e.subscriptions, s, subscription_fits, max);
+                }
                 Lists::None => {}
             }
             e.answers.insert(f.want, Answer::Answered);
         } else if !e.answered(f.want) {
             e.answers.insert(f.want, answer);
         }
+        self.ignored += dropped;
     }
 
     /// A message of the participant `app` was checked against the schemas
-    /// (`None`: it conforms).
+    /// (`None`: it conforms). At most [`ENTRIES`] participants (C-113
+    /// RR-3): the one checked longest ago gives way unless it is online;
+    /// if all are, a new participant is not recorded.
     pub(crate) fn checked(&mut self, app: &str, violation: Option<Violation>) {
         if app == self.me {
             return;
         }
+        if !self.conformity.contains_key(app) && self.conformity.len() >= ENTRIES {
+            let online = |a: &String| {
+                self.entries
+                    .get(a)
+                    .is_some_and(|e| e.availability == Availability::Online)
+            };
+            let gone = self
+                .conformity
+                .iter()
+                .filter(|(a, _)| !online(a))
+                .min_by_key(|(_, c)| c.seq)
+                .map(|(a, _)| a.clone());
+            match gone {
+                Some(a) => self.conformity.remove(&a),
+                None => return,
+            };
+        }
+        self.checks += 1;
         let c = self.conformity.entry(app.to_owned()).or_default();
         c.messages += 1;
-        if let Some(v) = violation {
+        c.seq = self.checks;
+        if let Some(mut v) = violation {
+            v.topic = v.topic.chars().take(TEXT_MAX).collect();
+            v.message = v.message.chars().take(TEXT_MAX).collect();
             c.violations += 1;
             c.last.push_back(v);
             trim(&mut c.last, self.limits.violation_trail);
@@ -902,14 +1098,20 @@ pub(crate) enum Lists {
     Subscriptions(Vec<SubscriptionEntry>),
 }
 
-/// Appends a changed Health (state or score) to the history.
+/// Appends a changed Health (state or score) to the history, without its
+/// details (C-113 RR-3: bounded per change; the latest Health keeps them).
 fn remember(e: &mut Entry, now: u64, health: &Health, max: usize) {
     let changed = e
         .health_history
         .back()
         .is_none_or(|(_, h)| h.health != health.health || h.health_score != health.health_score);
     if changed {
-        e.health_history.push_back((now, health.clone()));
+        let change = Health {
+            health: health.health,
+            health_score: health.health_score,
+            details: None,
+        };
+        e.health_history.push_back((now, change));
         trim(&mut e.health_history, max);
     }
 }
@@ -1557,5 +1759,258 @@ mod tests {
             ..Limits::default()
         });
         assert_eq!(d.conformity(APP).unwrap().last.len(), 1);
+    }
+
+    /// C-113 RR-1: a device entry another publisher created about the IL
+    /// of an application (squatting) is taken back by the application's
+    /// own MAM or Health: the forged MAM and Health are dropped and later
+    /// device messages about it are ignored.
+    #[test]
+    fn device_cannot_squat_an_application() {
+        for own_mam in [true, false] {
+            let mut d = Directory::new(ME);
+            d.mam(&at(OTHER, OTHER, false, 1), mam(OTHER));
+            d.health(&at(OTHER, OTHER, false, 1), normal());
+            d.mam(&at(OTHER, APP, false, 2), mam(APP));
+            d.health(&at(OTHER, APP, false, 2), health(HealthState::Failure, 7));
+            assert_eq!(d.get(APP).unwrap().kind, Kind::Device);
+            assert!(d.get(APP).unwrap().available(), "listed as a device");
+
+            let fx = if own_mam {
+                d.mam(&at(APP, APP, false, 3), mam(APP))
+            } else {
+                d.health(&at(APP, APP, false, 3), normal())
+            };
+            let e = d.get(APP).unwrap();
+            assert_eq!((e.kind, e.publisher.as_str()), (Kind::Application, APP));
+            assert_eq!(e.availability, Availability::Online);
+            assert_eq!(e.mam.is_some(), own_mam, "the forged MAM is dropped");
+            assert_eq!(e.health.is_some(), !own_mam, "the forged Health is dropped");
+            assert!(
+                e.health_history
+                    .iter()
+                    .all(|(_, h)| h.health == HealthState::Normal)
+            );
+            assert_eq!(unlisted(&fx), [APP], "the forgery is no longer offered");
+            assert_eq!(fetches(&fx), Want::ALL, "rule 2: a first sighting");
+            assert_eq!(d.devices(OTHER).count(), 0);
+
+            let ignored = d.ignored();
+            let mut forged = mam(APP);
+            forged.serial_number = "forged".into();
+            assert!(d.mam(&at(OTHER, APP, false, 4), forged).is_empty());
+            assert!(d.health(&at(OTHER, APP, false, 4), normal()).is_empty());
+            assert_eq!(d.ignored(), ignored + 2);
+            assert_eq!(d.get(APP).unwrap().publisher, APP);
+            assert_ne!(
+                d.get(APP)
+                    .unwrap()
+                    .mam
+                    .as_ref()
+                    .map(|m| m.serial_number.as_str()),
+                Some("forged")
+            );
+        }
+    }
+
+    /// C-113 RR-1: a device message whose Source is the AppId of a
+    /// participant seen on the bus is no device message (the conformity
+    /// view has seen it publish under its own AppId).
+    #[test]
+    fn a_participant_is_no_device() {
+        let mut d = Directory::new(ME);
+        d.checked(OTHER, None);
+        assert!(d.mam(&at(APP, OTHER, false, 1), mam(OTHER)).is_empty());
+        assert!(d.health(&at(APP, OTHER, false, 1), normal()).is_empty());
+        assert!(d.get(OTHER).is_none());
+        assert_eq!(d.ignored(), 2);
+    }
+
+    /// C-113 RR-1: the device of an online publisher is not taken over by
+    /// another publisher; after its publisher left it may be.
+    #[test]
+    fn device_of_an_online_publisher_stays() {
+        let mut d = Directory::new(ME);
+        online_app(&mut d);
+        d.mam(&at(APP, PUMP, false, 2), mam(PUMP));
+        d.health(&at(OTHER, OTHER, false, 2), normal());
+        let mut forged = mam(PUMP);
+        forged.serial_number = "forged".into();
+        assert!(d.mam(&at(OTHER, PUMP, false, 3), forged).is_empty());
+        assert!(d.health(&at(OTHER, PUMP, false, 3), normal()).is_empty());
+        assert_eq!(d.ignored(), 2);
+        let e = d.get(PUMP).unwrap();
+        assert_eq!(e.publisher, APP);
+        assert_eq!(e.mam, Some(mam(PUMP)));
+        assert!(e.health.is_none());
+
+        d.health(&at(APP, APP, false, 4), health(HealthState::Normal, 0));
+        d.mam(&at(OTHER, PUMP, false, 5), mam(PUMP));
+        assert_eq!(d.get(PUMP).unwrap().publisher, OTHER);
+    }
+
+    fn nth(i: usize) -> String {
+        format!("vendor.com/App/A-1/{i}")
+    }
+
+    /// C-113 RR-3: at most [`ENTRIES`] entries; when full, the offline
+    /// entry seen longest ago gives way, an online one never: then the
+    /// new asset is ignored.
+    #[test]
+    fn entries_are_bounded() {
+        let mut d = Directory::new(ME);
+        for i in 0..ENTRIES {
+            let il = nth(i);
+            d.health(&at(&il, &il, false, 1), normal());
+        }
+        assert_eq!(d.entries().count(), ENTRIES);
+        let extra = nth(ENTRIES);
+        assert!(d.health(&at(&extra, &extra, false, 2), normal()).is_empty());
+        assert!(
+            d.mam(&at(&nth(0), &extra, false, 2), mam(&extra))
+                .is_empty()
+        );
+        assert!(d.get(&extra).is_none());
+        assert_eq!(d.ignored(), 2);
+        assert_eq!(d.entries().count(), ENTRIES);
+
+        // two leave; the one seen longest ago gives way first
+        let (a, b) = (nth(7), nth(3));
+        d.health(&at(&a, &a, false, 3), health(HealthState::Normal, 0));
+        d.health(&at(&b, &b, false, 4), health(HealthState::Failure, 0));
+        d.health(&at(&extra, &extra, false, 5), normal());
+        assert!(d.get(&extra).is_some());
+        assert!(d.get(&a).is_none());
+        assert!(d.get(&b).is_some());
+        let device = nth(ENTRIES + 1);
+        d.mam(&at(&extra, &device, false, 6), mam(&device));
+        assert!(d.get(&b).is_none());
+        assert_eq!(d.get(&device).unwrap().kind, Kind::Device);
+        assert_eq!(d.entries().count(), ENTRIES);
+    }
+
+    /// C-113 RR-3: a MAM, Health, Profile or Event whose JSON text is
+    /// longer than [`VALUE_MAX`] is not kept (counted as ignored).
+    #[test]
+    fn oversized_values_are_not_kept() {
+        let mut d = Directory::new(ME);
+        let mut big = mam(APP);
+        big.hardware_revision = "x".repeat(VALUE_MAX);
+        assert!(d.mam(&at(APP, APP, false, 1), big).is_empty());
+        assert!(d.get(APP).is_none());
+        let detail =
+            serde_json::json!({ "Health": "NORMAL_0", "Description": "x".repeat(VALUE_MAX) });
+        let big: Health = serde_json::from_value(serde_json::json!({
+            "Health": "NORMAL_0", "HealthScore": 100, "Details": [detail]
+        }))
+        .unwrap();
+        assert!(d.health(&at(APP, APP, false, 1), big).is_empty());
+        assert!(d.get(APP).is_none());
+        assert_eq!(d.ignored(), 2);
+
+        online_app(&mut d);
+        let profile = vec![Subject::Resource(Resource::Mam); VALUE_MAX / 4];
+        d.profile(&at(APP, APP, false, 2), profile);
+        assert!(d.get(APP).unwrap().profile.is_none());
+        let mut ev = event(1);
+        ev.description = Some("x".repeat(VALUE_MAX));
+        d.event(&at(APP, APP, false, 2), None, ev);
+        assert_eq!(d.events().count(), 0);
+        let mut p = publication(Resource::Mam, APP, 11);
+        p.filter = Some("x".repeat(VALUE_MAX));
+        d.publications(&at(APP, APP, false, 2), vec![p.clone()]);
+        ask(
+            &mut d,
+            Want::PublicationList,
+            Answer::Answered,
+            Lists::Publications(vec![p, publication(Resource::Mam, APP, 12)]),
+        );
+        assert_eq!(d.get(APP).unwrap().publications.len(), 1);
+        assert_eq!(d.ignored(), 6);
+    }
+
+    /// C-113 RR-3: at most [`LIST_ENTRIES`] PublicationList and
+    /// SubscriptionList entries over all applications.
+    #[test]
+    fn lists_are_bounded() {
+        let mut d = Directory::new(ME);
+        online_app(&mut d);
+        d.mam(&at(OTHER, OTHER, false, 1), mam(OTHER));
+        let subs = |n: usize| (0..n).map(|i| subscription(&format!("t/{i}"))).collect();
+        ask(
+            &mut d,
+            Want::SubscriptionList,
+            Answer::Answered,
+            Lists::Subscriptions(subs(LIST_ENTRIES + 5)),
+        );
+        assert_eq!(d.get(APP).unwrap().subscriptions.len(), LIST_ENTRIES);
+        d.subscriptions(&at(OTHER, OTHER, false, 2), vec![subscription("u")]);
+        assert!(d.get(OTHER).unwrap().subscriptions.is_empty());
+        // replacing a list frees its room
+        ask(
+            &mut d,
+            Want::SubscriptionList,
+            Answer::Answered,
+            Lists::Subscriptions(subs(1)),
+        );
+        d.subscriptions(&at(OTHER, OTHER, false, 3), vec![subscription("u")]);
+        assert_eq!(d.get(OTHER).unwrap().subscriptions.len(), 1);
+        // an entry with a known key replaces it even when full
+        ask(
+            &mut d,
+            Want::SubscriptionList,
+            Answer::Answered,
+            Lists::Subscriptions(subs(LIST_ENTRIES - 1)),
+        );
+        d.subscriptions(&at(APP, APP, false, 4), vec![subscription("t/0")]);
+        assert_eq!(d.get(APP).unwrap().subscriptions.len(), LIST_ENTRIES - 1);
+    }
+
+    /// C-113 RR-3: at most [`ENTRIES`] participants in the conformity view;
+    /// the one checked longest ago gives way unless it is online; the
+    /// texts of a violation are bounded.
+    #[test]
+    fn conformity_is_bounded() {
+        let mut d = Directory::new(ME);
+        online_app(&mut d);
+        d.checked(APP, None);
+        for i in 0..=ENTRIES {
+            d.checked(&nth(i), None);
+        }
+        assert_eq!(d.conformity.len(), ENTRIES);
+        assert!(d.conformity(APP).is_some(), "online: kept");
+        assert!(d.conformity(&nth(0)).is_none());
+        assert!(d.conformity(&nth(ENTRIES)).is_some());
+
+        d.checked(
+            APP,
+            Some(Violation {
+                at: 1,
+                topic: "t".repeat(TEXT_MAX + 1),
+                reqs: Vec::new(),
+                message: "m".repeat(TEXT_MAX + 1),
+            }),
+        );
+        let v = d.conformity(APP).unwrap().last.back().unwrap();
+        assert_eq!((v.topic.len(), v.message.len()), (TEXT_MAX, TEXT_MAX));
+    }
+
+    /// C-113 RR-3: the Health history keeps state and score, not the
+    /// details (bounded per change).
+    #[test]
+    fn health_history_without_details() {
+        let mut d = Directory::new(ME);
+        let h: Health = serde_json::from_value(serde_json::json!({
+            "Health": "MAINTENANCE_REQUIRED_4", "HealthScore": 80,
+            "Details": [{ "Health": "MAINTENANCE_REQUIRED_4", "Description": "filter" }]
+        }))
+        .unwrap();
+        d.health(&at(APP, APP, false, 1), h.clone());
+        let e = d.get(APP).unwrap();
+        assert_eq!(e.health, Some(h));
+        let (_, kept) = e.health_history.back().unwrap();
+        assert_eq!(kept.health, HealthState::MaintenanceRequired);
+        assert_eq!(kept.health_score, Some(80));
+        assert!(kept.details.is_none());
     }
 }

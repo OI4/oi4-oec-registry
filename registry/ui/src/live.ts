@@ -1,8 +1,10 @@
 // The live view of the directory: one EventSource on /api/stream. The first
 // message is a snapshot; then `asset`, `event` and `directory` changes. After a
 // lost connection the browser reconnects and the registry sends a new snapshot.
+// The stream needs the session (ADR-0035): it ends with the session, and a
+// closed stream asks GET /api/session, which ends the page's session on 401.
 import { useEffect, useReducer } from "react";
-import type { DirectoryFields, EventRecord, StreamMessage, Summary } from "./api";
+import { fetchSession, type DirectoryFields, type EventRecord, type StreamMessage, type Summary } from "./api";
 
 export type Connection = "connecting" | "live" | "reconnecting";
 
@@ -97,7 +99,14 @@ export function useLive(): Live {
         dispatch({ kind: "error" });
         if (source?.readyState === EventSource.CLOSED && !stopped) {
           source = null;
-          timer = window.setTimeout(open, RETRY_MS);
+          fetchSession()
+            .then((user) => user !== null)
+            .catch(() => true)
+            .then((retry) => {
+              if (retry && !stopped) {
+                timer = window.setTimeout(open, RETRY_MS);
+              }
+            });
         }
       };
     };

@@ -12,14 +12,20 @@
 //! [`MAX_STREAMS`] event streams (`503` beyond); a response is written
 //! within [`RESPONSE_TIME`]; an event stream sends a comment `keep-alive`
 //! when quiet and ends for a client that does not read.
+//!
+//! The user management of ADR-0035 (C-113): the session of a request is the
+//! token of `Authorization: Bearer` or of the session cookie; a resource
+//! needs the [`Access`] of its route; password hashing runs on the blocking
+//! pool, at most [`HASHING`] at a time; an event stream ends with its
+//! session.
 
 use std::convert::Infallible;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::pin::{Pin, pin};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use hyper::body::{Body, Bytes, Frame, Incoming, SizeHint};
 use hyper::header::{self, HeaderValue};
@@ -30,10 +36,11 @@ use hyper_util::rt::{TokioIo, TokioTimer};
 use rustls::ServerConfig;
 use serde_json::json;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{Notify, mpsc};
+use tokio::sync::{Notify, Semaphore, mpsc};
 use tokio_rustls::TlsAcceptor;
 
-use crate::api::{self, Head, Hosts, Route, Stream};
+use crate::api::{self, Access, Head, Hosts, Route, Stream};
+use crate::auth::{self, Auth, Role};
 use crate::bus::{lock, unix_ms};
 use crate::directory::Directory;
 
@@ -56,6 +63,17 @@ const STREAM_POLL: Duration = Duration::from_millis(500);
 const STREAM_QUEUE: usize = 32;
 /// The default quiet time before a comment `keep-alive`.
 const KEEP_ALIVE: Duration = Duration::from_secs(15);
+/// At most this many password hashes are computed at a time.
+const HASHING: usize = 2;
+/// How long a request waits for a place to hash; then `503`.
+const HASHING_WAIT: Duration = Duration::from_secs(5);
+/// The session cookie over TLS (ADR-0035 §4) and its attributes.
+const COOKIE_TLS: (&str, &str) = (
+    "__Host-oec_session",
+    "; Path=/; Secure; HttpOnly; SameSite=Strict",
+);
+/// The session cookie over plain HTTP (development only).
+const COOKIE_PLAIN: (&str, &str) = ("oec_session", "; Path=/; HttpOnly; SameSite=Strict");
 
 /// The headers of every response besides `Content-Type`.
 const COMMON_HEADERS: [(header::HeaderName, &str); 5] = [
@@ -175,6 +193,10 @@ impl Listeners {
 /// What the connections share.
 struct Shared {
     dir: Arc<Mutex<Directory>>,
+    auth: Mutex<Auth>,
+    hashing: Semaphore,
+    /// The session cookie: name and attributes.
+    cookie: (&'static str, &'static str),
     hosts: Hosts,
     tls: Option<TlsAcceptor>,
     keep_alive: Duration,
@@ -213,6 +235,7 @@ pub(crate) fn start(
     hosts: Hosts,
     keep_alive: Duration,
     dir: Arc<Mutex<Directory>>,
+    auth: Auth,
 ) -> Result<(), String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
@@ -221,6 +244,13 @@ pub(crate) fn start(
         .map_err(|e| format!("HTTP: {e}"))?;
     let shared = Arc::new(Shared {
         dir,
+        auth: Mutex::new(auth),
+        hashing: Semaphore::new(HASHING),
+        cookie: if tls.is_some() {
+            COOKIE_TLS
+        } else {
+            COOKIE_PLAIN
+        },
         hosts,
         tls: tls.map(TlsAcceptor::from),
         keep_alive,
@@ -251,8 +281,8 @@ pub(crate) fn start(
 
 async fn accept(listener: TcpListener, ui: bool, s: Arc<Shared>) {
     loop {
-        let tcp = match listener.accept().await {
-            Ok((tcp, _)) => tcp,
+        let (tcp, ip) = match listener.accept().await {
+            Ok((tcp, peer)) => (tcp, peer.ip()),
             Err(e) => {
                 log::debug!("HTTP: accept: {e}");
                 tokio::time::sleep(Duration::from_millis(100)).await;
@@ -262,9 +292,9 @@ async fn accept(listener: TcpListener, ui: bool, s: Arc<Shared>) {
         let s = Arc::clone(&s);
         tokio::spawn(async move {
             if let Some(_slot) = Slot::take(&s.connections, MAX_CONNECTIONS) {
-                connection(tcp, ui, false, &s).await;
+                connection(tcp, ip, ui, false, &s).await;
             } else if let Some(_slot) = Slot::take(&s.refusing, MAX_REFUSING) {
-                connection(tcp, ui, true, &s).await;
+                connection(tcp, ip, ui, true, &s).await;
             }
         });
     }
@@ -272,19 +302,19 @@ async fn accept(listener: TcpListener, ui: bool, s: Arc<Shared>) {
 
 /// One connection: TLS handshake, one request (`refuse`: answered with
 /// `503`), the response.
-async fn connection(tcp: TcpStream, ui: bool, refuse: bool, s: &Arc<Shared>) {
+async fn connection(tcp: TcpStream, ip: IpAddr, ui: bool, refuse: bool, s: &Arc<Shared>) {
     let _ = tcp.set_nodelay(true);
     match &s.tls {
         Some(acceptor) => {
             if let Ok(Ok(tls)) = tokio::time::timeout(REQUEST_TIME, acceptor.accept(tcp)).await {
-                exchange(TokioIo::new(tls), ui, refuse, s).await;
+                exchange(TokioIo::new(tls), ip, ui, refuse, s).await;
             }
         }
-        None => exchange(TokioIo::new(tcp), ui, refuse, s).await,
+        None => exchange(TokioIo::new(tcp), ip, ui, refuse, s).await,
     }
 }
 
-async fn exchange<I>(io: I, ui: bool, refuse: bool, s: &Arc<Shared>)
+async fn exchange<I>(io: I, ip: IpAddr, ui: bool, refuse: bool, s: &Arc<Shared>)
 where
     I: hyper::rt::Read + hyper::rt::Write + Unpin + Send + 'static,
 {
@@ -294,15 +324,23 @@ where
     let service = {
         let (s, end) = (Arc::clone(s), Arc::clone(&end));
         service_fn(move |req: Request<Incoming>| {
-            let response = handle(&s, ui, refuse, &req, &end);
-            if !matches!(response.body(), Out::Stream(_)) {
-                let end = Arc::clone(&end);
-                tokio::spawn(async move {
-                    tokio::time::sleep(RESPONSE_TIME).await;
-                    end.notify_one();
-                });
+            let (s, end) = (Arc::clone(&s), Arc::clone(&end));
+            async move {
+                // the time for the body, the hashing and the response; an
+                // event stream has no end
+                let timer = {
+                    let end = Arc::clone(&end);
+                    tokio::spawn(async move {
+                        tokio::time::sleep(RESPONSE_TIME).await;
+                        end.notify_one();
+                    })
+                };
+                let response = handle(&s, ip, ui, refuse, req, &end).await;
+                if matches!(response.body(), Out::Stream(_)) {
+                    timer.abort();
+                }
+                Ok::<_, Infallible>(response)
             }
-            std::future::ready(Ok::<_, Infallible>(response))
         })
     };
     let mut conn = pin!(
@@ -377,10 +415,27 @@ fn json(status: u16, value: &serde_json::Value) -> Response<Out> {
 
 fn error(status: u16, message: &str) -> Response<Out> {
     let mut r = json(status, &json!({ "error": message }));
-    if status == 405 {
-        r.headers_mut()
-            .insert(header::ALLOW, HeaderValue::from_static("GET"));
+    if status == 401 {
+        r.headers_mut().insert(
+            header::WWW_AUTHENTICATE,
+            HeaderValue::from_static("Bearer realm=\"oec-registry\""),
+        );
     }
+    r
+}
+
+/// `405` with the methods of the route.
+fn not_allowed(allow: &'static str) -> Response<Out> {
+    let mut r = error(405, "method not allowed");
+    r.headers_mut()
+        .insert(header::ALLOW, HeaderValue::from_static(allow));
+    r
+}
+
+/// `204` without a body.
+fn no_content() -> Response<Out> {
+    let mut r = respond(204, "application/json", Out::Full(None));
+    r.headers_mut().remove(header::CONTENT_TYPE);
     r
 }
 
@@ -393,16 +448,115 @@ fn values<'a>(req: &'a Request<Incoming>, name: &header::HeaderName) -> Vec<&'a 
         .collect()
 }
 
-fn handle(
-    s: &Arc<Shared>,
-    ui: bool,
-    refuse: bool,
-    req: &Request<Incoming>,
-    end: &Arc<Notify>,
-) -> Response<Out> {
-    if refuse {
-        return error(503, "too many connections");
+/// The session token of a request: `Authorization: Bearer`, else the
+/// session cookie.
+fn token(req: &Request<Incoming>, cookie: &str) -> Option<String> {
+    let mut auths = req.headers().get_all(header::AUTHORIZATION).iter();
+    if let Some(a) = auths.next() {
+        let a = a.to_str().ok()?;
+        let (scheme, t) = a.split_once(' ')?;
+        return (auths.next().is_none() && scheme.eq_ignore_ascii_case("bearer"))
+            .then(|| t.trim().to_owned());
     }
+    values(req, &header::COOKIE)
+        .iter()
+        .flat_map(|v| v.split(';'))
+        .filter_map(|c| c.trim().split_once('='))
+        .find(|(n, _)| *n == cookie)
+        .map(|(_, v)| v.to_owned())
+}
+
+/// A refusal (boxed: a response is large).
+type Fail = Box<Response<Out>>;
+
+fn fail(status: u16, message: &str) -> Fail {
+    Box::new(error(status, message))
+}
+
+/// The members of a JSON body: an object of strings, only `allowed` ones,
+/// all `required` ones.
+async fn body(
+    req: Request<Incoming>,
+    allowed: &[&str],
+    required: &[&str],
+) -> Result<std::collections::HashMap<String, String>, Fail> {
+    let json_type = values(&req, &header::CONTENT_TYPE)
+        .first()
+        .is_some_and(|t| {
+            t.split(';')
+                .next()
+                .is_some_and(|m| m.trim().eq_ignore_ascii_case("application/json"))
+        });
+    if !json_type {
+        return Err(fail(415, "the body is application/json"));
+    }
+    let mut incoming = req.into_body();
+    let mut bytes = Vec::new();
+    let read = async {
+        while let Some(frame) =
+            std::future::poll_fn(|cx| Pin::new(&mut incoming).poll_frame(cx)).await
+        {
+            let Ok(frame) = frame else {
+                return Err(fail(400, "the body is broken"));
+            };
+            if let Some(data) = frame.data_ref() {
+                if bytes.len() + data.len() > api::MAX_JSON {
+                    return Err(fail(413, "the body is too large"));
+                }
+                bytes.extend_from_slice(data);
+            }
+        }
+        Ok(())
+    };
+    tokio::time::timeout(REQUEST_TIME, read)
+        .await
+        .map_err(|_| fail(408, "the body is too slow"))??;
+    let Ok(serde_json::Value::Object(members)) = serde_json::from_slice(&bytes) else {
+        return Err(fail(400, "the body is a JSON object"));
+    };
+    let mut out = std::collections::HashMap::new();
+    for (k, v) in members {
+        let (true, serde_json::Value::String(v)) = (allowed.contains(&k.as_str()), v) else {
+            return Err(fail(400, "unknown member or not a string"));
+        };
+        out.insert(k, v);
+    }
+    if required.iter().any(|r| !out.contains_key(*r)) {
+        return Err(fail(400, "a member is missing"));
+    }
+    Ok(out)
+}
+
+/// Runs `f` (password hashing) on the blocking pool, at most [`HASHING`]
+/// at a time.
+async fn hashing<T: Send + 'static>(
+    s: &Shared,
+    f: impl FnOnce() -> T + Send + 'static,
+) -> Result<T, Fail> {
+    let Ok(Ok(_permit)) = tokio::time::timeout(HASHING_WAIT, s.hashing.acquire()).await else {
+        return Err(fail(503, "busy, try again"));
+    };
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|_| fail(500, "hashing failed"))
+}
+
+fn too_many(secs: u64) -> Response<Out> {
+    let mut r = error(429, "too many failed attempts, wait");
+    r.headers_mut()
+        .insert(header::RETRY_AFTER, HeaderValue::from(secs));
+    r
+}
+
+fn set_cookie(r: &mut Response<Out>, cookie: (&str, &str), value: &str, clear: bool) {
+    let max_age = if clear { "; Max-Age=0" } else { "" };
+    if let Ok(v) = HeaderValue::from_str(&format!("{}={value}{}{max_age}", cookie.0, cookie.1)) {
+        r.headers_mut().insert(header::SET_COOKIE, v);
+    }
+}
+
+/// The guards of [`Hosts::check`] and the route.
+fn guard(s: &Shared, ui: bool, req: &Request<Incoming>) -> Result<Route, Fail> {
     let mut hosts = values(req, &header::HOST);
     // an absolute target names the host too: it has to be the same
     if let Some(authority) = req.uri().authority() {
@@ -410,46 +564,112 @@ fn handle(
             .iter()
             .any(|h| !h.eq_ignore_ascii_case(authority.as_str()))
         {
-            return error(400, "the target and Host differ");
+            return Err(fail(400, "the target and Host differ"));
         }
         if hosts.is_empty() {
             hosts.push(authority.as_str());
         }
     }
     let head = Head {
-        method: req.method().as_str(),
         hosts,
         origins: values(req, &header::ORIGIN),
         transfer_encoding: req.headers().contains_key(header::TRANSFER_ENCODING),
         content_length: values(req, &header::CONTENT_LENGTH),
     };
-    if let Err((status, why)) = s.hosts.check(&head) {
-        return error(status, why);
+    s.hosts
+        .check(&head)
+        .map_err(|(status, why)| fail(status, why))?;
+    let route = api::route(req.uri().path(), ui).ok_or_else(|| fail(404, "not found"))?;
+    if !route.methods().contains(&req.method().as_str()) {
+        return Err(Box::new(not_allowed(route.allow())));
     }
-    let Some(route) = api::route(req.uri().path(), ui) else {
-        return error(404, "not found");
+    Ok(route)
+}
+
+/// The user of the session of a request, if the route needs one.
+fn user(s: &Shared, route: &Route, token: Option<&str>) -> Result<Option<auth::User>, Fail> {
+    let access = route.access();
+    if access == Access::Public {
+        return Ok(None);
+    }
+    let user = token
+        .and_then(|t| lock(&s.auth).session(t, Instant::now()))
+        .ok_or_else(|| fail(401, "log in first"))?;
+    if user.must_change && access != Access::Session {
+        return Err(fail(403, "change the password first"));
+    }
+    if access == Access::Admin && user.role != Role::Admin {
+        return Err(fail(403, "for admins only"));
+    }
+    Ok(Some(user))
+}
+
+async fn handle(
+    s: &Arc<Shared>,
+    ip: IpAddr,
+    ui: bool,
+    refuse: bool,
+    req: Request<Incoming>,
+    end: &Arc<Notify>,
+) -> Response<Out> {
+    if refuse {
+        return error(503, "too many connections");
+    }
+    let route = match guard(s, ui, &req) {
+        Ok(r) => r,
+        Err(r) => return *r,
     };
+    let token = token(&req, s.cookie.0);
+    let user = match user(s, &route, token.as_deref()) {
+        Ok(u) => u,
+        Err(r) => return *r,
+    };
+    let post = req.method() != hyper::Method::GET;
     let dir = || lock(&s.dir);
-    match route {
-        Route::Ui(f) => content(200, f.content_type, Bytes::from_static(f.bytes)),
-        Route::Assets => json(200, &api::assets(&dir(), unix_ms())),
-        Route::Asset(il) => match api::asset(&dir(), &il) {
-            Some(v) => json(200, &v),
-            None => error(404, "no such asset"),
-        },
-        Route::Events => json(200, &api::events(&dir())),
-        Route::Data => json(200, &api::data(&dir())),
-        Route::OpenApi => content(
+    let result = match (route, user) {
+        (Route::Login, _) => login(s, ip, req).await,
+        (Route::Logout, _) => {
+            if let Some(t) = &token {
+                lock(&s.auth).logout(t);
+            }
+            let mut r = no_content();
+            set_cookie(&mut r, s.cookie, "", true);
+            Ok(r)
+        }
+        (Route::Session, Some(u)) => Ok(json(200, &u.view())),
+        (Route::Password, Some(u)) => {
+            password(s, ip, &u, token.as_deref().unwrap_or_default(), req).await
+        }
+        (Route::Users, _) if !post => Ok(json(200, &lock(&s.auth).list())),
+        (Route::Users, _) => create(s, req).await,
+        (Route::User(name), _) if req.method() == hyper::Method::PUT => update(s, &name, req).await,
+        (Route::User(name), _) => {
+            let deleted = lock(&s.auth).delete(&name);
+            deleted
+                .map(|()| no_content())
+                .map_err(|(status, why)| fail(status, why))
+        }
+        (Route::Ui(f), _) => Ok(content(200, f.content_type, Bytes::from_static(f.bytes))),
+        (Route::Assets, _) => Ok(json(200, &api::assets(&dir(), unix_ms()))),
+        (Route::Asset(il), _) => {
+            let found = api::asset(&dir(), &il);
+            found
+                .map(|v| json(200, &v))
+                .ok_or_else(|| fail(404, "no such asset"))
+        }
+        (Route::Events, _) => Ok(json(200, &api::events(&dir()))),
+        (Route::Data, _) => Ok(json(200, &api::data(&dir()))),
+        (Route::OpenApi, _) => Ok(content(
             200,
             "application/json",
             Bytes::from_static(api::OPENAPI.as_bytes()),
-        ),
-        Route::AsyncApi => content(
+        )),
+        (Route::AsyncApi, _) => Ok(content(
             200,
             "application/json",
             Bytes::from_static(api::ASYNCAPI.as_bytes()),
-        ),
-        Route::Stream => {
+        )),
+        (Route::Stream, _) => {
             if Slot::take(&s.streams, MAX_STREAMS)
                 .map(std::mem::forget)
                 .is_none()
@@ -457,15 +677,121 @@ fn handle(
                 return error(503, "too many event streams");
             }
             let (tx, rx) = mpsc::channel(STREAM_QUEUE);
-            tokio::spawn(produce(Arc::clone(s), tx, Arc::clone(end)));
-            respond(200, "text/event-stream", Out::Stream(rx))
+            let token = token.unwrap_or_default();
+            tokio::spawn(produce(Arc::clone(s), tx, Arc::clone(end), token));
+            Ok(respond(200, "text/event-stream", Out::Stream(rx)))
+        }
+        (Route::Session | Route::Password, None) => Err(fail(401, "log in first")),
+    };
+    result.unwrap_or_else(|r| *r)
+}
+
+/// `POST /api/login`.
+async fn login(s: &Arc<Shared>, ip: IpAddr, req: Request<Incoming>) -> Result<Response<Out>, Fail> {
+    let b = body(req, &["name", "password"], &["name", "password"]).await?;
+    let (name, password) = (b["name"].clone(), b["password"].clone());
+    let stored = lock(&s.auth).login_hash(ip, &name, Instant::now());
+    let stored = stored.map_err(too_many)?;
+    let checked = stored.clone();
+    if hashing(s, move || auth::verify(&password, &checked)).await? {
+        let session = lock(&s.auth).logged_in(ip, &name, &stored, Instant::now());
+        if let Some((user, token)) = session {
+            let mut v = user.view();
+            v["token"] = token.clone().into();
+            let mut r = json(200, &v);
+            set_cookie(&mut r, s.cookie, &token, false);
+            return Ok(r);
         }
     }
+    lock(&s.auth).failed(ip, Instant::now());
+    Err(fail(401, "wrong name or password"))
+}
+
+/// `POST /api/password`: the own password.
+async fn password(
+    s: &Arc<Shared>,
+    ip: IpAddr,
+    user: &auth::User,
+    token: &str,
+    req: Request<Incoming>,
+) -> Result<Response<Out>, Fail> {
+    let b = body(req, &["current", "new"], &["current", "new"]).await?;
+    let (current, new) = (b["current"].clone(), b["new"].clone());
+    auth::check_password(&user.name, &new).map_err(|why| fail(400, why))?;
+    if new == current {
+        return Err(fail(400, "the new password is the current one"));
+    }
+    let stored = lock(&s.auth).login_hash(ip, &user.name, Instant::now());
+    let stored = stored.map_err(too_many)?;
+    let iterations = lock(&s.auth).iterations;
+    let checked = stored.clone();
+    let new_hash = hashing(s, move || {
+        auth::verify(&current, &checked).then(|| auth::hash(&new, iterations))
+    })
+    .await?;
+    let Some(new_hash) = new_hash else {
+        lock(&s.auth).failed(ip, Instant::now());
+        return Err(fail(403, "wrong password"));
+    };
+    let changed = lock(&s.auth).change_own(&user.name, &stored, new_hash, token);
+    changed
+        .map(|u| json(200, &u.view()))
+        .map_err(|(status, why)| fail(status, why))
+}
+
+/// `POST /api/users`: a new user.
+async fn create(s: &Arc<Shared>, req: Request<Incoming>) -> Result<Response<Out>, Fail> {
+    let fields = ["name", "role", "password"];
+    let b = body(req, &fields, &fields).await?;
+    let name = b["name"].clone();
+    if !auth::valid_name(&name) {
+        return Err(fail(
+            400,
+            "a name has 1 … 64 characters A-Z a-z 0-9 . _ @ -",
+        ));
+    }
+    let role = Role::parse(&b["role"]).ok_or_else(|| fail(400, "the role is admin or user"))?;
+    let password = b["password"].clone();
+    auth::check_password(&name, &password).map_err(|why| fail(400, why))?;
+    let iterations = lock(&s.auth).iterations;
+    let hash = hashing(s, move || auth::hash(&password, iterations)).await?;
+    let created = lock(&s.auth).create(&name, role, hash);
+    created
+        .map(|u| json(201, &u.view()))
+        .map_err(|(status, why)| fail(status, why))
+}
+
+/// `PUT /api/users/{name}`: the role and/or a new password.
+async fn update(
+    s: &Arc<Shared>,
+    name: &str,
+    req: Request<Incoming>,
+) -> Result<Response<Out>, Fail> {
+    let b = body(req, &["role", "password"], &[]).await?;
+    if b.is_empty() {
+        return Err(fail(400, "role or password"));
+    }
+    let role = match b.get("role") {
+        Some(r) => Some(Role::parse(r).ok_or_else(|| fail(400, "the role is admin or user"))?),
+        None => None,
+    };
+    let hash = match b.get("password").cloned() {
+        Some(p) => {
+            auth::check_password(name, &p).map_err(|why| fail(400, why))?;
+            let iterations = lock(&s.auth).iterations;
+            Some(hashing(s, move || auth::hash(&p, iterations)).await?)
+        }
+        None => None,
+    };
+    let updated = lock(&s.auth).update(name, role, hash);
+    updated
+        .map(|u| json(200, &u.view()))
+        .map_err(|(status, why)| fail(status, why))
 }
 
 /// The messages of an event stream (see [`api::Stream`]) until the client
-/// goes; one that does not read ends its connection.
-async fn produce(s: Arc<Shared>, tx: mpsc::Sender<Bytes>, end: Arc<Notify>) {
+/// goes or its session ends; one that does not read ends its connection.
+async fn produce(s: Arc<Shared>, tx: mpsc::Sender<Bytes>, end: Arc<Notify>, token: String) {
     // the place taken in `handle`
     let _slot = Slot(&s.streams);
     let mut stream = Stream::default();
@@ -485,6 +811,10 @@ async fn produce(s: Arc<Shared>, tx: mpsc::Sender<Bytes>, end: Arc<Notify>) {
     loop {
         tokio::time::sleep(STREAM_POLL).await;
         if tx.is_closed() {
+            return;
+        }
+        let alive = lock(&s.auth).session(&token, Instant::now()).is_some();
+        if !alive {
             return;
         }
         let messages = stream.changes(&lock(&s.dir));
@@ -568,8 +898,56 @@ mod tests {
         String::from_utf8(out).unwrap()
     }
 
+    /// Without a session `401`; the login (plain: the cookie without
+    /// `Secure`); the session by cookie. The token.
+    fn login_over_loopback(api: SocketAddr) -> String {
+        let r = exchange(api, "GET /api/assets HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(r.starts_with("HTTP/1.1 401 "), "{r}");
+        assert!(
+            r.to_ascii_lowercase()
+                .contains("www-authenticate: bearer realm=\"oec-registry\""),
+            "{r}"
+        );
+        let login = |password: &str| {
+            let body = format!(r#"{{"name":"admin","password":"{password}"}}"#);
+            exchange(
+                api,
+                &format!(
+                    "POST /api/login HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+                    body.len()
+                ),
+            )
+        };
+        assert!(login("wrong horse battery").starts_with("HTTP/1.1 401 "));
+        let r = login("correct horse battery");
+        assert!(r.starts_with("HTTP/1.1 200 OK\r\n"), "{r}");
+        assert!(
+            r.contains("set-cookie: oec_session=")
+                && r.contains("; Path=/; HttpOnly; SameSite=Strict")
+                && !r.contains("Secure"),
+            "{r}"
+        );
+        let token = r
+            .split(r#""token":""#)
+            .nth(1)
+            .and_then(|t| t.split('"').next())
+            .unwrap()
+            .to_owned();
+        let r = exchange(
+            api,
+            &format!(
+                "GET /api/session HTTP/1.1\r\nHost: localhost\r\nCookie: a=b; oec_session={token}\r\n\r\n"
+            ),
+        );
+        assert!(
+            r.starts_with("HTTP/1.1 200 OK\r\n") && r.contains(r#""role":"admin""#),
+            "{r}"
+        );
+        token
+    }
+
     /// The server over loopback (plain; TLS: the Go tests): the views, the
-    /// headers, the guards and the event stream.
+    /// headers, the guards, the login and the event stream.
     #[test]
     fn served_over_loopback() {
         let settings = Settings {
@@ -584,11 +962,26 @@ mod tests {
             panic!("bound")
         };
         let dir = Arc::new(Mutex::new(crate::api::tests::fixture()));
-        start(listeners, None, Hosts::new([], false), KEEP_ALIVE, dir).unwrap();
+        let root = crate::auth::tests::temp("http");
+        let file = root.join("password");
+        std::fs::write(&file, "correct horse battery\n").unwrap();
+        let (auth, _) = Auth::open(&root, &file, true, crate::auth::tests::FAST).unwrap();
+        start(
+            listeners,
+            None,
+            Hosts::new([], false),
+            KEEP_ALIVE,
+            dir,
+            auth,
+        )
+        .unwrap();
+        let token = login_over_loopback(api);
         let get = |addr: SocketAddr, path: &str| {
             exchange(
                 addr,
-                &format!("GET {path} HTTP/1.1\r\nHost: localhost\r\n\r\n"),
+                &format!(
+                    "GET {path} HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {token}\r\n\r\n"
+                ),
             )
         };
         let r = get(api, "/api/assets");
@@ -630,6 +1023,12 @@ mod tests {
         );
         assert!(r.starts_with("HTTP/1.1 405 "), "{r}");
         assert!(r.to_ascii_lowercase().contains("allow: get"), "{r}");
+        let r = exchange(
+            api,
+            "GET /api/users/admin HTTP/1.1\r\nHost: localhost\r\n\r\n",
+        );
+        assert!(r.starts_with("HTTP/1.1 405 "), "{r}");
+        assert!(r.to_ascii_lowercase().contains("allow: put, delete"), "{r}");
         let r = exchange(
             api,
             "GET /api/events HTTP/1.1\r\nHost: evil.example\r\n\r\n",

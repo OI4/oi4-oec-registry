@@ -187,6 +187,8 @@ func (b *Broker) Container(t *testing.T, hostname string) string {
 		"etc/oi4/mqtt/broker.json":    fmt.Sprintf(`{"Address": "localhost", "SecurePort": %d, "MaxPacketSize": 262144}`, b.Port),
 		"etc/oi4/certs/ca.pem":        string(ca),
 		"run/secrets/oi4/credentials": "dXNlcjpwYTpzcw==\n", // base64("user:pa:ss")
+		// the first user admin of the HTTP side (ADR-0035)
+		"run/secrets/oi4/registry_admin_password": AdminPassword + "\n",
 	} {
 		Write(t, filepath.Join(root, name), content)
 	}

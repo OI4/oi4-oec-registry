@@ -47,8 +47,6 @@ pub(crate) const COLLECTED: [Resource; 7] = [
 const FETCH_DELAY: Duration = Duration::from_millis(500);
 /// The applications asked at the same time; the others wait.
 const MAX_PROBES: usize = 16;
-/// The longest violation message kept, in characters.
-const MESSAGE_MAX: usize = 512;
 
 /// The Config of the registry (ADR-0029 §3): its context name (the Filter
 /// of `Config/<AppId>/<Filter>`) and group.
@@ -262,7 +260,7 @@ impl Bus {
             at: unix_ms(),
             topic: p.topic().to_owned(),
             reqs,
-            message: message.chars().take(MESSAGE_MAX).collect(),
+            message,
         };
         let (app, outcome) = match Topic::parse(p.topic()) {
             Err(e) => (
@@ -578,8 +576,9 @@ mod tests {
     /// `del` or `new_data_set_writer_id` (a `Call`) in its sources, all
     /// files below `src`, whitespace ignored, test modules excluded. The
     /// sources use no other method of these names either. The HTTP side
-    /// (C-088) names no other HTTP method, reads no request body, and the
-    /// guard of `api.rs` refuses every method but `GET` with `405`.
+    /// (C-088) serves the directory with `GET` only; only the user
+    /// management of `http.rs` (ADR-0035) takes other methods and reads a
+    /// request body, at one place.
     #[test]
     fn read_only() {
         let mut files = Vec::new();
@@ -588,7 +587,7 @@ mod tests {
             &mut files,
         );
         assert!(files.len() >= 7, "the sources were not found");
-        let mut gets = 0;
+        let mut bodies = 0;
         for path in files {
             let text = std::fs::read_to_string(&path).unwrap();
             let code: String = without_tests(&text)
@@ -603,6 +602,10 @@ mod tests {
                 ".new_data_set_writer_id",
             ] {
                 assert!(!code.contains(method), "{}: {method}", path.display());
+            }
+            if path.ends_with("http.rs") {
+                bodies += code.matches("into_body(").count();
+                continue;
             }
             // the HTTP side (C-088): no method but GET is served, no
             // request body is read
@@ -620,12 +623,19 @@ mod tests {
             ] {
                 assert!(!code.contains(http), "{}: {http}", path.display());
             }
-            if path.ends_with("api.rs") {
-                gets += 1;
-                assert!(code.contains(r#"ifh.method!="GET"{returnErr((405,"#));
-            }
         }
-        assert_eq!(gets, 1, "the method guard of api.rs");
+        assert_eq!(bodies, 1, "the request body of the user management");
+        for path in [
+            "/api/assets",
+            "/api/assets/x",
+            "/api/events",
+            "/api/data",
+            "/api/stream",
+        ] {
+            let route = crate::api::route(path, true).unwrap();
+            assert_eq!(route.methods(), ["GET"], "{path}");
+            assert_eq!(route.access(), crate::api::Access::Read, "{path}");
+        }
     }
 
     /// The scan sees code after a test module and in front of it.

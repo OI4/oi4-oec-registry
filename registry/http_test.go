@@ -19,7 +19,7 @@ import (
 // Integration tests of the HTTP side of the registry (ADR-0029 §7, §11,
 // A-398 ff.): REST read-only, the event stream, OpenAPI, TLS and the ports,
 // against the running registry on the test broker; Go standard library
-// only.
+// only. The user management (ADR-0035): users_test.go.
 
 // peer is a participant the tests announce to the registry.
 const peer = "acme.com/RegistryTest/RT-1/1"
@@ -100,6 +100,9 @@ func TestHTTPSelfSigned(t *testing.T) {
 	}
 	w := regtest.WaitWeb(t, web, regtest.Pinned(cert, "localhost"))
 	a := regtest.WaitWeb(t, api, regtest.Pinned(cert, "reg-1"))
+	s.stderr(t, "HTTP: the user admin with the password of its file")
+	w.Login(t, "admin", regtest.AdminPassword)
+	a.Login(t, "admin", regtest.AdminPassword)
 
 	// no plain HTTP on a TLS port
 	c, err := net.Dial("tcp", api)
@@ -216,9 +219,10 @@ func checkContent(t *testing.T, s started, w, a *regtest.Web) {
 		}
 	}
 
-	// every path of the document answers 200 (the stream: above)
+	// every path of the document with GET answers 200 (the stream: above;
+	// the others: users_test.go)
 	for _, p := range doc.Paths() {
-		if p == "/api/stream" {
+		if p == "/api/stream" || !slices.Contains(doc.Methods(p), "GET") {
 			continue
 		}
 		p = strings.Replace(p, "{il}", url.PathEscape(peer), 1)
@@ -314,6 +318,7 @@ func TestHTTPApplicationCertificate(t *testing.T) {
 		t.Errorf("the registry presents %s, not the application certificate", got.Subject)
 	}
 	a := regtest.WaitWeb(t, api, regtest.Pinned(ca.Cert, "reg-1"))
+	a.Login(t, "admin", regtest.AdminPassword)
 	var assets map[string]any
 	a.JSON(t, "/api/assets", &assets)
 	if assets["registry"] != il {
@@ -337,6 +342,7 @@ func TestHTTPPlain(t *testing.T) {
 		t.Error("the API port is on")
 	}
 	w := regtest.WaitWeb(t, web, nil)
+	w.Login(t, "admin", regtest.AdminPassword)
 	announce(t, b, birth.Conn)
 	regtest.Eventually(t, "the peer in /api/assets", func() bool {
 		var assets map[string]any
@@ -353,8 +359,9 @@ func TestHTTPPlain(t *testing.T) {
 	stream.Event(t, 0, "snapshot", nil)
 }
 
-// TestHTTPSettings: invalid HTTP settings and a port in use end the
-// registry with an error before it connects; both ports off is allowed.
+// TestHTTPSettings: invalid HTTP settings, a port in use and a missing
+// or weak password file of the first user (ADR-0035) end the registry
+// with an error before it connects; both ports off is allowed.
 func TestHTTPSettings(t *testing.T) {
 	b := regtest.StartBroker(t)
 	used, err := net.Listen("tcp", "127.0.0.1:0")
@@ -372,8 +379,14 @@ func TestHTTPSettings(t *testing.T) {
 		{[]string{"OEC_REGISTRY_TLS=maybe"}, "OEC_REGISTRY_TLS"},
 		{[]string{"OEC_REGISTRY_KEEPALIVE_MS=0"}, "OEC_REGISTRY_KEEPALIVE_MS"},
 		{[]string{"OEC_REGISTRY_API=" + used.Addr().String()}, used.Addr().String()},
+		{[]string{"OEC_REGISTRY_API=" + free, "OEC_REGISTRY_ADMIN_PASSWORD_FILE=/nonexistent/password"}, "/nonexistent/password"},
+		{[]string{"OEC_REGISTRY_API=" + free, "weak"}, "12 … 256 characters"},
 	} {
 		root := b.Container(t, "reg-1")
+		if tc.env[len(tc.env)-1] == "weak" {
+			tc.env = tc.env[:len(tc.env)-1]
+			regtest.Write(t, root+"/run/secrets/oi4/registry_admin_password", "short\n")
+		}
 		env := append(append([]string{"OEC_ROOT=" + root}, regtest.HTTPOff...), tc.env...)
 		p := regtest.Start(t, regtest.Registry(t), env...)
 		if err := p.Exit(t); err == nil {

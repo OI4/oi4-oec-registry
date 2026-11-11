@@ -10,8 +10,8 @@ Rust on the crate `oec`, ServiceType `Registry`, Messaging Level 3,
 | Interface | What it offers |
 |---|---|
 | Message bus | `Get/MAM[/<Source>]`, `Get/Health[/<Source>]` and its own `Config` |
-| HTTPS `5798` | Web UI (React/TypeScript, embedded in the binary) and the read-only REST API `/api` with Server-Sent Events |
-| HTTPS `5799` | the REST API `/api` only |
+| HTTPS `5798` | Web UI (React/TypeScript, embedded in the binary) and the REST API `/api` with Server-Sent Events – login required (users with the roles `admin` and `user`, sessions) |
+| HTTPS `5799` | the REST API `/api` only (login required) |
 | API documents | [`registry/api/openapi.json`](registry/api/openapi.json) (REST), [`registry/api/asyncapi.json`](registry/api/asyncapi.json) (MQTT) |
 
 Guide: [OEC Registry](https://oi4.github.io/oi4-oec-documentation/docs/community/registry)

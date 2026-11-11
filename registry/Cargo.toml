@@ -1,7 +1,7 @@
 # The OEC Registry D5 of P7 (ADR-0029, A-380): an own Cargo package outside
 # the SDK workspace, on the Rust SDK `oec` by path, with its own Cargo.lock
 # and the cargo-deny policy of the SDK (oec/sdk/rust/deny.toml).
-# Dependencies within ADR-0023 (amendments C-086, C-087, C-088).
+# Dependencies within ADR-0023 (amendments C-086, C-087, C-088, C-113).
 [package]
 name = "oec-registry"
 description = "OEC Registry (D5): collects the MAM and Health of the assets on the OI4 Message Bus and offers them with the Registry services of MG A1."
@@ -39,6 +39,10 @@ tokio-rustls = { version = "0.26.6", default-features = false }
 rustls-pki-types = { version = "1.15", default-features = false, features = ["std"] }
 pkcs8 = { version = "0.11", default-features = false, features = ["std", "pem", "encryption"] }
 rcgen = { version = "0.14", default-features = false, features = ["pem", "aws_lc_rs"] }
+# The user management (ADR-0035, ADR-0023 amendment C-113): PBKDF2,
+# SHA-256 and the random generator of the crypto provider of rustls (the
+# same crate and version, no new crate).
+aws-lc-rs = { version = "1.16", default-features = false, features = ["aws-lc-sys"] }
 
 [dev-dependencies]
 # the pin of ADR-0019 §8; validates the API documents against the

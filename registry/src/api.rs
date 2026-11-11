@@ -1,7 +1,15 @@
 //! The HTTP API of the registry (ADR-0029 §7, increment 3), sans-IO: the
 //! router, the request guards and the JSON views of the directory; the
-//! server is [`crate::http`]. Read-only (ADR-0008): every resource answers
-//! `GET` only, any other method `405` with `Allow: GET`.
+//! server is [`crate::http`]. The directory is read-only (ADR-0008): its
+//! resources answer `GET` only. Since C-113 (ADR-0035) every resource but
+//! the Web UI files, the API documents, login and logout needs a session
+//! of a user ([`crate::auth`]); a method a resource does not take is `405`
+//! with its `Allow`.
+//!
+//! - `POST /api/login`, `POST /api/logout`, `GET /api/session`,
+//!   `POST /api/password`: the session and the own password.
+//! - `GET`/`POST /api/users`, `PUT`/`DELETE /api/users/{name}`: the users
+//!   (role `admin`).
 //!
 //! - `GET /api/assets`: the directory – the registry, its limits, the
 //!   count of ignored messages and a summary per asset.
@@ -23,6 +31,7 @@
 //! bus. The schemas: `api/openapi.json`.
 
 use std::collections::BTreeMap;
+use std::hash::{BuildHasher, RandomState};
 
 use serde_json::{Value, json};
 
@@ -57,8 +66,10 @@ fn ui_file(path: &str) -> Option<&'static UiFile> {
 }
 
 /// At most this many request bodies are announced (ADR-0028 amendment
-/// C-083); no resource takes a body.
+/// C-083); the resources that take a body take less ([`MAX_JSON`]).
 pub(crate) const MAX_BODY: u64 = 64 * 1024;
+/// The largest body of a resource that takes one (ADR-0035).
+pub(crate) const MAX_JSON: usize = 4 * 1024;
 
 /// A resource of the API.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,12 +85,68 @@ pub(crate) enum Route {
     Stream,
     OpenApi,
     AsyncApi,
+    Login,
+    Logout,
+    Session,
+    Password,
+    Users,
+    /// `/api/users/{name}`, the decoded name.
+    User(String),
+}
+
+/// Who may use a resource (ADR-0035 §6).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Access {
+    /// Anyone (the Web UI files, the API documents, login, logout).
+    Public,
+    /// A session, also one whose password must be changed first.
+    Session,
+    /// A session whose password need not be changed.
+    Read,
+    /// A session of an `admin` whose password need not be changed.
+    Admin,
+}
+
+impl Route {
+    /// The methods of the route.
+    pub(crate) fn methods(&self) -> &'static [&'static str] {
+        match self {
+            Self::Login | Self::Logout | Self::Password => &["POST"],
+            Self::Users => &["GET", "POST"],
+            Self::User(_) => &["PUT", "DELETE"],
+            _ => &["GET"],
+        }
+    }
+
+    /// The value of `Allow` for the route.
+    pub(crate) fn allow(&self) -> &'static str {
+        match self.methods() {
+            ["POST"] => "POST",
+            ["GET", "POST"] => "GET, POST",
+            ["PUT", "DELETE"] => "PUT, DELETE",
+            _ => "GET",
+        }
+    }
+
+    /// Who may use the route.
+    pub(crate) fn access(&self) -> Access {
+        match self {
+            Self::Ui(_) | Self::OpenApi | Self::AsyncApi | Self::Login | Self::Logout => {
+                Access::Public
+            }
+            Self::Session | Self::Password => Access::Session,
+            Self::Users | Self::User(_) => Access::Admin,
+            Self::Assets | Self::Asset(_) | Self::Events | Self::Data | Self::Stream => {
+                Access::Read
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 impl Route {
     /// The paths of the API, as in the OpenAPI document.
-    pub(crate) const PATHS: [&'static str; 7] = [
+    pub(crate) const PATHS: [&'static str; 13] = [
         "/api/assets",
         "/api/assets/{il}",
         "/api/events",
@@ -87,6 +154,12 @@ impl Route {
         "/api/openapi.json",
         "/api/asyncapi.json",
         "/api/data",
+        "/api/login",
+        "/api/logout",
+        "/api/session",
+        "/api/password",
+        "/api/users",
+        "/api/users/{name}",
     ];
 
     /// The path template of the route (`None`: not part of the API).
@@ -100,6 +173,12 @@ impl Route {
             Self::OpenApi => Self::PATHS[4],
             Self::AsyncApi => Self::PATHS[5],
             Self::Data => Self::PATHS[6],
+            Self::Login => Self::PATHS[7],
+            Self::Logout => Self::PATHS[8],
+            Self::Session => Self::PATHS[9],
+            Self::Password => Self::PATHS[10],
+            Self::Users => Self::PATHS[11],
+            Self::User(_) => Self::PATHS[12],
         })
     }
 }
@@ -120,7 +199,16 @@ pub(crate) fn route(path: &str, ui: bool) -> Option<Route> {
         "/api/stream" => Route::Stream,
         "/api/openapi.json" => Route::OpenApi,
         "/api/asyncapi.json" => Route::AsyncApi,
+        "/api/login" => Route::Login,
+        "/api/logout" => Route::Logout,
+        "/api/session" => Route::Session,
+        "/api/password" => Route::Password,
+        "/api/users" => Route::Users,
         _ => {
+            if let Some(raw) = path.strip_prefix("/api/users/") {
+                let name = percent_decode(raw)?;
+                return (!name.is_empty() && !name.contains('/')).then_some(Route::User(name));
+            }
             let raw = path.strip_prefix("/api/assets/")?;
             let il = percent_decode(raw)?;
             if il.is_empty() {
@@ -153,7 +241,6 @@ pub(crate) type Refusal = (u16, &'static str);
 /// What the guards see of a request.
 #[derive(Debug, Default)]
 pub(crate) struct Head<'a> {
-    pub(crate) method: &'a str,
     /// The values of `Host` (and the authority of an absolute target).
     pub(crate) hosts: Vec<&'a str>,
     pub(crate) origins: Vec<&'a str>,
@@ -211,11 +298,11 @@ impl Hosts {
             || self.names.iter().any(|n| n.eq_ignore_ascii_case(name))
     }
 
-    /// The guards of ADR-0028 amendment C-083 for a server without
-    /// authentication, in this order: `Host` (one, allowed: against DNS
-    /// rebinding), `Origin` (same site: against cross-site requests),
-    /// no `Transfer-Encoding`, `Content-Length` ≤ [`MAX_BODY`], method
-    /// `GET`. The path is judged after.
+    /// The guards of ADR-0028 amendment C-083, in this order: `Host` (one,
+    /// allowed: against DNS rebinding), `Origin` (same site: against
+    /// cross-site requests), no `Transfer-Encoding`, `Content-Length` ≤
+    /// [`MAX_BODY`]. The path, the method and the session are judged
+    /// after (ADR-0035 §6).
     pub(crate) fn check(&self, h: &Head<'_>) -> Result<(), Refusal> {
         let [host] = h.hosts[..] else {
             return Err((400, "exactly one Host is required"));
@@ -239,9 +326,6 @@ impl Hosts {
                 Err(_) => return Err((400, "invalid Content-Length")),
             },
             _ => return Err((400, "repeated Content-Length")),
-        }
-        if h.method != "GET" {
-            return Err((405, "the registry is read-only: GET only"));
         }
         Ok(())
     }
@@ -279,6 +363,9 @@ fn limits(l: Limits) -> Value {
         "healthHistory": l.health_history,
         "eventTrail": l.event_trail,
         "violationTrail": l.violation_trail,
+        "entries": crate::directory::ENTRIES,
+        "valueMax": crate::directory::VALUE_MAX,
+        "listEntries": crate::directory::LIST_ENTRIES,
     })
 }
 
@@ -437,11 +524,14 @@ pub(crate) fn data(d: &Directory) -> Value {
 }
 
 /// What one event stream has sent: the messages for the changes since.
+/// It keeps a digest of each message, not the message (C-113 RR-3: up to
+/// [`crate::directory::ENTRIES`] summaries per stream).
 #[derive(Debug, Default)]
 pub(crate) struct Stream {
-    assets: BTreeMap<String, String>,
-    directory: String,
+    assets: BTreeMap<String, u64>,
+    directory: u64,
     last_event: u64,
+    keys: RandomState,
 }
 
 impl Stream {
@@ -449,9 +539,9 @@ impl Stream {
     pub(crate) fn snapshot(&mut self, d: &Directory, now: u64) -> String {
         self.assets = d
             .entries()
-            .map(|e| (e.il.clone(), summary(d, e).to_string()))
+            .map(|e| (e.il.clone(), self.keys.hash_one(summary(d, e).to_string())))
             .collect();
-        self.directory = directory(d).to_string();
+        self.directory = self.keys.hash_one(directory(d).to_string());
         self.last_event = d.events().last().map_or(0, |r| r.seq);
         let v = merged(assets(d, now), "events", events(d)["events"].take());
         merged(v, "type", json!("snapshot")).to_string()
@@ -463,17 +553,19 @@ impl Stream {
     pub(crate) fn changes(&mut self, d: &Directory) -> Vec<String> {
         let mut out = Vec::new();
         let dir = directory(d);
-        let text = dir.to_string();
-        if text != self.directory {
+        let digest = self.keys.hash_one(dir.to_string());
+        if digest != self.directory {
             out.push(merged(dir, "type", json!("directory")).to_string());
-            self.directory = text;
+            self.directory = digest;
         }
+        // entries the directory gave up (C-113 RR-3) are forgotten
+        self.assets.retain(|il, _| d.get(il).is_some());
         for e in d.entries() {
             let s = summary(d, e);
-            let text = s.to_string();
-            if self.assets.get(&e.il) != Some(&text) {
+            let digest = self.keys.hash_one(s.to_string());
+            if self.assets.get(&e.il) != Some(&digest) {
                 out.push(json!({ "type": "asset", "asset": s }).to_string());
-                self.assets.insert(e.il.clone(), text);
+                self.assets.insert(e.il.clone(), digest);
             }
         }
         let last = self.last_event;
@@ -723,9 +815,8 @@ pub(crate) mod tests {
         assert!(!index.contains("<style") && !index.contains(" style="));
     }
 
-    fn head<'a>(method: &'a str, host: &'a str) -> Head<'a> {
+    fn head<'a>(_method: &'a str, host: &'a str) -> Head<'a> {
         Head {
-            method,
             hosts: vec![host],
             ..Head::default()
         }
@@ -810,15 +901,47 @@ pub(crate) mod tests {
             content_length: vec!["2"],
             ..head("POST", "localhost")
         };
-        assert_eq!(h.check(&small).map_err(|r| r.0), Err(405));
-        for m in [
-            "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "get",
+        assert_eq!(h.check(&small), Ok(()));
+    }
+
+    /// The methods and the access of the routes (ADR-0035 §6).
+    #[test]
+    fn methods_and_access() {
+        let r = |p| route(p, true).unwrap();
+        for (path, allow, access) in [
+            ("/", "GET", Access::Public),
+            ("/api/openapi.json", "GET", Access::Public),
+            ("/api/asyncapi.json", "GET", Access::Public),
+            ("/api/login", "POST", Access::Public),
+            ("/api/logout", "POST", Access::Public),
+            ("/api/session", "GET", Access::Session),
+            ("/api/password", "POST", Access::Session),
+            ("/api/assets", "GET", Access::Read),
+            ("/api/assets/x", "GET", Access::Read),
+            ("/api/events", "GET", Access::Read),
+            ("/api/data", "GET", Access::Read),
+            ("/api/stream", "GET", Access::Read),
+            ("/api/users", "GET, POST", Access::Admin),
+            ("/api/users/jane", "PUT, DELETE", Access::Admin),
         ] {
             assert_eq!(
-                h.check(&head(m, "localhost")).map_err(|r| r.0),
-                Err(405),
-                "{m}"
+                (r(path).allow(), r(path).access()),
+                (allow, access),
+                "{path}"
             );
+            assert_eq!(r(path).methods().join(", "), allow, "{path}");
+        }
+        assert_eq!(
+            r("/api/users/jane%40acme"),
+            Route::User("jane@acme".to_owned())
+        );
+        for nope in [
+            "/api/users/",
+            "/api/users/a%2Fb",
+            "/api/users/a/b",
+            "/api/users/%zz",
+        ] {
+            assert_eq!(route(nope, true), None, "{nope}");
         }
     }
 
@@ -829,6 +952,10 @@ pub(crate) mod tests {
         assert_eq!(all["registry"], ME);
         assert_eq!(all["time"], 9);
         assert_eq!(all["limits"]["eventTrail"], 200);
+        // C-113 RR-3: the fixed bounds of the directory
+        assert_eq!(all["limits"]["entries"], crate::directory::ENTRIES);
+        assert_eq!(all["limits"]["valueMax"], crate::directory::VALUE_MAX);
+        assert_eq!(all["limits"]["listEntries"], crate::directory::LIST_ENTRIES);
         let list = all["assets"].as_array().unwrap();
         assert_eq!(list.len(), 2);
         let app = &list[0];
@@ -915,5 +1042,34 @@ pub(crate) mod tests {
         let msgs = s.changes(&d);
         assert_eq!(msgs.len(), 1);
         assert!(msgs[0].contains(r#""type":"directory""#), "{}", msgs[0]);
+    }
+
+    /// C-113 RR-3: a stream keeps a digest per asset of the directory,
+    /// and forgets the assets the directory gave up.
+    #[test]
+    fn stream_is_bounded() {
+        let mut d = Directory::new(ME);
+        let il = |i: usize| format!("vendor.com/App/A-1/{i}");
+        let normal = Health {
+            health: HealthState::Normal,
+            health_score: Some(100),
+            details: None,
+        };
+        for i in 0..crate::directory::ENTRIES {
+            d.health(&at(&il(i), &il(i), false, 1), normal.clone());
+        }
+        let mut s = Stream::default();
+        s.snapshot(&d, 1);
+        let close = Health {
+            health_score: Some(0),
+            ..normal.clone()
+        };
+        d.health(&at(&il(0), &il(0), false, 2), close);
+        let extra = il(crate::directory::ENTRIES);
+        d.health(&at(&extra, &extra, false, 3), normal);
+        assert!(d.get(&il(0)).is_none());
+        assert_eq!(s.changes(&d).len(), 1, "the new asset");
+        assert_eq!(s.assets.len(), crate::directory::ENTRIES);
+        assert!(!s.assets.contains_key(&il(0)));
     }
 }

@@ -908,6 +908,7 @@ dependencies = [
 name = "oec-registry"
 version = "0.1.0"
 dependencies = [
+ "aws-lc-rs",
  "hyper",
  "hyper-util",
  "jsonschema",

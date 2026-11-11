@@ -16,12 +16,17 @@
 //! `0.0.0.0:5799`) – an empty value switches the port off –,
 //! `OEC_REGISTRY_TLS` (`on` (default) or `off`: plain HTTP, for
 //! development only), `OEC_REGISTRY_HOSTS` (further names of the registry
-//! for `Host`, comma-separated) and `OEC_REGISTRY_KEEPALIVE_MS` (quiet time
-//! of an event stream before a comment, 1 … 15000, default 15000).
+//! for `Host`, comma-separated), `OEC_REGISTRY_KEEPALIVE_MS` (quiet time
+//! of an event stream before a comment, 1 … 15000, default 15000) and
+//! `OEC_REGISTRY_ADMIN_PASSWORD_FILE` (the password of the first user
+//! `admin`, default `<OEC_ROOT>/run/secrets/oi4/registry_admin_password`;
+//! without the file a generated password is printed once on stderr and has
+//! to be changed at the first login – ADR-0035, [`auth`]).
 
 mod api;
 #[cfg(test)]
 mod api_tests;
+mod auth;
 mod bus;
 mod directory;
 mod http;
@@ -73,8 +78,14 @@ fn run() -> Result<(), String> {
     let root = std::env::var_os("OEC_ROOT").map_or_else(|| PathBuf::from("/"), PathBuf::from);
     let settings = http::Settings::from(|name| std::env::var(name).ok())?;
     let listeners = http::Listeners::bind(&settings)?;
+    let (web_port, api_port) = listeners.addrs();
+    let users = if web_port.is_some() || api_port.is_some() {
+        Some(users(&root)?)
+    } else {
+        None
+    };
     let app = App::builder(LEVEL, ServiceType::Registry, product())
-        .bootstrap(Bootstrap::ContainerStorage { root })
+        .bootstrap(Bootstrap::ContainerStorage { root: root.clone() })
         .build()
         .map_err(|e| e.to_string())?;
     log::info!(
@@ -86,22 +97,23 @@ fn run() -> Result<(), String> {
         .add_config(bus::config())
         .map_err(|e| e.to_string())?;
     let bus = bus::Bus::start(app.handle(), config)?;
-    serve(&app, &settings, listeners, &bus)?;
+    serve(&app, users, &settings, listeners, &bus)?;
     app.run().map_err(|e| e.to_string())
 }
 
 /// Starts the HTTP side, if a port is on.
 fn serve(
     app: &App,
+    users: Option<auth::Auth>,
     settings: &http::Settings,
     listeners: http::Listeners,
     bus: &bus::Bus,
 ) -> Result<(), String> {
     let (web_port, api_port) = listeners.addrs();
-    if web_port.is_none() && api_port.is_none() {
+    let Some(users) = users else {
         log::info!("HTTP: off");
         return Ok(());
-    }
+    };
     let auth = app.connection().auth();
     let files = tls::Files::of(auth);
     // the container name: the name of the certificate file, else the
@@ -144,7 +156,41 @@ fn serve(
     if let Some(a) = api_port {
         log::info!("HTTP: API on {scheme}://{a}");
     }
-    http::start(listeners, tls, hosts, settings.keep_alive, bus.directory())
+    http::start(
+        listeners,
+        tls,
+        hosts,
+        settings.keep_alive,
+        bus.directory(),
+        users,
+    )
+}
+
+/// The users of the HTTP side (ADR-0035).
+fn users(root: &std::path::Path) -> Result<auth::Auth, String> {
+    let explicit = std::env::var_os("OEC_REGISTRY_ADMIN_PASSWORD_FILE");
+    let file = explicit.clone().map_or_else(
+        || root.join("run/secrets/oi4/registry_admin_password"),
+        PathBuf::from,
+    );
+    let (users, opened) = auth::Auth::open(root, &file, explicit.is_some(), auth::ITERATIONS)?;
+    match opened {
+        auth::Opened::Loaded(n) => log::info!("HTTP: {n} users"),
+        auth::Opened::Bootstrapped => {
+            log::info!("HTTP: the user admin with the password of its file");
+        }
+        auth::Opened::Generated(password) => {
+            log::warn!(
+                "HTTP: the user admin with a generated password (see stderr), change it at the first login"
+            );
+            // never through `log`: its records also go to Syslog on the bus
+            eprintln!("oec-registry: the password of the user admin: {password}");
+        }
+    }
+    if !users.persistent() {
+        log::warn!("HTTP: the users are kept in memory only (no volume etc/oi4/app)");
+    }
+    Ok(users)
 }
 
 fn main() -> ExitCode {

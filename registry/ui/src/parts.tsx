@@ -172,6 +172,7 @@ const ICONS: Record<string, string> = {
   pause: "M8 5v14M16 5v14",
   play: "M7 5l12 7-12 7z",
   arrow: "M5 12h14M13 6l6 6-6 6",
+  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0",
 };
 
 export function Icon({ name }: { name: keyof typeof ICONS }) {

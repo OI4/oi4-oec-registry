@@ -271,8 +271,9 @@ fn openapi_is_valid() {
     assert_eq!(serde_json::from_str::<Value>(api::OPENAPI).ok(), Some(doc));
 }
 
-/// The paths are those of the router, each with `GET` only (read-only,
-/// ADR-0008), and every `$ref` of the document resolves.
+/// The paths are those of the router, each with the methods of its route
+/// (the directory: `GET` only, ADR-0008), `401` exactly where a session is
+/// needed (ADR-0035), and every `$ref` of the document resolves.
 #[test]
 fn openapi_paths_are_the_router() {
     let doc = openapi();
@@ -281,17 +282,43 @@ fn openapi_paths_are_the_router() {
     let routed: BTreeSet<&str> = Route::PATHS.into_iter().collect();
     assert_eq!(documented, routed);
     for (path, item) in paths {
-        let methods: Vec<&String> = item.as_object().expect("path item").keys().collect();
-        assert_eq!(methods, ["get"], "{path}");
-        let get = &item["get"];
-        for code in ["200", "403", "405"] {
-            assert!(get["responses"].get(code).is_some(), "{path} {code}");
-        }
         // an example path of the template is routed to it, on both ports
-        let example = path.replace("{il}", "vendor.com%2FPump%2FP-1%2F0815");
+        let example = path
+            .replace("{il}", "vendor.com%2FPump%2FP-1%2F0815")
+            .replace("{name}", "jane%40acme");
+        let mut route = None;
         for ui in [true, false] {
             let r = api::route(&example, ui).unwrap_or_else(|| panic!("{example}"));
             assert_eq!(r.template(), Some(path.as_str()));
+            route = Some(r);
+        }
+        let route = route.unwrap();
+        let methods: Vec<String> = item
+            .as_object()
+            .expect("path item")
+            .keys()
+            .filter(|k| *k != "parameters")
+            .map(|k| k.to_ascii_uppercase())
+            .collect();
+        let mut routed = route.methods().to_vec();
+        routed.sort_unstable();
+        assert_eq!(methods, routed, "{path}");
+        for m in route.methods() {
+            let op = &item[m.to_ascii_lowercase()];
+            for code in ["400", "403", "405", "413", "501", "503"] {
+                assert!(op["responses"].get(code).is_some(), "{path} {m} {code}");
+            }
+            let public = route.access() == api::Access::Public;
+            assert_eq!(
+                op["responses"].get("401").is_none() || path == "/api/login",
+                public,
+                "{path} {m}"
+            );
+            assert_eq!(
+                op.get("security") == Some(&Value::Array(Vec::new())),
+                public,
+                "{path} {m}"
+            );
         }
     }
     assert_eq!(api::route("/", false), None);
